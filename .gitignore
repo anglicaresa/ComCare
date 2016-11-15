@@ -243,3 +243,5 @@ ModelManifest.xml
 
 # FAKE - F# Make
 .fake/
+/Report Project1
+/Report Project2

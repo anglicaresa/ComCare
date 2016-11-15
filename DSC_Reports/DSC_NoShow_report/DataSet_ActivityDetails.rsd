@@ -1,0 +1,198 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<SharedDataSet xmlns="http://schemas.microsoft.com/sqlserver/reporting/2010/01/shareddatasetdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <DataSet Name="DataSet1">
+    <Query>
+      <DataSourceReference>ASADWH</DataSourceReference>
+      <DataSetParameters>
+        <DataSetParameter Name="@Start_Date">
+          <ReadOnly>false</ReadOnly>
+          <Nullable>false</Nullable>
+          <OmitFromQuery>false</OmitFromQuery>
+          <rd:DbType>Object</rd:DbType>
+        </DataSetParameter>
+        <DataSetParameter Name="@End_Date">
+          <ReadOnly>false</ReadOnly>
+          <Nullable>false</Nullable>
+          <OmitFromQuery>false</OmitFromQuery>
+          <rd:DbType>Object</rd:DbType>
+        </DataSetParameter>
+        <DataSetParameter Name="@Organisation_Name_">
+          <ReadOnly>false</ReadOnly>
+          <Nullable>false</Nullable>
+          <OmitFromQuery>false</OmitFromQuery>
+          <rd:DbType>Object</rd:DbType>
+        </DataSetParameter>
+      </DataSetParameters>
+      <CommandText>
+SELECT        
+J004.Organisation_Name
+,J002.Client_ID, J002.Title
+,J002.Last_Name
+,J002.Preferred_Name
+,DATEADD(DD, 0, DATEDIFF(DD, 0, J002.Birth_Date)) AS Birth_Date
+,J005.Building_name
+,J005.Location
+,J005.dwelling_number
+,J005.Street
+,J005.suburb
+,J005.Post_Code
+,J006.Description
+,CONVERT(datetime, J001.Schedule_Time) AS Schedule_Time
+
+FROM [appsql-3\TRAIN].[ComCareTRAIN].dbo.WI_Activity AS J001 
+INNER JOIN
+(
+	SELECT
+		CL.Client_ID
+		,P.Last_Name
+		,P.Given_Names
+		,CL.URN
+		,RE.Description AS 'Religion'
+		,PBS.Description AS 'Pension Benefit Status'
+		,CRS.Description AS 'Carer Residency Status'
+		,CL.Registration_Date
+		,CL.Creation_Date
+		,CL.Creator_User_Name
+		,CL.Last_Modified_Date
+		,CL.Last_Modified_User_Name
+		,EC.Description AS 'Ethnicity'
+		,CAT.Description AS 'Carer Avaliability Type'
+		,P.Preferred_Name
+		,P.Salutation
+		,P.Birth_Date
+		,CONVERT(datetime, P.Deceased_Date) AS Deceased_Date
+		,P.Estimated_DOB_Flag
+		,P.Dummy_PID
+		,P.Source_System
+		,P.Source_System_Person_ID, G.Description AS 'Gender'
+		,T.Description AS 'Title'
+		,C.Description AS 'Country'
+		,L.Description AS 'Language'
+		,ES.Description AS 'Employment Status'
+		,MS.Description AS 'Marital Status'
+		,INS.Description AS 'Interpreter Status'
+
+	FROM [appsql-3\TRAIN].[ComCareTRAIN].dbo.Client AS CL WITH (NOLOCK) 
+	INNER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Person AS P WITH (NOLOCK) ON CL.Client_ID = P.Person_ID 
+	INNER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Title AS T ON P.Title_Code = T.Title_Code 
+	LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Carer_Availability_Type AS CAT ON CL.Carer_Availability_Type_Code = CAT.Carer_Availability_Type_Code 
+	LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Ethnicity_Classification AS EC ON P.Ethnicity_Class_Code = EC.Ethnicity_Class_Code 
+	LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Religion AS RE ON CL.Religion_Code = RE.Religion_Code 
+	LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Carer_Residency_Status AS CRS ON CL.Carer_Residency_Status_Code = CRS.Carer_Residency_Status_Code 
+	LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Pension_Benefit_Status AS PBS ON CL.Pension_Benefit_Status_Code = PBS.Pension_Benefit_Status_Code 
+	LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Living_Arrangement AS LA ON CL.Living_Arrangement_Type_Code = LA.Living_Arrangement_Type_Code 
+	LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Gender AS G ON P.Gender_Code = G.Gender_Code 
+	LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Country AS C ON P.Country_Code = C.Country_Code 
+	LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Language AS L ON P.Language_Code = L.Language_Code 
+	LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Employment_Status AS ES ON P.Employment_Status_ID = ES.Employment_Status_ID 
+	LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Marital_Status AS MS ON P.Marital_Status_ID = MS.Marital_Status_ID 
+	LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Interpreter_Status AS INS ON P.Interpreter_Status_ID = INS.Interpreter_Status_ID
+) 
+AS J002 ON J002.Client_ID = J001.Client_ID
+
+LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Service_Delivery AS J003 ON J003.Client_ID = J002.Client_ID 
+INNER JOIN
+(
+	SELECT        
+		SD.Client_ID
+		, O.Organisation_Name
+		, SD.Service_Type_Code
+	FROM [appsql-3\TRAIN].[ComCareTRAIN].dbo.Service_Delivery AS SD 
+		INNER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Period_of_Residency AS PR ON PR.Person_ID = SD.Client_ID 
+		INNER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Address AS A ON A.Address_ID = PR.Address_ID 
+		INNER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Service_Provision AS SP ON A.Suburb_ID = SP.Suburb_ID AND SP.Service_Type_Code = SD.Service_Type_Code 
+		INNER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Organisation AS O ON SP.Centre_ID = O.Organisation_ID
+    WHERE
+		(PR.To_Date IS NULL) 
+		AND (PR.Display_Indicator = 1)
+) 
+AS J004 ON J004.Client_ID = J003.Client_ID AND J004.Service_Type_Code = J003.Service_Type_Code
+ 
+LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Person_Current_Address_Phone AS J005 ON J005.Person_id = J002.Client_ID 
+LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Service_Type AS J006 ON J006.Service_Type_Code = J003.Service_Type_Code
+
+WHERE					
+(J001.Client_Not_Home &lt;&gt; 0) 
+AND (J001.Schedule_Time BETWEEN (@Start_Date) AND (@End_Date)) 
+AND J004.Organisation_Name IN (@Organisation_Name_)
+AND (J002.Deceased_Date IS NULL)
+
+GROUP BY 
+	J004.Organisation_Name
+	,J002.Client_ID
+	,J002.Title
+	,J002.Last_Name
+	,J002.Preferred_Name
+	,DATEADD(DD, 0, DATEDIFF(DD, 0, J002.Birth_Date))
+	,J005.Building_name
+	,J005.Location
+	,J005.dwelling_number
+	,J005.Street
+	,J005.suburb
+	,J005.Post_Code
+	,J006.Description
+	,CONVERT(datetime, J001.Schedule_Time)
+
+ORDER BY
+1,2,3</CommandText>
+    </Query>
+    <Fields>
+      <Field Name="Organisation_Name">
+        <DataField>Organisation_Name</DataField>
+        <rd:TypeName>System.String</rd:TypeName>
+      </Field>
+      <Field Name="Client_ID">
+        <DataField>Client_ID</DataField>
+        <rd:TypeName>System.Int32</rd:TypeName>
+      </Field>
+      <Field Name="Last_Name">
+        <DataField>Last_Name</DataField>
+        <rd:TypeName>System.String</rd:TypeName>
+      </Field>
+      <Field Name="Title">
+        <DataField>Title</DataField>
+        <rd:TypeName>System.String</rd:TypeName>
+      </Field>
+      <Field Name="Preferred_Name">
+        <DataField>Preferred_Name</DataField>
+        <rd:TypeName>System.String</rd:TypeName>
+      </Field>
+      <Field Name="Building_name">
+        <DataField>Building_name</DataField>
+        <rd:TypeName>System.String</rd:TypeName>
+      </Field>
+      <Field Name="Location">
+        <DataField>Location</DataField>
+        <rd:TypeName>System.String</rd:TypeName>
+      </Field>
+      <Field Name="Birth_Date">
+        <DataField>Birth_Date</DataField>
+        <rd:TypeName>System.DateTime</rd:TypeName>
+      </Field>
+      <Field Name="dwelling_number">
+        <DataField>dwelling_number</DataField>
+        <rd:TypeName>System.String</rd:TypeName>
+      </Field>
+      <Field Name="Street">
+        <DataField>Street</DataField>
+        <rd:TypeName>System.String</rd:TypeName>
+      </Field>
+      <Field Name="suburb">
+        <DataField>suburb</DataField>
+        <rd:TypeName>System.String</rd:TypeName>
+      </Field>
+      <Field Name="Post_Code">
+        <DataField>Post_Code</DataField>
+        <rd:TypeName>System.Int16</rd:TypeName>
+      </Field>
+      <Field Name="Description">
+        <DataField>Description</DataField>
+        <rd:TypeName>System.String</rd:TypeName>
+      </Field>
+      <Field Name="Schedule_Time">
+        <DataField>Schedule_Time</DataField>
+        <rd:TypeName>System.DateTime</rd:TypeName>
+      </Field>
+    </Fields>
+  </DataSet>
+</SharedDataSet>

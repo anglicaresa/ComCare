@@ -1,0 +1,89 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<SharedDataSet xmlns="http://schemas.microsoft.com/sqlserver/reporting/2010/01/shareddatasetdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <DataSet Name="DataSet1">
+    <Query>
+      <DataSourceReference>ASADWH</DataSourceReference>
+      <DataSetParameters>
+        <DataSetParameter Name="@Client_ID_">
+          <ReadOnly>false</ReadOnly>
+          <Nullable>false</Nullable>
+          <OmitFromQuery>false</OmitFromQuery>
+          <rd:DbType>Object</rd:DbType>
+        </DataSetParameter>
+      </DataSetParameters>
+      <CommandText>select
+	J001.Client_ID
+	,J001.Visit_Date
+	,J001.Rate
+	,J001.Unit
+	,J001.Amount
+	,J001.Rate_Type
+	,J001.Line_Description
+	,J002.Description as Origin_ItemNumber
+	,J004.Description as TypeOfUnit
+	,J003.[UOM_Code]
+	,J002.Contract_Billing_Item_ID
+	,J003.Contract_Billing_Rate_ID
+
+ FROM [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Actual_Service_Charge_Item] J001
+Inner Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[FB_Contract_Billing_Item] J002 on J001.Contract_Billing_Item_ID = J002.Contract_Billing_Item_ID
+Left Outer Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[FB_Contract_Billing_Rate] J003 on J001.Contract_Billing_Rate_ID = J003.Contract_Billing_Rate_ID
+Left Outer Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Unit_of_Measure] J004 ON J003.[UOM_Code] = J004.[UOM_Code]
+
+Where 
+	1=1
+	and Client_ID = @Client_ID_
+	and Line_Description Not like 'HCP Daily Charges%'</CommandText>
+    </Query>
+    <Fields>
+      <Field Name="Client_ID">
+        <DataField>Client_ID</DataField>
+        <rd:TypeName>System.Int32</rd:TypeName>
+      </Field>
+      <Field Name="Visit_Date">
+        <DataField>Visit_Date</DataField>
+        <rd:TypeName>System.DateTime</rd:TypeName>
+      </Field>
+      <Field Name="Rate">
+        <DataField>Rate</DataField>
+        <rd:TypeName>System.Decimal</rd:TypeName>
+      </Field>
+      <Field Name="Unit">
+        <DataField>Unit</DataField>
+        <rd:TypeName>System.Decimal</rd:TypeName>
+      </Field>
+      <Field Name="Amount">
+        <DataField>Amount</DataField>
+        <rd:TypeName>System.Decimal</rd:TypeName>
+      </Field>
+      <Field Name="Rate_Type">
+        <DataField>Rate_Type</DataField>
+        <rd:TypeName>System.String</rd:TypeName>
+      </Field>
+      <Field Name="Line_Description">
+        <DataField>Line_Description</DataField>
+        <rd:TypeName>System.String</rd:TypeName>
+      </Field>
+      <Field Name="Origin_ItemNumber">
+        <DataField>Origin_ItemNumber</DataField>
+        <rd:TypeName>System.String</rd:TypeName>
+      </Field>
+      <Field Name="TypeOfUnit">
+        <DataField>TypeOfUnit</DataField>
+        <rd:TypeName>System.String</rd:TypeName>
+      </Field>
+      <Field Name="UOM_Code">
+        <DataField>UOM_Code</DataField>
+        <rd:TypeName>System.String</rd:TypeName>
+      </Field>
+      <Field Name="Contract_Billing_Item_ID">
+        <DataField>Contract_Billing_Item_ID</DataField>
+        <rd:TypeName>System.Decimal</rd:TypeName>
+      </Field>
+      <Field Name="Contract_Billing_Rate_ID">
+        <DataField>Contract_Billing_Rate_ID</DataField>
+        <rd:TypeName>System.Decimal</rd:TypeName>
+      </Field>
+    </Fields>
+  </DataSet>
+</SharedDataSet>
