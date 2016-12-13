@@ -24,8 +24,7 @@
             <Value>=Parameters!Organisation_Name_.Value</Value>
           </QueryParameter>
         </QueryParameters>
-        <CommandText>
-SELECT        
+        <CommandText>SELECT        
 J004.Organisation_Name
 ,J002.Client_ID, J002.Title
 ,J002.Last_Name
@@ -46,7 +45,7 @@ J004.Organisation_Name
 end
  as CancelType
 
-FROM [appsql-3\TRAIN].[ComCareTRAIN].dbo.WI_Activity AS J001 
+FROM [APPSQL-3\COMCAREPROD].[comcareprod].dbo.WI_Activity AS J001 
 INNER JOIN
 (
 	SELECT
@@ -79,44 +78,44 @@ INNER JOIN
 		,MS.Description AS 'Marital Status'
 		,INS.Description AS 'Interpreter Status'
 
-	FROM [appsql-3\TRAIN].[ComCareTRAIN].dbo.Client AS CL WITH (NOLOCK) 
-	INNER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Person AS P WITH (NOLOCK) ON CL.Client_ID = P.Person_ID 
-	INNER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Title AS T ON P.Title_Code = T.Title_Code 
-	LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Carer_Availability_Type AS CAT ON CL.Carer_Availability_Type_Code = CAT.Carer_Availability_Type_Code 
-	LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Ethnicity_Classification AS EC ON P.Ethnicity_Class_Code = EC.Ethnicity_Class_Code 
-	LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Religion AS RE ON CL.Religion_Code = RE.Religion_Code 
-	LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Carer_Residency_Status AS CRS ON CL.Carer_Residency_Status_Code = CRS.Carer_Residency_Status_Code 
-	LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Pension_Benefit_Status AS PBS ON CL.Pension_Benefit_Status_Code = PBS.Pension_Benefit_Status_Code 
-	LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Living_Arrangement AS LA ON CL.Living_Arrangement_Type_Code = LA.Living_Arrangement_Type_Code 
-	LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Gender AS G ON P.Gender_Code = G.Gender_Code 
-	LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Country AS C ON P.Country_Code = C.Country_Code 
-	LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Language AS L ON P.Language_Code = L.Language_Code 
-	LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Employment_Status AS ES ON P.Employment_Status_ID = ES.Employment_Status_ID 
-	LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Marital_Status AS MS ON P.Marital_Status_ID = MS.Marital_Status_ID 
-	LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Interpreter_Status AS INS ON P.Interpreter_Status_ID = INS.Interpreter_Status_ID
+	FROM [APPSQL-3\COMCAREPROD].[comcareprod].dbo.Client AS CL WITH (NOLOCK) 
+	INNER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].dbo.Person AS P WITH (NOLOCK) ON CL.Client_ID = P.Person_ID 
+	INNER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].dbo.Title AS T ON P.Title_Code = T.Title_Code 
+	LEFT OUTER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].dbo.Carer_Availability_Type AS CAT ON CL.Carer_Availability_Type_Code = CAT.Carer_Availability_Type_Code 
+	LEFT OUTER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].dbo.Ethnicity_Classification AS EC ON P.Ethnicity_Class_Code = EC.Ethnicity_Class_Code 
+	LEFT OUTER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].dbo.Religion AS RE ON CL.Religion_Code = RE.Religion_Code 
+	LEFT OUTER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].dbo.Carer_Residency_Status AS CRS ON CL.Carer_Residency_Status_Code = CRS.Carer_Residency_Status_Code 
+	LEFT OUTER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].dbo.Pension_Benefit_Status AS PBS ON CL.Pension_Benefit_Status_Code = PBS.Pension_Benefit_Status_Code 
+	LEFT OUTER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].dbo.Living_Arrangement AS LA ON CL.Living_Arrangement_Type_Code = LA.Living_Arrangement_Type_Code 
+	LEFT OUTER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].dbo.Gender AS G ON P.Gender_Code = G.Gender_Code 
+	LEFT OUTER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].dbo.Country AS C ON P.Country_Code = C.Country_Code 
+	LEFT OUTER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].dbo.Language AS L ON P.Language_Code = L.Language_Code 
+	LEFT OUTER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].dbo.Employment_Status AS ES ON P.Employment_Status_ID = ES.Employment_Status_ID 
+	LEFT OUTER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].dbo.Marital_Status AS MS ON P.Marital_Status_ID = MS.Marital_Status_ID 
+	LEFT OUTER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].dbo.Interpreter_Status AS INS ON P.Interpreter_Status_ID = INS.Interpreter_Status_ID
 ) 
 AS J002 ON J002.Client_ID = J001.Client_ID
 
-LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Service_Delivery AS J003 ON J003.Client_ID = J002.Client_ID 
+LEFT OUTER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].dbo.Service_Delivery AS J003 ON J003.Client_ID = J002.Client_ID 
 INNER JOIN
 (
 	SELECT        
 		SD.Client_ID
 		, O.Organisation_Name
 		, SD.Service_Type_Code
-	FROM [appsql-3\TRAIN].[ComCareTRAIN].dbo.Service_Delivery AS SD 
-		INNER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Period_of_Residency AS PR ON PR.Person_ID = SD.Client_ID 
-		INNER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Address AS A ON A.Address_ID = PR.Address_ID 
-		INNER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Service_Provision AS SP ON A.Suburb_ID = SP.Suburb_ID AND SP.Service_Type_Code = SD.Service_Type_Code 
-		INNER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Organisation AS O ON SP.Centre_ID = O.Organisation_ID
+	FROM [APPSQL-3\COMCAREPROD].[comcareprod].dbo.Service_Delivery AS SD 
+		INNER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].dbo.Period_of_Residency AS PR ON PR.Person_ID = SD.Client_ID 
+		INNER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].dbo.Address AS A ON A.Address_ID = PR.Address_ID 
+		INNER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].dbo.Service_Provision AS SP ON A.Suburb_ID = SP.Suburb_ID AND SP.Service_Type_Code = SD.Service_Type_Code 
+		INNER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].dbo.Organisation AS O ON SP.Centre_ID = O.Organisation_ID
     WHERE
 		(PR.To_Date IS NULL) 
 		AND (PR.Display_Indicator = 1)
 ) 
 AS J004 ON J004.Client_ID = J003.Client_ID AND J004.Service_Type_Code = J003.Service_Type_Code
  
-LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Person_Current_Address_Phone AS J005 ON J005.Person_id = J002.Client_ID 
-LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].dbo.Service_Type AS J006 ON J006.Service_Type_Code = J003.Service_Type_Code
+LEFT OUTER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].dbo.Person_Current_Address_Phone AS J005 ON J005.Person_id = J002.Client_ID 
+LEFT OUTER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].dbo.Service_Type AS J006 ON J006.Service_Type_Code = J003.Service_Type_Code
 
 WHERE
 1=1					

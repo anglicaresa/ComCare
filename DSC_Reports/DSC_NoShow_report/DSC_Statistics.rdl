@@ -14,66 +14,36 @@
       <Query>
         <DataSourceName>Ref_ASADWH</DataSourceName>
         <QueryParameters>
+          <QueryParameter Name="@Organisation_Name_">
+            <Value>=Parameters!Organisation_Name_.Value</Value>
+          </QueryParameter>
           <QueryParameter Name="@ServiceType">
             <Value>=Parameters!ServiceType.Value</Value>
           </QueryParameter>
         </QueryParameters>
-        <CommandText>--[appsql-3\TRAIN].[ComCareTRAIN]
---[APPSQL-3\COMCAREPROD].[comcareprod]
-
-/*
-select * from [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[WI_Activity]
-select top 1 * from [appsql-3\comcareprod].[comcareprod].[dbo].[Person_Current_Address_Phone]
-select * from [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Characteristic]
-select * from [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Service_Type]
-select * from [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Service_delivery]
-select * from [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Marital_Status]
-*/
-
--------------------------------------------------------------------------------
--------------------------------------------------------------------------------
---in Prod 
-
---Declare @Client_ID_ AS INT
---Set @Client_ID_ = 10073894
-
---Declare @ServiceType varchar(60)
-
---set @ServiceType = 'DC Assistance to Access Community'
-
-Declare @Organisation_Name_ varchar(40)
-set @Organisation_Name_ = 'Disabilities Children'
--------------------------------------------------------------------------------
--------------------------------------------------------------------------------
-SELECT
+        <CommandText>SELECT
 
 J001.[Client_ID] AS 'Client_ID'
+,LAG(J001.[Client_ID]) Over 
+	(Order by J001.[Client_ID]) as 'Pre_ID'
 ,J001.[Title] AS 'Client_Title'
 ,J001.[Last_Name] AS 'Client_LastName'
 ,J001.[Preferred_Name] AS 'Client_PreferredName'
 ,CONVERT(date,J001.[Birth_Date]) AS 'Birth_Date'
-,J001.[Country] as 'Country'
 ,J001.[Gender] as 'Gender'
 ,J013.[Service_Type] as 'Service_Type'
 ,J012.[Description] as 'Diagnosis'
-,J003.[Description] AS 'Contact_Type'
-,J007.[Title] AS 'Contact_Title'
-,J007.[Last_Name] AS 'Contact_LastName'
-,J007.[Preferred_Name] AS 'Contact_PreferredName'
 ,convert(Varchar(16) ,J008.[Phone]) AS 'Contact_Phone_Number'
-,J016.[Contact_LGBTI] AS 'P_LGBTI'
-,J007.[Marital_Status] AS 'Marital_Status'
 ,J002.[Building_name] AS 'BuildingName'
 ,J002.[Location] AS 'Location'
 ,J002.[dwelling_number] AS 'DwellingNumber'
 ,J002.[Street] AS 'Street'
 ,J002.[suburb] AS 'Suburb'
 ,J002.[Post_Code] AS 'PostCode'
-,J007.[Employment_Status] as 'P_EmpStat'
-,J001.[Language] as 'CL_Language'
-,J014.[CL_LGBTI] as 'CL_LGBTI'
 ,J015.[MF_Provider] as 'M/F_Provider'
 ,convert(Varchar(16) ,J002.[Phone]) as 'alt_Phone'
+,J001.[Ethnicity] as 'Ethnicity'
+,Convert(int ,(Count(J013.[Service_Type]) Over (Partition by J001.[Client_ID], J012.[Description]))) as 'ServiceCount'
 
 FROM 
 (
@@ -81,30 +51,22 @@ FROM
 		CL.Client_ID
 		,P.Last_Name
 		,P.Given_Names
-		,RE.Description as 'Religion'
 		,EC.Description as 'Ethnicity' 
 		,P.Preferred_Name
 		,P.Birth_Date
 		,CONVERT(date,P.Deceased_Date) as Deceased_Date
 		,G.Description as 'Gender'
 		,T.Description as 'Title'
-		,C.Description as 'Country'
-		,L.Description as 'Language'
-		,INS.Description as 'Interpreter Status'
 	from [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].Client CL WITH(NOLOCK)
 		Inner Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Person] P WITH(NOLOCK) on Cl.[Client_ID] = P.[Person_ID]
 		Inner Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Title] T on P.[Title_Code] = T.[Title_Code]
 		Left Outer Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Ethnicity_Classification] EC on P.[Ethnicity_Class_Code] = EC.[Ethnicity_Class_Code]
-		Left Outer Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Religion] RE on CL.[Religion_Code] = RE.[Religion_Code]
 		Left Outer Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Gender] G on P.[Gender_Code] = G.[Gender_Code]
-		Left Outer Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Country] C on P.[Country_Code] = C.[Country_Code]
-		Left Outer Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Language] L on P.[Language_Code] = L.[Language_Code]
-		Left Outer Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Interpreter_Status] INS on P.[Interpreter_Status_ID] = INS.[Interpreter_Status_ID]
 ) J001
 
 LEFT OUTER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Person_Current_Address_Phone] J002 ON J002.[Person_id] = J001.[Client_ID]
 
-left outer join --inner
+left outer join
 (
 	Select
 		PC.[Person_ID]
@@ -130,26 +92,20 @@ left outer join --inner
 	Left outer Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Personal_Contact_Type] PCT ON PCT.[Personal_Contact_Type_Code] = PC.[Personal_Contact_Type_Code] 
 )J003 on J003.[Person_ID] = J001.[Client_ID]
 
-left outer JOIN --inner
+left outer JOIN
 (
 	Select
 		P.Person_ID
 		,P.Preferred_Name
 		,P.Last_Name
-		,P.Birth_Date
-		,G.Description as 'Gender'
 		,T.Description as 'Title'
-		,ES.Description as 'Employment_Status'
-		,MS.Description as 'Marital_Status'
 	from [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].Person P  WITH(NOLOCK)
 		Inner Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Title] T on P.[Title_Code] = T.[Title_Code]
-		Left Outer Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Gender] G on P.[Gender_Code] = G.[Gender_Code]
-		Left Outer Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Employment_Status] ES on P.[Employment_Status_ID] = ES.[Employment_Status_ID]
-		Left Outer Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Marital_Status] MS on P.[Marital_Status_ID] = MS.[Marital_Status_ID]
 ) J007 ON J007.[Person_ID] = J003.[Contact_ID]
 
-LEFT OUTER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Person_Current_Address_Phone] J008 ON J008.[Person_id] = J007.[Person_ID]
+LEFT OUTER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Person_Current_Address_Phone]J008 ON J008.[Person_id] = J007.[Person_ID]
 LEFT OUTER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Service_Delivery] J009 ON J009.[Client_ID] = J001.[Client_ID]
+
 INNER JOIN
 (
 	Select 
@@ -170,11 +126,27 @@ LEFT OUTER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Diagnosis_Category] 
 Inner Join
 (
 	Select
-	SD.[Client_ID]
-	,ST.[Description] as 'Service_Type'
+		SD.[Client_ID]
+		,iif(ST.Description = 'OATS', ST_ALT.[Task_Description], ST.Description) as 'Service_Type'
 	From [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Service_Delivery] SD
-	left outer join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Service_Type] ST On ST.[Service_Type_Code] = SD.[Service_Type_Code]
-	Where SD.To_Date IS NULL
+		left outer join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Service_Type] ST On ST.[Service_Type_Code] = SD.[Service_Type_Code]
+		left outer join 
+		(
+			select
+				tt.[Description] as 'Task_Description'
+				,tt.[Service_Type_Code] as 'Service_Type_Code'
+				,tt.[task_type_code] as 'Task_Type_Code'
+				,ROW_NUMBER() Over
+				(
+					Partition BY tt.[Service_Type_Code] Order By tt.[Task_Type_Code] ASC
+				) as 'RN'
+			from [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].Task_Type tt
+		)ST_ALT On ST_ALT.[Service_Type_Code] = SD.[Service_Type_Code]
+	Where 
+	1=1
+	AND SD.To_Date IS NULL
+	AND ST_ALT.RN = 1
+	OR ST.Description = 'OATS'
 )J013 on J013.[Client_ID] = J001.[Client_ID]
 
 LEFT OUTER JOIN 
@@ -206,27 +178,17 @@ left outer JOIN
 	left outer join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Characteristic] C ON C.[Characteristic_Code] = PC.[Characteristic_Code]
 )J015 on J015.[Person_ID] = J001.[Client_ID]
 
-LEFT OUTER JOIN 
-(
-	select
-		PC.[Person_ID] AS 'Person_ID'
-		,C.[Description] as 'Contact_LGBTI'
-	From [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Person_Characteristic] PC
-	inner join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Characteristic] C ON C.[Characteristic_Code] = PC.[Characteristic_Code]
-	where
-	1=1
-	and C.[Description] = 'Identify as LGBTI'
-)J016 on J016.[Person_ID] = J003.[Contact_ID]
 
 WHERE
 	1=1
 	and J010.[Organisation_Name] = @Organisation_Name_
+
 	and ( IIF( J003.RN IS NULL, 1, J003.RN ) = 1 )
 	and ( IIF( J015.RN IS NULL, 1, J015.RN ) = 1 )
+
 	and J001.[Deceased_Date] IS NULL
 	and J013.[Service_Type] IN (@ServiceType)
-
---	and J001.Client_ID = 10073894
+--	and J001.Client_ID = @Client_ID_
 	-- NOTE service date = null is inside the subquiry
 
 GROUP BY
@@ -235,28 +197,19 @@ J001.[Client_ID]
 ,J001.[Last_Name]
 ,J001.[Preferred_Name]
 ,CONVERT(date,J001.[Birth_Date])
-,J001.[Country]
 ,J001.[Gender]
 ,J013.[Service_Type]
 ,J012.[Description]
-,J003.[Description]
-,J007.[Title]
-,J007.[Last_Name]
-,J007.[Preferred_Name]
 ,convert(Varchar(16) ,J008.[Phone])
-,J016.[Contact_LGBTI]
-,J007.[Marital_Status]
 ,J002.[Building_name]
 ,J002.[Location]
 ,J002.[dwelling_number]
 ,J002.[Street]
 ,J002.[suburb]
 ,J002.[Post_Code] 
-,J007.[Employment_Status]
-,J001.[Language]
-,J014.[CL_LGBTI] 
 ,J015.[MF_Provider]
 ,convert(Varchar(16) ,J002.[Phone])
+,J001.[Ethnicity]
 
 ORDER BY
 	J001.[Client_ID]</CommandText>
@@ -270,6 +223,10 @@ ORDER BY
           <DataField>Client_Title</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
+        <Field Name="Pre_ID">
+          <DataField>Pre_ID</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
         <Field Name="Client_LastName">
           <DataField>Client_LastName</DataField>
           <rd:TypeName>System.String</rd:TypeName>
@@ -281,10 +238,6 @@ ORDER BY
         <Field Name="Birth_Date">
           <DataField>Birth_Date</DataField>
           <rd:TypeName>System.DateTime</rd:TypeName>
-        </Field>
-        <Field Name="Country">
-          <DataField>Country</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
         </Field>
         <Field Name="Gender">
           <DataField>Gender</DataField>
@@ -298,40 +251,20 @@ ORDER BY
           <DataField>Diagnosis</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
-        <Field Name="Contact_Type">
-          <DataField>Contact_Type</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-        <Field Name="Contact_Title">
-          <DataField>Contact_Title</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-        <Field Name="Contact_LastName">
-          <DataField>Contact_LastName</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-        <Field Name="Contact_PreferredName">
-          <DataField>Contact_PreferredName</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
         <Field Name="Contact_Phone_Number">
           <DataField>Contact_Phone_Number</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-        <Field Name="P_LGBTI">
-          <DataField>P_LGBTI</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
         <Field Name="BuildingName">
           <DataField>BuildingName</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
-        <Field Name="Marital_Status">
-          <DataField>Marital_Status</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
         <Field Name="Location">
           <DataField>Location</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Ethnicity">
+          <DataField>Ethnicity</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
         <Field Name="DwellingNumber">
@@ -350,18 +283,6 @@ ORDER BY
           <DataField>PostCode</DataField>
           <rd:TypeName>System.Int16</rd:TypeName>
         </Field>
-        <Field Name="P_EmpStat">
-          <DataField>P_EmpStat</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-        <Field Name="CL_Language">
-          <DataField>CL_Language</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-        <Field Name="CL_LGBTI">
-          <DataField>CL_LGBTI</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
         <Field Name="M_F_Provider">
           <DataField>M/F_Provider</DataField>
           <rd:TypeName>System.String</rd:TypeName>
@@ -373,8 +294,9 @@ ORDER BY
           <DataField>alt_Phone</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
-        <Field Name="Contact_Name">
-          <Value>=Fields!Contact_Title.Value &amp; " " &amp; Fields!Contact_LastName.Value &amp; ", " &amp; Fields!Contact_PreferredName.Value</Value>
+        <Field Name="ServiceCount">
+          <DataField>ServiceCount</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
         </Field>
         <Field Name="Address">
           <Value>=
@@ -383,34 +305,34 @@ ORDER BY
 	( 
 		IsNothing(Fields!BuildingName.Value),
 		"",
-		(Fields!BuildingName.Value + ", ")
+		(Fields!BuildingName.Value + ",&lt;br&gt;")
 	)
 )
 +
 (
 	IIF
 	(
-		IsNothing(Fields!Location.Value),
-		"",
-		(Fields!Location.Value + " / ")
+		IsNothing(Fields!Location.Value)
+		,""
+		,(Fields!Location.Value + " / ")
 	)
 )
 +
 (
 	IIF
 	(
-		IsNothing(Fields!DwellingNumber.Value),
-		"",
-		(Fields!DwellingNumber.Value + " ")
+		IsNothing(Fields!DwellingNumber.Value)
+		,""
+		,(Fields!DwellingNumber.Value + " ")
 	)
 )
 +
 (
 	IIF
 	(
-		IsNothing(Fields!Street.Value),
-		"",
-		(Fields!Street.Value + ", ")
+		IsNothing(Fields!Street.Value)
+		,""
+		,(Fields!Street.Value + ",&lt;br&gt;")
 	)
 )
 +
@@ -428,7 +350,7 @@ ORDER BY
 	(
 		IsNothing(Fields!PostCode.Value),
 		"",
-		((CStr(Fields!PostCode.Value)))
+		("&lt;br&gt;"+(CStr(Fields!PostCode.Value)))
 	)
 )</Value>
         </Field>
@@ -469,6 +391,15 @@ IIF
 	,Cstr(Fields!Contact_Phone_Number.Value)
 )</Value>
         </Field>
+        <Field Name="Ethnicity_Filterd">
+          <Value>=
+IIF
+(
+	IsNothing(Fields!Ethnicity.Value)
+	,"Not Stated"
+	,Fields!Ethnicity.Value
+)</Value>
+        </Field>
       </Fields>
     </DataSet>
     <DataSet Name="DataSet2">
@@ -476,13 +407,28 @@ IIF
         <DataSourceName>Ref_ASADWH</DataSourceName>
         <CommandText>Select 
 
-Description as 'Service_Type'
+iif(J001.Description = 'OATS', J002.[Task_Description], J001.Description) as 'Service_Type'
 
-From [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Service_Type]
+From [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Service_Type] J001
+Inner Join 
+(
+	select
+		tt.[Description] as 'Task_Description'
+		,tt.[Service_Type_Code] as 'Service_Type_Code'
+		,tt.[task_type_code] as 'Task_Type_Code'
+		,ROW_NUMBER() Over
+		(
+			Partition BY tt.[Service_Type_Code] Order By tt.[Task_Type_Code] ASC
+		)as 'RN'
+	from [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].Task_Type tt
+	
+)J002 on J002.[Service_Type_Code] = J001.[Service_Type_Code]
 
 where 
 1=1
-and Left(Description, 3)='DC '</CommandText>
+and Left(J001.Description, 3)='DC '
+and RN = 1
+OR J001.Description = 'OATS'</CommandText>
       </Query>
       <Fields>
         <Field Name="Service_Type">
@@ -500,7 +446,7 @@ and Left(Description, 3)='DC '</CommandText>
             <TablixBody>
               <TablixColumns>
                 <TablixColumn>
-                  <Width>2.12714cm</Width>
+                  <Width>1.48167cm</Width>
                 </TablixColumn>
               </TablixColumns>
               <TablixRows>
@@ -525,7 +471,7 @@ and Left(Description, 3)='DC '</CommandText>
                                 </TextRun>
                               </TextRuns>
                               <Style>
-                                <TextAlign>Left</TextAlign>
+                                <TextAlign>Center</TextAlign>
                               </Style>
                             </Paragraph>
                           </Paragraphs>
@@ -550,7 +496,7 @@ and Left(Description, 3)='DC '</CommandText>
                   </TablixCells>
                 </TablixRow>
                 <TablixRow>
-                  <Height>0.57354cm</Height>
+                  <Height>0.86458cm</Height>
                   <TablixCells>
                     <TablixCell>
                       <CellContents>
@@ -561,7 +507,7 @@ and Left(Description, 3)='DC '</CommandText>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Employment</Value>
+                                  <Value>Service Count</Value>
                                   <Style>
                                     <FontSize>8pt</FontSize>
                                     <FontWeight>Bold</FontWeight>
@@ -570,7 +516,7 @@ and Left(Description, 3)='DC '</CommandText>
                                 </TextRun>
                               </TextRuns>
                               <Style>
-                                <TextAlign>Left</TextAlign>
+                                <TextAlign>Center</TextAlign>
                               </Style>
                             </Paragraph>
                           </Paragraphs>
@@ -599,41 +545,34 @@ and Left(Description, 3)='DC '</CommandText>
                   <TablixCells>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="P_EmpStat1">
+                        <Textbox Name="ServiceCount">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>=
-IIF
-(
-	IsNothing(Fields!P_EmpStat.Value)
-	,"Not Stated"
-	,Fields!P_EmpStat.Value
-)</Value>
+                                  <Value>=Fields!ServiceCount.Value</Value>
+                                  <MarkupType>HTML</MarkupType>
                                   <Style>
                                     <FontSize>8pt</FontSize>
+                                    <Format>0;(0)</Format>
                                   </Style>
                                 </TextRun>
                               </TextRuns>
                               <Style>
-                                <TextAlign>Left</TextAlign>
+                                <TextAlign>Center</TextAlign>
                               </Style>
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>P_EmpStat1</rd:DefaultName>
+                          <ZIndex>2</ZIndex>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
                               <Style>Solid</Style>
                             </Border>
-                            <LeftBorder>
-                              <Style>None</Style>
-                            </LeftBorder>
                             <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , CountDistinct , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
-                            <PaddingLeft>4pt</PaddingLeft>
+                            <PaddingLeft>2pt</PaddingLeft>
                             <PaddingRight>2pt</PaddingRight>
                             <PaddingTop>2pt</PaddingTop>
                             <PaddingBottom>2pt</PaddingBottom>
@@ -644,7 +583,7 @@ IIF
                   </TablixCells>
                 </TablixRow>
                 <TablixRow>
-                  <Height>0.75875cm</Height>
+                  <Height>0.73228cm</Height>
                   <TablixCells>
                     <TablixCell>
                       <CellContents>
@@ -664,7 +603,7 @@ IIF
                                 </TextRun>
                               </TextRuns>
                               <Style>
-                                <TextAlign>Left</TextAlign>
+                                <TextAlign>Center</TextAlign>
                               </Style>
                             </Paragraph>
                           </Paragraphs>
@@ -699,7 +638,7 @@ IIF
               <TablixMembers>
                 <TablixMember>
                   <TablixHeader>
-                    <Size>21.90764cm</Size>
+                    <Size>1.71317cm</Size>
                     <CellContents>
                       <Textbox Name="Textbox53">
                         <CanGrow>true</CanGrow>
@@ -708,7 +647,7 @@ IIF
                           <Paragraph>
                             <TextRuns>
                               <TextRun>
-                                <Value>Client </Value>
+                                <Value />
                                 <Style>
                                   <FontSize>12pt</FontSize>
                                   <FontWeight>Bold</FontWeight>
@@ -742,16 +681,16 @@ IIF
                   <TablixMembers>
                     <TablixMember>
                       <TablixHeader>
-                        <Size>3.85572cm</Size>
+                        <Size>2.61558cm</Size>
                         <CellContents>
-                          <Textbox Name="Textbox61">
+                          <Textbox Name="Textbox43">
                             <CanGrow>true</CanGrow>
                             <KeepTogether>true</KeepTogether>
                             <Paragraphs>
                               <Paragraph>
                                 <TextRuns>
                                   <TextRun>
-                                    <Value>Parent/Gaurdian </Value>
+                                    <Value />
                                     <Style>
                                       <FontSize>12pt</FontSize>
                                       <FontWeight>Bold</FontWeight>
@@ -764,25 +703,18 @@ IIF
                                 </Style>
                               </Paragraph>
                             </Paragraphs>
-                            <rd:DefaultName>Textbox61</rd:DefaultName>
+                            <rd:DefaultName>Textbox43</rd:DefaultName>
                             <Style>
                               <Border>
                                 <Color>LightGrey</Color>
                                 <Style>Solid</Style>
                               </Border>
-                              <TopBorder>
-                                <Color>LightGrey</Color>
-                              </TopBorder>
-                              <LeftBorder>
-                                <Color>Red</Color>
-                                <Width>2pt</Width>
-                              </LeftBorder>
                               <RightBorder>
                                 <Style>None</Style>
                               </RightBorder>
                               <BackgroundColor>#004b8e</BackgroundColor>
-                              <PaddingLeft>4pt</PaddingLeft>
-                              <PaddingRight>2pt</PaddingRight>
+                              <PaddingLeft>2pt</PaddingLeft>
+                              <PaddingRight>4pt</PaddingRight>
                               <PaddingTop>2pt</PaddingTop>
                               <PaddingBottom>2pt</PaddingBottom>
                             </Style>
@@ -790,9 +722,413 @@ IIF
                         </CellContents>
                       </TablixHeader>
                       <TablixMembers>
-                        <TablixMember />
+                        <TablixMember>
+                          <TablixHeader>
+                            <Size>3.87583cm</Size>
+                            <CellContents>
+                              <Textbox Name="Textbox51">
+                                <CanGrow>true</CanGrow>
+                                <KeepTogether>true</KeepTogether>
+                                <Paragraphs>
+                                  <Paragraph>
+                                    <TextRuns>
+                                      <TextRun>
+                                        <Value />
+                                        <Style>
+                                          <FontSize>12pt</FontSize>
+                                          <FontWeight>Bold</FontWeight>
+                                          <Color>White</Color>
+                                        </Style>
+                                      </TextRun>
+                                    </TextRuns>
+                                    <Style>
+                                      <TextAlign>Left</TextAlign>
+                                    </Style>
+                                  </Paragraph>
+                                </Paragraphs>
+                                <rd:DefaultName>Textbox51</rd:DefaultName>
+                                <Style>
+                                  <Border>
+                                    <Color>LightGrey</Color>
+                                    <Style>Solid</Style>
+                                  </Border>
+                                  <RightBorder>
+                                    <Style>None</Style>
+                                  </RightBorder>
+                                  <BackgroundColor>#004b8e</BackgroundColor>
+                                  <PaddingLeft>2pt</PaddingLeft>
+                                  <PaddingRight>4pt</PaddingRight>
+                                  <PaddingTop>2pt</PaddingTop>
+                                  <PaddingBottom>2pt</PaddingBottom>
+                                </Style>
+                              </Textbox>
+                            </CellContents>
+                          </TablixHeader>
+                          <TablixMembers>
+                            <TablixMember>
+                              <TablixHeader>
+                                <Size>2.15604cm</Size>
+                                <CellContents>
+                                  <Textbox Name="Textbox56">
+                                    <CanGrow>true</CanGrow>
+                                    <KeepTogether>true</KeepTogether>
+                                    <Paragraphs>
+                                      <Paragraph>
+                                        <TextRuns>
+                                          <TextRun>
+                                            <Value />
+                                            <Style>
+                                              <FontSize>12pt</FontSize>
+                                              <FontWeight>Bold</FontWeight>
+                                              <Color>White</Color>
+                                            </Style>
+                                          </TextRun>
+                                        </TextRuns>
+                                        <Style>
+                                          <TextAlign>Right</TextAlign>
+                                        </Style>
+                                      </Paragraph>
+                                    </Paragraphs>
+                                    <rd:DefaultName>Textbox56</rd:DefaultName>
+                                    <Style>
+                                      <Border>
+                                        <Color>LightGrey</Color>
+                                        <Style>Solid</Style>
+                                      </Border>
+                                      <RightBorder>
+                                        <Style>None</Style>
+                                      </RightBorder>
+                                      <BackgroundColor>#004b8e</BackgroundColor>
+                                      <PaddingLeft>2pt</PaddingLeft>
+                                      <PaddingRight>4pt</PaddingRight>
+                                      <PaddingTop>2pt</PaddingTop>
+                                      <PaddingBottom>2pt</PaddingBottom>
+                                    </Style>
+                                  </Textbox>
+                                </CellContents>
+                              </TablixHeader>
+                              <TablixMembers>
+                                <TablixMember>
+                                  <TablixHeader>
+                                    <Size>2.11861cm</Size>
+                                    <CellContents>
+                                      <Textbox Name="Textbox47">
+                                        <CanGrow>true</CanGrow>
+                                        <KeepTogether>true</KeepTogether>
+                                        <Paragraphs>
+                                          <Paragraph>
+                                            <TextRuns>
+                                              <TextRun>
+                                                <Value />
+                                                <Style>
+                                                  <FontSize>12pt</FontSize>
+                                                  <FontWeight>Bold</FontWeight>
+                                                  <Color>White</Color>
+                                                </Style>
+                                              </TextRun>
+                                            </TextRuns>
+                                            <Style>
+                                              <TextAlign>Right</TextAlign>
+                                            </Style>
+                                          </Paragraph>
+                                        </Paragraphs>
+                                        <rd:DefaultName>Textbox47</rd:DefaultName>
+                                        <Style>
+                                          <Border>
+                                            <Color>LightGrey</Color>
+                                            <Style>Solid</Style>
+                                          </Border>
+                                          <RightBorder>
+                                            <Style>None</Style>
+                                          </RightBorder>
+                                          <BackgroundColor>#004b8e</BackgroundColor>
+                                          <PaddingLeft>2pt</PaddingLeft>
+                                          <PaddingRight>4pt</PaddingRight>
+                                          <PaddingTop>2pt</PaddingTop>
+                                          <PaddingBottom>2pt</PaddingBottom>
+                                        </Style>
+                                      </Textbox>
+                                    </CellContents>
+                                  </TablixHeader>
+                                  <TablixMembers>
+                                    <TablixMember>
+                                      <TablixHeader>
+                                        <Size>1.01833cm</Size>
+                                        <CellContents>
+                                          <Textbox Name="Textbox60">
+                                            <CanGrow>true</CanGrow>
+                                            <KeepTogether>true</KeepTogether>
+                                            <Paragraphs>
+                                              <Paragraph>
+                                                <TextRuns>
+                                                  <TextRun>
+                                                    <Value />
+                                                    <Style>
+                                                      <FontSize>12pt</FontSize>
+                                                      <FontWeight>Bold</FontWeight>
+                                                      <Color>White</Color>
+                                                    </Style>
+                                                  </TextRun>
+                                                </TextRuns>
+                                                <Style>
+                                                  <TextAlign>Center</TextAlign>
+                                                </Style>
+                                              </Paragraph>
+                                            </Paragraphs>
+                                            <rd:DefaultName>Textbox60</rd:DefaultName>
+                                            <Style>
+                                              <Border>
+                                                <Color>LightGrey</Color>
+                                                <Style>Solid</Style>
+                                              </Border>
+                                              <RightBorder>
+                                                <Style>None</Style>
+                                              </RightBorder>
+                                              <BackgroundColor>#004b8e</BackgroundColor>
+                                              <PaddingLeft>2pt</PaddingLeft>
+                                              <PaddingRight>4pt</PaddingRight>
+                                              <PaddingTop>2pt</PaddingTop>
+                                              <PaddingBottom>2pt</PaddingBottom>
+                                            </Style>
+                                          </Textbox>
+                                        </CellContents>
+                                      </TablixHeader>
+                                      <TablixMembers>
+                                        <TablixMember>
+                                          <TablixHeader>
+                                            <Size>1.23cm</Size>
+                                            <CellContents>
+                                              <Textbox Name="Textbox64">
+                                                <CanGrow>true</CanGrow>
+                                                <KeepTogether>true</KeepTogether>
+                                                <Paragraphs>
+                                                  <Paragraph>
+                                                    <TextRuns>
+                                                      <TextRun>
+                                                        <Value />
+                                                        <Style>
+                                                          <FontSize>12pt</FontSize>
+                                                          <FontWeight>Bold</FontWeight>
+                                                          <Color>White</Color>
+                                                        </Style>
+                                                      </TextRun>
+                                                    </TextRuns>
+                                                    <Style>
+                                                      <TextAlign>Center</TextAlign>
+                                                    </Style>
+                                                  </Paragraph>
+                                                </Paragraphs>
+                                                <rd:DefaultName>Textbox64</rd:DefaultName>
+                                                <Style>
+                                                  <Border>
+                                                    <Color>LightGrey</Color>
+                                                    <Style>Solid</Style>
+                                                  </Border>
+                                                  <RightBorder>
+                                                    <Style>None</Style>
+                                                  </RightBorder>
+                                                  <BackgroundColor>#004b8e</BackgroundColor>
+                                                  <PaddingLeft>2pt</PaddingLeft>
+                                                  <PaddingRight>4pt</PaddingRight>
+                                                  <PaddingTop>2pt</PaddingTop>
+                                                  <PaddingBottom>2pt</PaddingBottom>
+                                                </Style>
+                                              </Textbox>
+                                            </CellContents>
+                                          </TablixHeader>
+                                          <TablixMembers>
+                                            <TablixMember>
+                                              <TablixHeader>
+                                                <Size>1.49458cm</Size>
+                                                <CellContents>
+                                                  <Textbox Name="Textbox37">
+                                                    <CanGrow>true</CanGrow>
+                                                    <KeepTogether>true</KeepTogether>
+                                                    <Paragraphs>
+                                                      <Paragraph>
+                                                        <TextRuns>
+                                                          <TextRun>
+                                                            <Value />
+                                                            <Style>
+                                                              <FontSize>12pt</FontSize>
+                                                              <FontWeight>Bold</FontWeight>
+                                                              <Color>White</Color>
+                                                            </Style>
+                                                          </TextRun>
+                                                        </TextRuns>
+                                                        <Style>
+                                                          <TextAlign>Center</TextAlign>
+                                                        </Style>
+                                                      </Paragraph>
+                                                    </Paragraphs>
+                                                    <rd:DefaultName>Textbox37</rd:DefaultName>
+                                                    <Style>
+                                                      <Border>
+                                                        <Color>LightGrey</Color>
+                                                        <Style>Solid</Style>
+                                                      </Border>
+                                                      <RightBorder>
+                                                        <Style>None</Style>
+                                                      </RightBorder>
+                                                      <BackgroundColor>#004b8e</BackgroundColor>
+                                                      <PaddingLeft>2pt</PaddingLeft>
+                                                      <PaddingRight>4pt</PaddingRight>
+                                                      <PaddingTop>2pt</PaddingTop>
+                                                      <PaddingBottom>2pt</PaddingBottom>
+                                                    </Style>
+                                                  </Textbox>
+                                                </CellContents>
+                                              </TablixHeader>
+                                              <TablixMembers>
+                                                <TablixMember>
+                                                  <TablixHeader>
+                                                    <Size>1.99729cm</Size>
+                                                    <CellContents>
+                                                      <Textbox Name="Textbox4">
+                                                        <CanGrow>true</CanGrow>
+                                                        <KeepTogether>true</KeepTogether>
+                                                        <Paragraphs>
+                                                          <Paragraph>
+                                                            <TextRuns>
+                                                              <TextRun>
+                                                                <Value />
+                                                                <Style>
+                                                                  <FontSize>12pt</FontSize>
+                                                                  <FontWeight>Bold</FontWeight>
+                                                                  <Color>White</Color>
+                                                                </Style>
+                                                              </TextRun>
+                                                            </TextRuns>
+                                                            <Style>
+                                                              <TextAlign>Right</TextAlign>
+                                                            </Style>
+                                                          </Paragraph>
+                                                        </Paragraphs>
+                                                        <rd:DefaultName>Textbox4</rd:DefaultName>
+                                                        <Style>
+                                                          <Border>
+                                                            <Color>LightGrey</Color>
+                                                            <Style>Solid</Style>
+                                                          </Border>
+                                                          <RightBorder>
+                                                            <Style>None</Style>
+                                                          </RightBorder>
+                                                          <BackgroundColor>#004b8e</BackgroundColor>
+                                                          <PaddingLeft>2pt</PaddingLeft>
+                                                          <PaddingRight>4pt</PaddingRight>
+                                                          <PaddingTop>2pt</PaddingTop>
+                                                          <PaddingBottom>2pt</PaddingBottom>
+                                                        </Style>
+                                                      </Textbox>
+                                                    </CellContents>
+                                                  </TablixHeader>
+                                                  <TablixMembers>
+                                                    <TablixMember>
+                                                      <TablixHeader>
+                                                        <Size>3.74354cm</Size>
+                                                        <CellContents>
+                                                          <Textbox Name="Textbox19">
+                                                            <CanGrow>true</CanGrow>
+                                                            <KeepTogether>true</KeepTogether>
+                                                            <Paragraphs>
+                                                              <Paragraph>
+                                                                <TextRuns>
+                                                                  <TextRun>
+                                                                    <Value />
+                                                                    <Style>
+                                                                      <FontSize>12pt</FontSize>
+                                                                      <FontWeight>Bold</FontWeight>
+                                                                      <Color>White</Color>
+                                                                    </Style>
+                                                                  </TextRun>
+                                                                </TextRuns>
+                                                                <Style>
+                                                                  <TextAlign>Right</TextAlign>
+                                                                </Style>
+                                                              </Paragraph>
+                                                            </Paragraphs>
+                                                            <rd:DefaultName>Textbox19</rd:DefaultName>
+                                                            <Style>
+                                                              <Border>
+                                                                <Color>LightGrey</Color>
+                                                                <Style>Solid</Style>
+                                                              </Border>
+                                                              <RightBorder>
+                                                                <Style>None</Style>
+                                                              </RightBorder>
+                                                              <BackgroundColor>#004b8e</BackgroundColor>
+                                                              <PaddingLeft>2pt</PaddingLeft>
+                                                              <PaddingRight>4pt</PaddingRight>
+                                                              <PaddingTop>2pt</PaddingTop>
+                                                              <PaddingBottom>2pt</PaddingBottom>
+                                                            </Style>
+                                                          </Textbox>
+                                                        </CellContents>
+                                                      </TablixHeader>
+                                                      <TablixMembers>
+                                                        <TablixMember>
+                                                          <TablixHeader>
+                                                            <Size>4.44586cm</Size>
+                                                            <CellContents>
+                                                              <Textbox Name="Textbox30">
+                                                                <CanGrow>true</CanGrow>
+                                                                <KeepTogether>true</KeepTogether>
+                                                                <Paragraphs>
+                                                                  <Paragraph>
+                                                                    <TextRuns>
+                                                                      <TextRun>
+                                                                        <Value />
+                                                                        <Style>
+                                                                          <FontSize>12pt</FontSize>
+                                                                          <FontWeight>Bold</FontWeight>
+                                                                          <Color>White</Color>
+                                                                        </Style>
+                                                                      </TextRun>
+                                                                    </TextRuns>
+                                                                    <Style>
+                                                                      <TextAlign>Right</TextAlign>
+                                                                    </Style>
+                                                                  </Paragraph>
+                                                                </Paragraphs>
+                                                                <rd:DefaultName>Textbox30</rd:DefaultName>
+                                                                <Style>
+                                                                  <Border>
+                                                                    <Color>LightGrey</Color>
+                                                                    <Style>Solid</Style>
+                                                                  </Border>
+                                                                  <RightBorder>
+                                                                    <Style>None</Style>
+                                                                  </RightBorder>
+                                                                  <BackgroundColor>#004b8e</BackgroundColor>
+                                                                  <PaddingLeft>2pt</PaddingLeft>
+                                                                  <PaddingRight>4pt</PaddingRight>
+                                                                  <PaddingTop>2pt</PaddingTop>
+                                                                  <PaddingBottom>2pt</PaddingBottom>
+                                                                </Style>
+                                                              </Textbox>
+                                                            </CellContents>
+                                                          </TablixHeader>
+                                                          <TablixMembers>
+                                                            <TablixMember />
+                                                          </TablixMembers>
+                                                        </TablixMember>
+                                                      </TablixMembers>
+                                                    </TablixMember>
+                                                  </TablixMembers>
+                                                </TablixMember>
+                                              </TablixMembers>
+                                            </TablixMember>
+                                          </TablixMembers>
+                                        </TablixMember>
+                                      </TablixMembers>
+                                    </TablixMember>
+                                  </TablixMembers>
+                                </TablixMember>
+                              </TablixMembers>
+                            </TablixMember>
+                          </TablixMembers>
+                        </TablixMember>
                       </TablixMembers>
-                      <RepeatOnNewPage>true</RepeatOnNewPage>
                     </TablixMember>
                   </TablixMembers>
                   <KeepWithGroup>After</KeepWithGroup>
@@ -840,16 +1176,16 @@ IIF
                   <TablixMembers>
                     <TablixMember>
                       <TablixHeader>
-                        <Size>2.60746cm</Size>
+                        <Size>2.61558cm</Size>
                         <CellContents>
-                          <Textbox Name="Textbox33">
+                          <Textbox Name="Textbox44">
                             <CanGrow>true</CanGrow>
                             <KeepTogether>true</KeepTogether>
                             <Paragraphs>
                               <Paragraph>
                                 <TextRuns>
                                   <TextRun>
-                                    <Value>Name</Value>
+                                    <Value>Client Name</Value>
                                     <Style>
                                       <FontSize>8pt</FontSize>
                                       <FontWeight>Bold</FontWeight>
@@ -862,15 +1198,15 @@ IIF
                                 </Style>
                               </Paragraph>
                             </Paragraphs>
-                            <rd:DefaultName>Textbox33</rd:DefaultName>
+                            <rd:DefaultName>Textbox44</rd:DefaultName>
                             <Style>
                               <Border>
                                 <Color>LightGrey</Color>
                                 <Style>Solid</Style>
                               </Border>
                               <BackgroundColor>#2b70b1</BackgroundColor>
-                              <PaddingLeft>4pt</PaddingLeft>
-                              <PaddingRight>2pt</PaddingRight>
+                              <PaddingLeft>2pt</PaddingLeft>
+                              <PaddingRight>4pt</PaddingRight>
                               <PaddingTop>2pt</PaddingTop>
                               <PaddingBottom>2pt</PaddingBottom>
                             </Style>
@@ -880,16 +1216,16 @@ IIF
                       <TablixMembers>
                         <TablixMember>
                           <TablixHeader>
-                            <Size>1.99892cm</Size>
+                            <Size>3.87583cm</Size>
                             <CellContents>
-                              <Textbox Name="Textbox31">
+                              <Textbox Name="Textbox52">
                                 <CanGrow>true</CanGrow>
                                 <KeepTogether>true</KeepTogether>
                                 <Paragraphs>
                                   <Paragraph>
                                     <TextRuns>
                                       <TextRun>
-                                        <Value>Phone</Value>
+                                        <Value>Address</Value>
                                         <Style>
                                           <FontSize>8pt</FontSize>
                                           <FontWeight>Bold</FontWeight>
@@ -898,11 +1234,11 @@ IIF
                                       </TextRun>
                                     </TextRuns>
                                     <Style>
-                                      <TextAlign>Right</TextAlign>
+                                      <TextAlign>Left</TextAlign>
                                     </Style>
                                   </Paragraph>
                                 </Paragraphs>
-                                <rd:DefaultName>Textbox31</rd:DefaultName>
+                                <rd:DefaultName>Textbox52</rd:DefaultName>
                                 <Style>
                                   <Border>
                                     <Color>LightGrey</Color>
@@ -920,16 +1256,16 @@ IIF
                           <TablixMembers>
                             <TablixMember>
                               <TablixHeader>
-                                <Size>3.61288cm</Size>
+                                <Size>2.15604cm</Size>
                                 <CellContents>
-                                  <Textbox Name="Textbox29">
+                                  <Textbox Name="Textbox57">
                                     <CanGrow>true</CanGrow>
                                     <KeepTogether>true</KeepTogether>
                                     <Paragraphs>
                                       <Paragraph>
                                         <TextRuns>
                                           <TextRun>
-                                            <Value>Address</Value>
+                                            <Value>Phone</Value>
                                             <Style>
                                               <FontSize>8pt</FontSize>
                                               <FontWeight>Bold</FontWeight>
@@ -938,19 +1274,19 @@ IIF
                                           </TextRun>
                                         </TextRuns>
                                         <Style>
-                                          <TextAlign>Left</TextAlign>
+                                          <TextAlign>Right</TextAlign>
                                         </Style>
                                       </Paragraph>
                                     </Paragraphs>
-                                    <rd:DefaultName>Textbox29</rd:DefaultName>
+                                    <rd:DefaultName>Textbox57</rd:DefaultName>
                                     <Style>
                                       <Border>
                                         <Color>LightGrey</Color>
                                         <Style>Solid</Style>
                                       </Border>
                                       <BackgroundColor>#2b70b1</BackgroundColor>
-                                      <PaddingLeft>4pt</PaddingLeft>
-                                      <PaddingRight>2pt</PaddingRight>
+                                      <PaddingLeft>2pt</PaddingLeft>
+                                      <PaddingRight>4pt</PaddingRight>
                                       <PaddingTop>2pt</PaddingTop>
                                       <PaddingBottom>2pt</PaddingBottom>
                                     </Style>
@@ -960,9 +1296,9 @@ IIF
                               <TablixMembers>
                                 <TablixMember>
                                   <TablixHeader>
-                                    <Size>1.78909cm</Size>
+                                    <Size>2.11861cm</Size>
                                     <CellContents>
-                                      <Textbox Name="Textbox27">
+                                      <Textbox Name="Textbox48">
                                         <CanGrow>true</CanGrow>
                                         <KeepTogether>true</KeepTogether>
                                         <Paragraphs>
@@ -982,7 +1318,7 @@ IIF
                                             </Style>
                                           </Paragraph>
                                         </Paragraphs>
-                                        <rd:DefaultName>Textbox27</rd:DefaultName>
+                                        <rd:DefaultName>Textbox48</rd:DefaultName>
                                         <Style>
                                           <Border>
                                             <Color>LightGrey</Color>
@@ -990,7 +1326,7 @@ IIF
                                           </Border>
                                           <BackgroundColor>#2b70b1</BackgroundColor>
                                           <PaddingLeft>2pt</PaddingLeft>
-                                          <PaddingRight>3pt</PaddingRight>
+                                          <PaddingRight>4pt</PaddingRight>
                                           <PaddingTop>2pt</PaddingTop>
                                           <PaddingBottom>2pt</PaddingBottom>
                                         </Style>
@@ -1000,9 +1336,9 @@ IIF
                                   <TablixMembers>
                                     <TablixMember>
                                       <TablixHeader>
-                                        <Size>0.97142cm</Size>
+                                        <Size>1.01833cm</Size>
                                         <CellContents>
-                                          <Textbox Name="Textbox47">
+                                          <Textbox Name="Textbox61">
                                             <CanGrow>true</CanGrow>
                                             <KeepTogether>true</KeepTogether>
                                             <Paragraphs>
@@ -1018,19 +1354,19 @@ IIF
                                                   </TextRun>
                                                 </TextRuns>
                                                 <Style>
-                                                  <TextAlign>Left</TextAlign>
+                                                  <TextAlign>Center</TextAlign>
                                                 </Style>
                                               </Paragraph>
                                             </Paragraphs>
-                                            <rd:DefaultName>Textbox47</rd:DefaultName>
+                                            <rd:DefaultName>Textbox61</rd:DefaultName>
                                             <Style>
                                               <Border>
                                                 <Color>LightGrey</Color>
                                                 <Style>Solid</Style>
                                               </Border>
                                               <BackgroundColor>#2b70b1</BackgroundColor>
-                                              <PaddingLeft>4pt</PaddingLeft>
-                                              <PaddingRight>2pt</PaddingRight>
+                                              <PaddingLeft>2pt</PaddingLeft>
+                                              <PaddingRight>4pt</PaddingRight>
                                               <PaddingTop>2pt</PaddingTop>
                                               <PaddingBottom>2pt</PaddingBottom>
                                             </Style>
@@ -1040,9 +1376,9 @@ IIF
                                       <TablixMembers>
                                         <TablixMember>
                                           <TablixHeader>
-                                            <Size>1.42121cm</Size>
+                                            <Size>1.23cm</Size>
                                             <CellContents>
-                                              <Textbox Name="Textbox21">
+                                              <Textbox Name="Textbox65">
                                                 <CanGrow>true</CanGrow>
                                                 <KeepTogether>true</KeepTogether>
                                                 <Paragraphs>
@@ -1058,19 +1394,19 @@ IIF
                                                       </TextRun>
                                                     </TextRuns>
                                                     <Style>
-                                                      <TextAlign>Left</TextAlign>
+                                                      <TextAlign>Center</TextAlign>
                                                     </Style>
                                                   </Paragraph>
                                                 </Paragraphs>
-                                                <rd:DefaultName>Textbox21</rd:DefaultName>
+                                                <rd:DefaultName>Textbox65</rd:DefaultName>
                                                 <Style>
                                                   <Border>
                                                     <Color>LightGrey</Color>
                                                     <Style>Solid</Style>
                                                   </Border>
                                                   <BackgroundColor>#2b70b1</BackgroundColor>
-                                                  <PaddingLeft>4pt</PaddingLeft>
-                                                  <PaddingRight>2pt</PaddingRight>
+                                                  <PaddingLeft>2pt</PaddingLeft>
+                                                  <PaddingRight>4pt</PaddingRight>
                                                   <PaddingTop>2pt</PaddingTop>
                                                   <PaddingBottom>2pt</PaddingBottom>
                                                 </Style>
@@ -1080,16 +1416,16 @@ IIF
                                           <TablixMembers>
                                             <TablixMember>
                                               <TablixHeader>
-                                                <Size>1.47139cm</Size>
+                                                <Size>1.49458cm</Size>
                                                 <CellContents>
-                                                  <Textbox Name="Textbox49">
+                                                  <Textbox Name="Textbox38">
                                                     <CanGrow>true</CanGrow>
                                                     <KeepTogether>true</KeepTogether>
                                                     <Paragraphs>
                                                       <Paragraph>
                                                         <TextRuns>
                                                           <TextRun>
-                                                            <Value>M/F </Value>
+                                                            <Value>M/F Provider</Value>
                                                             <Style>
                                                               <FontSize>8pt</FontSize>
                                                               <FontWeight>Bold</FontWeight>
@@ -1098,26 +1434,11 @@ IIF
                                                           </TextRun>
                                                         </TextRuns>
                                                         <Style>
-                                                          <TextAlign>Left</TextAlign>
-                                                        </Style>
-                                                      </Paragraph>
-                                                      <Paragraph>
-                                                        <TextRuns>
-                                                          <TextRun>
-                                                            <Value>Provider</Value>
-                                                            <Style>
-                                                              <FontSize>8pt</FontSize>
-                                                              <FontWeight>Bold</FontWeight>
-                                                              <Color>White</Color>
-                                                            </Style>
-                                                          </TextRun>
-                                                        </TextRuns>
-                                                        <Style>
-                                                          <TextAlign>Left</TextAlign>
+                                                          <TextAlign>Center</TextAlign>
                                                         </Style>
                                                       </Paragraph>
                                                     </Paragraphs>
-                                                    <rd:DefaultName>Textbox49</rd:DefaultName>
+                                                    <rd:DefaultName>Textbox38</rd:DefaultName>
                                                     <Style>
                                                       <Border>
                                                         <Color>LightGrey</Color>
@@ -1135,16 +1456,16 @@ IIF
                                               <TablixMembers>
                                                 <TablixMember>
                                                   <TablixHeader>
-                                                    <Size>2.39579cm</Size>
+                                                    <Size>1.99729cm</Size>
                                                     <CellContents>
-                                                      <Textbox Name="Textbox66">
+                                                      <Textbox Name="Textbox5">
                                                         <CanGrow>true</CanGrow>
                                                         <KeepTogether>true</KeepTogether>
                                                         <Paragraphs>
                                                           <Paragraph>
                                                             <TextRuns>
                                                               <TextRun>
-                                                                <Value>Diagnosis </Value>
+                                                                <Value>Ethnicity</Value>
                                                                 <Style>
                                                                   <FontSize>8pt</FontSize>
                                                                   <FontWeight>Bold</FontWeight>
@@ -1157,7 +1478,7 @@ IIF
                                                             </Style>
                                                           </Paragraph>
                                                         </Paragraphs>
-                                                        <rd:DefaultName>Textbox66</rd:DefaultName>
+                                                        <rd:DefaultName>Textbox5</rd:DefaultName>
                                                         <Style>
                                                           <Border>
                                                             <Color>LightGrey</Color>
@@ -1175,16 +1496,16 @@ IIF
                                                   <TablixMembers>
                                                     <TablixMember>
                                                       <TablixHeader>
-                                                        <Size>3.92631cm</Size>
+                                                        <Size>3.74354cm</Size>
                                                         <CellContents>
-                                                          <Textbox Name="Textbox69">
+                                                          <Textbox Name="Textbox20">
                                                             <CanGrow>true</CanGrow>
                                                             <KeepTogether>true</KeepTogether>
                                                             <Paragraphs>
                                                               <Paragraph>
                                                                 <TextRuns>
                                                                   <TextRun>
-                                                                    <Value>Service Type </Value>
+                                                                    <Value>Diagnosis</Value>
                                                                     <Style>
                                                                       <FontSize>8pt</FontSize>
                                                                       <FontWeight>Bold</FontWeight>
@@ -1197,15 +1518,12 @@ IIF
                                                                 </Style>
                                                               </Paragraph>
                                                             </Paragraphs>
-                                                            <rd:DefaultName>Textbox69</rd:DefaultName>
+                                                            <rd:DefaultName>Textbox20</rd:DefaultName>
                                                             <Style>
                                                               <Border>
                                                                 <Color>LightGrey</Color>
                                                                 <Style>Solid</Style>
                                                               </Border>
-                                                              <RightBorder>
-                                                                <Style>None</Style>
-                                                              </RightBorder>
                                                               <BackgroundColor>#2b70b1</BackgroundColor>
                                                               <PaddingLeft>4pt</PaddingLeft>
                                                               <PaddingRight>2pt</PaddingRight>
@@ -1218,16 +1536,16 @@ IIF
                                                       <TablixMembers>
                                                         <TablixMember>
                                                           <TablixHeader>
-                                                            <Size>2.10475cm</Size>
+                                                            <Size>4.44586cm</Size>
                                                             <CellContents>
-                                                              <Textbox Name="Textbox19">
+                                                              <Textbox Name="Textbox32">
                                                                 <CanGrow>true</CanGrow>
                                                                 <KeepTogether>true</KeepTogether>
                                                                 <Paragraphs>
                                                                   <Paragraph>
                                                                     <TextRuns>
                                                                       <TextRun>
-                                                                        <Value>Marital Status</Value>
+                                                                        <Value>Services </Value>
                                                                         <Style>
                                                                           <FontSize>8pt</FontSize>
                                                                           <FontWeight>Bold</FontWeight>
@@ -1240,16 +1558,12 @@ IIF
                                                                     </Style>
                                                                   </Paragraph>
                                                                 </Paragraphs>
-                                                                <rd:DefaultName>Textbox19</rd:DefaultName>
+                                                                <rd:DefaultName>Textbox32</rd:DefaultName>
                                                                 <Style>
                                                                   <Border>
                                                                     <Color>LightGrey</Color>
                                                                     <Style>Solid</Style>
                                                                   </Border>
-                                                                  <LeftBorder>
-                                                                    <Color>Red</Color>
-                                                                    <Width>2pt</Width>
-                                                                  </LeftBorder>
                                                                   <BackgroundColor>#2b70b1</BackgroundColor>
                                                                   <PaddingLeft>4pt</PaddingLeft>
                                                                   <PaddingRight>2pt</PaddingRight>
@@ -1260,94 +1574,26 @@ IIF
                                                             </CellContents>
                                                           </TablixHeader>
                                                           <TablixMembers>
-                                                            <TablixMember>
-                                                              <TablixHeader>
-                                                                <Size>1.75097cm</Size>
-                                                                <CellContents>
-                                                                  <Textbox Name="Textbox17">
-                                                                    <CanGrow>true</CanGrow>
-                                                                    <KeepTogether>true</KeepTogether>
-                                                                    <Paragraphs>
-                                                                      <Paragraph>
-                                                                        <TextRuns>
-                                                                          <TextRun>
-                                                                            <Value>Identified </Value>
-                                                                            <Style>
-                                                                              <FontSize>8pt</FontSize>
-                                                                              <FontWeight>Bold</FontWeight>
-                                                                              <Color>White</Color>
-                                                                            </Style>
-                                                                          </TextRun>
-                                                                        </TextRuns>
-                                                                        <Style>
-                                                                          <TextAlign>Left</TextAlign>
-                                                                        </Style>
-                                                                      </Paragraph>
-                                                                      <Paragraph>
-                                                                        <TextRuns>
-                                                                          <TextRun>
-                                                                            <Value>as LGBTI</Value>
-                                                                            <Style>
-                                                                              <FontSize>8pt</FontSize>
-                                                                              <FontWeight>Bold</FontWeight>
-                                                                              <Color>White</Color>
-                                                                            </Style>
-                                                                          </TextRun>
-                                                                        </TextRuns>
-                                                                        <Style>
-                                                                          <TextAlign>Left</TextAlign>
-                                                                        </Style>
-                                                                      </Paragraph>
-                                                                    </Paragraphs>
-                                                                    <rd:DefaultName>Textbox17</rd:DefaultName>
-                                                                    <Style>
-                                                                      <Border>
-                                                                        <Color>LightGrey</Color>
-                                                                        <Style>Solid</Style>
-                                                                      </Border>
-                                                                      <BackgroundColor>#2b70b1</BackgroundColor>
-                                                                      <PaddingLeft>4pt</PaddingLeft>
-                                                                      <PaddingRight>2pt</PaddingRight>
-                                                                      <PaddingTop>2pt</PaddingTop>
-                                                                      <PaddingBottom>2pt</PaddingBottom>
-                                                                    </Style>
-                                                                  </Textbox>
-                                                                </CellContents>
-                                                              </TablixHeader>
-                                                              <TablixMembers>
-                                                                <TablixMember />
-                                                              </TablixMembers>
-                                                              <RepeatOnNewPage>true</RepeatOnNewPage>
-                                                            </TablixMember>
+                                                            <TablixMember />
                                                           </TablixMembers>
-                                                          <RepeatOnNewPage>true</RepeatOnNewPage>
                                                         </TablixMember>
                                                       </TablixMembers>
-                                                      <RepeatOnNewPage>true</RepeatOnNewPage>
                                                     </TablixMember>
                                                   </TablixMembers>
-                                                  <RepeatOnNewPage>true</RepeatOnNewPage>
                                                 </TablixMember>
                                               </TablixMembers>
-                                              <RepeatOnNewPage>true</RepeatOnNewPage>
                                             </TablixMember>
                                           </TablixMembers>
-                                          <RepeatOnNewPage>true</RepeatOnNewPage>
                                         </TablixMember>
                                       </TablixMembers>
-                                      <RepeatOnNewPage>true</RepeatOnNewPage>
                                     </TablixMember>
                                   </TablixMembers>
-                                  <RepeatOnNewPage>true</RepeatOnNewPage>
                                 </TablixMember>
                               </TablixMembers>
-                              <RepeatOnNewPage>true</RepeatOnNewPage>
                             </TablixMember>
                           </TablixMembers>
-                          <RepeatOnNewPage>true</RepeatOnNewPage>
                         </TablixMember>
                       </TablixMembers>
-                      <RepeatOnNewPage>true</RepeatOnNewPage>
                     </TablixMember>
                   </TablixMembers>
                   <KeepWithGroup>After</KeepWithGroup>
@@ -1393,7 +1639,7 @@ IIF
                           </Border>
                           <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , CountDistinct , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
                           <PaddingLeft>2pt</PaddingLeft>
-                          <PaddingRight>4pt</PaddingRight>
+                          <PaddingRight>2pt</PaddingRight>
                           <PaddingTop>2pt</PaddingTop>
                           <PaddingBottom>2pt</PaddingBottom>
                         </Style>
@@ -1413,7 +1659,7 @@ IIF
                         </SortExpression>
                       </SortExpressions>
                       <TablixHeader>
-                        <Size>2.60746cm</Size>
+                        <Size>2.61558cm</Size>
                         <CellContents>
                           <Textbox Name="Client_Name">
                             <CanGrow>true</CanGrow>
@@ -1440,7 +1686,7 @@ IIF
                                 <Style>Solid</Style>
                               </Border>
                               <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , CountDistinct , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
-                              <PaddingLeft>4pt</PaddingLeft>
+                              <PaddingLeft>2pt</PaddingLeft>
                               <PaddingRight>2pt</PaddingRight>
                               <PaddingTop>2pt</PaddingTop>
                               <PaddingBottom>2pt</PaddingBottom>
@@ -1450,39 +1696,39 @@ IIF
                       </TablixHeader>
                       <TablixMembers>
                         <TablixMember>
-                          <Group Name="Contact_Phone_Number">
+                          <Group Name="Address">
                             <GroupExpressions>
-                              <GroupExpression>=Fields!Contact_Phone_Number.Value</GroupExpression>
+                              <GroupExpression>=Fields!Address.Value</GroupExpression>
                             </GroupExpressions>
                           </Group>
                           <SortExpressions>
                             <SortExpression>
-                              <Value>=Fields!Contact_Phone_Number.Value</Value>
+                              <Value>=Fields!Address.Value</Value>
                             </SortExpression>
                           </SortExpressions>
                           <TablixHeader>
-                            <Size>1.99892cm</Size>
+                            <Size>3.87583cm</Size>
                             <CellContents>
-                              <Textbox Name="Phone">
+                              <Textbox Name="Address">
                                 <CanGrow>true</CanGrow>
                                 <KeepTogether>true</KeepTogether>
                                 <Paragraphs>
                                   <Paragraph>
                                     <TextRuns>
                                       <TextRun>
-                                        <Value>=Fields!Phone.Value</Value>
+                                        <Value>=Fields!Address.Value</Value>
+                                        <MarkupType>HTML</MarkupType>
                                         <Style>
                                           <FontSize>8pt</FontSize>
-                                          <Format>0;(0)</Format>
                                         </Style>
                                       </TextRun>
                                     </TextRuns>
                                     <Style>
-                                      <TextAlign>Right</TextAlign>
+                                      <TextAlign>Left</TextAlign>
                                     </Style>
                                   </Paragraph>
                                 </Paragraphs>
-                                <rd:DefaultName>Phone</rd:DefaultName>
+                                <rd:DefaultName>Address</rd:DefaultName>
                                 <Style>
                                   <Border>
                                     <Color>LightGrey</Color>
@@ -1490,7 +1736,7 @@ IIF
                                   </Border>
                                   <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , CountDistinct , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
                                   <PaddingLeft>2pt</PaddingLeft>
-                                  <PaddingRight>4pt</PaddingRight>
+                                  <PaddingRight>2pt</PaddingRight>
                                   <PaddingTop>2pt</PaddingTop>
                                   <PaddingBottom>2pt</PaddingBottom>
                                 </Style>
@@ -1499,45 +1745,45 @@ IIF
                           </TablixHeader>
                           <TablixMembers>
                             <TablixMember>
-                              <Group Name="Address">
+                              <Group Name="Contact_Phone_Number">
                                 <GroupExpressions>
-                                  <GroupExpression>=Fields!Address.Value</GroupExpression>
+                                  <GroupExpression>=Fields!Contact_Phone_Number.Value</GroupExpression>
                                 </GroupExpressions>
                               </Group>
                               <SortExpressions>
                                 <SortExpression>
-                                  <Value>=Fields!Address.Value</Value>
+                                  <Value>=Fields!Contact_Phone_Number.Value</Value>
                                 </SortExpression>
                               </SortExpressions>
                               <TablixHeader>
-                                <Size>3.61288cm</Size>
+                                <Size>2.15604cm</Size>
                                 <CellContents>
-                                  <Textbox Name="Address">
+                                  <Textbox Name="Contact_Phone_Number">
                                     <CanGrow>true</CanGrow>
                                     <KeepTogether>true</KeepTogether>
                                     <Paragraphs>
                                       <Paragraph>
                                         <TextRuns>
                                           <TextRun>
-                                            <Value>=Fields!Address.Value</Value>
+                                            <Value>=Fields!Contact_Phone_Number.Value</Value>
                                             <Style>
                                               <FontSize>8pt</FontSize>
                                             </Style>
                                           </TextRun>
                                         </TextRuns>
                                         <Style>
-                                          <TextAlign>Left</TextAlign>
+                                          <TextAlign>Right</TextAlign>
                                         </Style>
                                       </Paragraph>
                                     </Paragraphs>
-                                    <rd:DefaultName>Address</rd:DefaultName>
+                                    <rd:DefaultName>Contact_Phone_Number</rd:DefaultName>
                                     <Style>
                                       <Border>
                                         <Color>LightGrey</Color>
                                         <Style>Solid</Style>
                                       </Border>
                                       <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , CountDistinct , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
-                                      <PaddingLeft>4pt</PaddingLeft>
+                                      <PaddingLeft>2pt</PaddingLeft>
                                       <PaddingRight>2pt</PaddingRight>
                                       <PaddingTop>2pt</PaddingTop>
                                       <PaddingBottom>2pt</PaddingBottom>
@@ -1558,7 +1804,7 @@ IIF
                                     </SortExpression>
                                   </SortExpressions>
                                   <TablixHeader>
-                                    <Size>1.78909cm</Size>
+                                    <Size>2.11861cm</Size>
                                     <CellContents>
                                       <Textbox Name="Birth_Date">
                                         <CanGrow>true</CanGrow>
@@ -1567,11 +1813,10 @@ IIF
                                           <Paragraph>
                                             <TextRuns>
                                               <TextRun>
-                                                <Value>=
-IIF
+                                                <Value>=IIF
 (
 	IsNothing(Fields!Birth_Date.Value)
-	,"&lt;font Color ='red'&gt; Not on &lt;br&gt;record&lt;/font&gt;"
+	,"&lt;font Color ='red'&gt;Not on record&lt;/font&gt;"
 	,format(Fields!Birth_Date.Value,"dd/MM/yyyy")
 )</Value>
                                                 <MarkupType>HTML</MarkupType>
@@ -1593,7 +1838,7 @@ IIF
                                           </Border>
                                           <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , CountDistinct , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
                                           <PaddingLeft>2pt</PaddingLeft>
-                                          <PaddingRight>3pt</PaddingRight>
+                                          <PaddingRight>2pt</PaddingRight>
                                           <PaddingTop>2pt</PaddingTop>
                                           <PaddingBottom>2pt</PaddingBottom>
                                         </Style>
@@ -1613,7 +1858,7 @@ IIF
                                         </SortExpression>
                                       </SortExpressions>
                                       <TablixHeader>
-                                        <Size>0.97142cm</Size>
+                                        <Size>1.01833cm</Size>
                                         <CellContents>
                                           <Textbox Name="Age">
                                             <CanGrow>true</CanGrow>
@@ -1630,7 +1875,7 @@ IIF
                                                   </TextRun>
                                                 </TextRuns>
                                                 <Style>
-                                                  <TextAlign>Left</TextAlign>
+                                                  <TextAlign>Center</TextAlign>
                                                 </Style>
                                               </Paragraph>
                                             </Paragraphs>
@@ -1641,7 +1886,7 @@ IIF
                                                 <Style>Solid</Style>
                                               </Border>
                                               <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , CountDistinct , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
-                                              <PaddingLeft>4pt</PaddingLeft>
+                                              <PaddingLeft>2pt</PaddingLeft>
                                               <PaddingRight>2pt</PaddingRight>
                                               <PaddingTop>2pt</PaddingTop>
                                               <PaddingBottom>2pt</PaddingBottom>
@@ -1662,7 +1907,7 @@ IIF
                                             </SortExpression>
                                           </SortExpressions>
                                           <TablixHeader>
-                                            <Size>1.42121cm</Size>
+                                            <Size>1.23cm</Size>
                                             <CellContents>
                                               <Textbox Name="Gender">
                                                 <CanGrow>true</CanGrow>
@@ -1678,7 +1923,7 @@ IIF
                                                       </TextRun>
                                                     </TextRuns>
                                                     <Style>
-                                                      <TextAlign>Left</TextAlign>
+                                                      <TextAlign>Center</TextAlign>
                                                     </Style>
                                                   </Paragraph>
                                                 </Paragraphs>
@@ -1689,7 +1934,7 @@ IIF
                                                     <Style>Solid</Style>
                                                   </Border>
                                                   <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , CountDistinct , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
-                                                  <PaddingLeft>4pt</PaddingLeft>
+                                                  <PaddingLeft>2pt</PaddingLeft>
                                                   <PaddingRight>2pt</PaddingRight>
                                                   <PaddingTop>2pt</PaddingTop>
                                                   <PaddingBottom>2pt</PaddingBottom>
@@ -1710,7 +1955,7 @@ IIF
                                                 </SortExpression>
                                               </SortExpressions>
                                               <TablixHeader>
-                                                <Size>1.47139cm</Size>
+                                                <Size>1.49458cm</Size>
                                                 <CellContents>
                                                   <Textbox Name="M_F_Provider">
                                                     <CanGrow>true</CanGrow>
@@ -1732,7 +1977,7 @@ IIF
                                                           </TextRun>
                                                         </TextRuns>
                                                         <Style>
-                                                          <TextAlign>Left</TextAlign>
+                                                          <TextAlign>Center</TextAlign>
                                                         </Style>
                                                       </Paragraph>
                                                     </Paragraphs>
@@ -1743,7 +1988,7 @@ IIF
                                                         <Style>Solid</Style>
                                                       </Border>
                                                       <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , CountDistinct , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
-                                                      <PaddingLeft>4pt</PaddingLeft>
+                                                      <PaddingLeft>2pt</PaddingLeft>
                                                       <PaddingRight>2pt</PaddingRight>
                                                       <PaddingTop>2pt</PaddingTop>
                                                       <PaddingBottom>2pt</PaddingBottom>
@@ -1753,27 +1998,27 @@ IIF
                                               </TablixHeader>
                                               <TablixMembers>
                                                 <TablixMember>
-                                                  <Group Name="Diagnosis_">
+                                                  <Group Name="Ethnicity">
                                                     <GroupExpressions>
-                                                      <GroupExpression>=Fields!Diagnosis_.Value</GroupExpression>
+                                                      <GroupExpression>=Fields!Ethnicity.Value</GroupExpression>
                                                     </GroupExpressions>
                                                   </Group>
                                                   <SortExpressions>
                                                     <SortExpression>
-                                                      <Value>=Fields!Diagnosis_.Value</Value>
+                                                      <Value>=Fields!Ethnicity.Value</Value>
                                                     </SortExpression>
                                                   </SortExpressions>
                                                   <TablixHeader>
-                                                    <Size>2.39579cm</Size>
+                                                    <Size>1.99729cm</Size>
                                                     <CellContents>
-                                                      <Textbox Name="Diagnosis_">
+                                                      <Textbox Name="Ethnicity_Filterd">
                                                         <CanGrow>true</CanGrow>
                                                         <KeepTogether>true</KeepTogether>
                                                         <Paragraphs>
                                                           <Paragraph>
                                                             <TextRuns>
                                                               <TextRun>
-                                                                <Value>=Join( Code.RemoveDuplicates(LookupSet( Fields!Client_ID.Value, Fields!Client_ID.Value, Fields!Diagnosis_Filtered.Value,"DataSet1")), ", ")</Value>
+                                                                <Value>=Fields!Ethnicity_Filterd.Value</Value>
                                                                 <Style>
                                                                   <FontSize>8pt</FontSize>
                                                                 </Style>
@@ -1784,14 +2029,14 @@ IIF
                                                             </Style>
                                                           </Paragraph>
                                                         </Paragraphs>
-                                                        <rd:DefaultName>Diagnosis_</rd:DefaultName>
+                                                        <rd:DefaultName>Ethnicity_Filterd</rd:DefaultName>
                                                         <Style>
                                                           <Border>
                                                             <Color>LightGrey</Color>
                                                             <Style>Solid</Style>
                                                           </Border>
                                                           <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , CountDistinct , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
-                                                          <PaddingLeft>4pt</PaddingLeft>
+                                                          <PaddingLeft>2pt</PaddingLeft>
                                                           <PaddingRight>2pt</PaddingRight>
                                                           <PaddingTop>2pt</PaddingTop>
                                                           <PaddingBottom>2pt</PaddingBottom>
@@ -1801,27 +2046,27 @@ IIF
                                                   </TablixHeader>
                                                   <TablixMembers>
                                                     <TablixMember>
-                                                      <Group Name="ServiceType_">
+                                                      <Group Name="Diagnosis">
                                                         <GroupExpressions>
-                                                          <GroupExpression>=Fields!ServiceType_.Value</GroupExpression>
+                                                          <GroupExpression>=Fields!Diagnosis_.Value</GroupExpression>
                                                         </GroupExpressions>
                                                       </Group>
                                                       <SortExpressions>
                                                         <SortExpression>
-                                                          <Value>=Fields!ServiceType_.Value</Value>
+                                                          <Value>=Fields!Diagnosis.Value</Value>
                                                         </SortExpression>
                                                       </SortExpressions>
                                                       <TablixHeader>
-                                                        <Size>3.92631cm</Size>
+                                                        <Size>3.74354cm</Size>
                                                         <CellContents>
-                                                          <Textbox Name="ServiceType_">
+                                                          <Textbox Name="Diagnosis">
                                                             <CanGrow>true</CanGrow>
                                                             <KeepTogether>true</KeepTogether>
                                                             <Paragraphs>
                                                               <Paragraph>
                                                                 <TextRuns>
                                                                   <TextRun>
-                                                                    <Value>=Join( Code.RemoveDuplicates(LookupSet( Fields!Client_ID.Value, Fields!Client_ID.Value, Fields!Service_Type.Value,"DataSet1")), ",&lt;br&gt;")</Value>
+                                                                    <Value>=Join( Code.RemoveDuplicates(LookupSet( Fields!Client_ID.Value, Fields!Client_ID.Value, Fields!Diagnosis_Filtered.Value,"DataSet1")), ";&lt;br&gt;")</Value>
                                                                     <MarkupType>HTML</MarkupType>
                                                                     <Style>
                                                                       <FontSize>8pt</FontSize>
@@ -1833,17 +2078,14 @@ IIF
                                                                 </Style>
                                                               </Paragraph>
                                                             </Paragraphs>
-                                                            <rd:DefaultName>ServiceType_</rd:DefaultName>
+                                                            <rd:DefaultName>Diagnosis</rd:DefaultName>
                                                             <Style>
                                                               <Border>
                                                                 <Color>LightGrey</Color>
                                                                 <Style>Solid</Style>
                                                               </Border>
-                                                              <RightBorder>
-                                                                <Style>None</Style>
-                                                              </RightBorder>
                                                               <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , CountDistinct , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
-                                                              <PaddingLeft>4pt</PaddingLeft>
+                                                              <PaddingLeft>2pt</PaddingLeft>
                                                               <PaddingRight>2pt</PaddingRight>
                                                               <PaddingTop>2pt</PaddingTop>
                                                               <PaddingBottom>2pt</PaddingBottom>
@@ -1853,32 +2095,28 @@ IIF
                                                       </TablixHeader>
                                                       <TablixMembers>
                                                         <TablixMember>
-                                                          <Group Name="P_EmpStat">
+                                                          <Group Name="ServiceType_">
                                                             <GroupExpressions>
-                                                              <GroupExpression>=Fields!P_EmpStat.Value</GroupExpression>
+                                                              <GroupExpression>=Fields!ServiceType_.Value</GroupExpression>
                                                             </GroupExpressions>
                                                           </Group>
                                                           <SortExpressions>
                                                             <SortExpression>
-                                                              <Value>=Fields!P_EmpStat.Value</Value>
+                                                              <Value>=Fields!ServiceType_.Value</Value>
                                                             </SortExpression>
                                                           </SortExpressions>
                                                           <TablixHeader>
-                                                            <Size>2.10475cm</Size>
+                                                            <Size>4.44586cm</Size>
                                                             <CellContents>
-                                                              <Textbox Name="P_EmpStat">
+                                                              <Textbox Name="ServiceType_">
                                                                 <CanGrow>true</CanGrow>
                                                                 <KeepTogether>true</KeepTogether>
                                                                 <Paragraphs>
                                                                   <Paragraph>
                                                                     <TextRuns>
                                                                       <TextRun>
-                                                                        <Value>=IIF
-(
-	IsNothing(Fields!Marital_Status.Value)
-	,"Not Stated"
-	,Fields!Marital_Status.Value
-)</Value>
+                                                                        <Value>=Join( Code.RemoveDuplicates(LookupSet( Fields!Client_ID.Value, Fields!Client_ID.Value, Fields!Service_Type.Value,"DataSet1")), ";&lt;br&gt;")</Value>
+                                                                        <MarkupType>HTML</MarkupType>
                                                                         <Style>
                                                                           <FontSize>8pt</FontSize>
                                                                         </Style>
@@ -1889,18 +2127,14 @@ IIF
                                                                     </Style>
                                                                   </Paragraph>
                                                                 </Paragraphs>
-                                                                <rd:DefaultName>P_EmpStat</rd:DefaultName>
+                                                                <rd:DefaultName>ServiceType_</rd:DefaultName>
                                                                 <Style>
                                                                   <Border>
                                                                     <Color>LightGrey</Color>
                                                                     <Style>Solid</Style>
                                                                   </Border>
-                                                                  <LeftBorder>
-                                                                    <Color>Red</Color>
-                                                                    <Width>2pt</Width>
-                                                                  </LeftBorder>
                                                                   <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , CountDistinct , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
-                                                                  <PaddingLeft>4pt</PaddingLeft>
+                                                                  <PaddingLeft>2pt</PaddingLeft>
                                                                   <PaddingRight>2pt</PaddingRight>
                                                                   <PaddingTop>2pt</PaddingTop>
                                                                   <PaddingBottom>2pt</PaddingBottom>
@@ -1910,66 +2144,11 @@ IIF
                                                           </TablixHeader>
                                                           <TablixMembers>
                                                             <TablixMember>
-                                                              <Group Name="P_LGBTI">
+                                                              <Group Name="Details">
                                                                 <GroupExpressions>
-                                                                  <GroupExpression>=Fields!P_LGBTI.Value</GroupExpression>
+                                                                  <GroupExpression>=Fields!Client_ID.Value</GroupExpression>
                                                                 </GroupExpressions>
                                                               </Group>
-                                                              <SortExpressions>
-                                                                <SortExpression>
-                                                                  <Value>=Fields!P_LGBTI.Value</Value>
-                                                                </SortExpression>
-                                                              </SortExpressions>
-                                                              <TablixHeader>
-                                                                <Size>1.75097cm</Size>
-                                                                <CellContents>
-                                                                  <Textbox Name="P_LGBTI">
-                                                                    <CanGrow>true</CanGrow>
-                                                                    <KeepTogether>true</KeepTogether>
-                                                                    <Paragraphs>
-                                                                      <Paragraph>
-                                                                        <TextRuns>
-                                                                          <TextRun>
-                                                                            <Value>=IIF
-(
-	IsNothing(Fields!P_LGBTI.Value)
-	,"No"
-	,"Yes"
-)</Value>
-                                                                            <Style>
-                                                                              <FontSize>8pt</FontSize>
-                                                                            </Style>
-                                                                          </TextRun>
-                                                                        </TextRuns>
-                                                                        <Style>
-                                                                          <TextAlign>Left</TextAlign>
-                                                                        </Style>
-                                                                      </Paragraph>
-                                                                    </Paragraphs>
-                                                                    <rd:DefaultName>P_LGBTI</rd:DefaultName>
-                                                                    <Style>
-                                                                      <Border>
-                                                                        <Color>LightGrey</Color>
-                                                                        <Style>Solid</Style>
-                                                                      </Border>
-                                                                      <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , CountDistinct , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
-                                                                      <PaddingLeft>4pt</PaddingLeft>
-                                                                      <PaddingRight>2pt</PaddingRight>
-                                                                      <PaddingTop>2pt</PaddingTop>
-                                                                      <PaddingBottom>2pt</PaddingBottom>
-                                                                    </Style>
-                                                                  </Textbox>
-                                                                </CellContents>
-                                                              </TablixHeader>
-                                                              <TablixMembers>
-                                                                <TablixMember>
-                                                                  <Group Name="Details">
-                                                                    <GroupExpressions>
-                                                                      <GroupExpression>=Fields!P_EmpStat.Value</GroupExpression>
-                                                                    </GroupExpressions>
-                                                                  </Group>
-                                                                </TablixMember>
-                                                              </TablixMembers>
                                                             </TablixMember>
                                                           </TablixMembers>
                                                         </TablixMember>
@@ -1995,24 +2174,16 @@ IIF
                 </TablixMember>
                 <TablixMember>
                   <TablixHeader>
-                    <Size>9.93243cm</Size>
+                    <Size>1.71317cm</Size>
                     <CellContents>
-                      <Textbox Name="Textbox87">
+                      <Textbox Name="Textbox3">
                         <CanGrow>true</CanGrow>
                         <KeepTogether>true</KeepTogether>
                         <Paragraphs>
                           <Paragraph>
                             <TextRuns>
                               <TextRun>
-                                <Value>Total number of clients: </Value>
-                                <Style>
-                                  <FontSize>12pt</FontSize>
-                                  <FontWeight>Bold</FontWeight>
-                                  <Color>White</Color>
-                                </Style>
-                              </TextRun>
-                              <TextRun>
-                                <Value>=CountDistinct(Fields!Client_Name.Value, "DataSet1")</Value>
+                                <Value />
                                 <Style>
                                   <FontSize>12pt</FontSize>
                                   <FontWeight>Bold</FontWeight>
@@ -2025,7 +2196,7 @@ IIF
                             </Style>
                           </Paragraph>
                         </Paragraphs>
-                        <rd:DefaultName>Textbox87</rd:DefaultName>
+                        <rd:DefaultName>Textbox3</rd:DefaultName>
                         <Style>
                           <Border>
                             <Color>LightGrey</Color>
@@ -2043,9 +2214,9 @@ IIF
                   <TablixMembers>
                     <TablixMember>
                       <TablixHeader>
-                        <Size>1.78909cm</Size>
+                        <Size>2.61558cm</Size>
                         <CellContents>
-                          <Textbox Name="Textbox91">
+                          <Textbox Name="Textbox46">
                             <CanGrow>true</CanGrow>
                             <KeepTogether>true</KeepTogether>
                             <Paragraphs>
@@ -2061,11 +2232,11 @@ IIF
                                   </TextRun>
                                 </TextRuns>
                                 <Style>
-                                  <TextAlign>Right</TextAlign>
+                                  <TextAlign>Left</TextAlign>
                                 </Style>
                               </Paragraph>
                             </Paragraphs>
-                            <rd:DefaultName>Textbox91</rd:DefaultName>
+                            <rd:DefaultName>Textbox46</rd:DefaultName>
                             <Style>
                               <Border>
                                 <Color>LightGrey</Color>
@@ -2073,7 +2244,7 @@ IIF
                               </Border>
                               <BackgroundColor>#004b8e</BackgroundColor>
                               <PaddingLeft>2pt</PaddingLeft>
-                              <PaddingRight>3pt</PaddingRight>
+                              <PaddingRight>4pt</PaddingRight>
                               <PaddingTop>2pt</PaddingTop>
                               <PaddingBottom>2pt</PaddingBottom>
                             </Style>
@@ -2083,9 +2254,9 @@ IIF
                       <TablixMembers>
                         <TablixMember>
                           <TablixHeader>
-                            <Size>0.97142cm</Size>
+                            <Size>3.87583cm</Size>
                             <CellContents>
-                              <Textbox Name="Textbox92">
+                              <Textbox Name="Textbox55">
                                 <CanGrow>true</CanGrow>
                                 <KeepTogether>true</KeepTogether>
                                 <Paragraphs>
@@ -2105,15 +2276,15 @@ IIF
                                     </Style>
                                   </Paragraph>
                                 </Paragraphs>
-                                <rd:DefaultName>Textbox92</rd:DefaultName>
+                                <rd:DefaultName>Textbox55</rd:DefaultName>
                                 <Style>
                                   <Border>
                                     <Color>LightGrey</Color>
                                     <Style>Solid</Style>
                                   </Border>
                                   <BackgroundColor>#004b8e</BackgroundColor>
-                                  <PaddingLeft>4pt</PaddingLeft>
-                                  <PaddingRight>2pt</PaddingRight>
+                                  <PaddingLeft>2pt</PaddingLeft>
+                                  <PaddingRight>4pt</PaddingRight>
                                   <PaddingTop>2pt</PaddingTop>
                                   <PaddingBottom>2pt</PaddingBottom>
                                 </Style>
@@ -2123,9 +2294,9 @@ IIF
                           <TablixMembers>
                             <TablixMember>
                               <TablixHeader>
-                                <Size>1.42121cm</Size>
+                                <Size>2.15604cm</Size>
                                 <CellContents>
-                                  <Textbox Name="Textbox93">
+                                  <Textbox Name="Textbox59">
                                     <CanGrow>true</CanGrow>
                                     <KeepTogether>true</KeepTogether>
                                     <Paragraphs>
@@ -2141,19 +2312,19 @@ IIF
                                           </TextRun>
                                         </TextRuns>
                                         <Style>
-                                          <TextAlign>Left</TextAlign>
+                                          <TextAlign>Right</TextAlign>
                                         </Style>
                                       </Paragraph>
                                     </Paragraphs>
-                                    <rd:DefaultName>Textbox93</rd:DefaultName>
+                                    <rd:DefaultName>Textbox59</rd:DefaultName>
                                     <Style>
                                       <Border>
                                         <Color>LightGrey</Color>
                                         <Style>Solid</Style>
                                       </Border>
                                       <BackgroundColor>#004b8e</BackgroundColor>
-                                      <PaddingLeft>4pt</PaddingLeft>
-                                      <PaddingRight>2pt</PaddingRight>
+                                      <PaddingLeft>2pt</PaddingLeft>
+                                      <PaddingRight>4pt</PaddingRight>
                                       <PaddingTop>2pt</PaddingTop>
                                       <PaddingBottom>2pt</PaddingBottom>
                                     </Style>
@@ -2163,9 +2334,9 @@ IIF
                               <TablixMembers>
                                 <TablixMember>
                                   <TablixHeader>
-                                    <Size>1.47139cm</Size>
+                                    <Size>2.11861cm</Size>
                                     <CellContents>
-                                      <Textbox Name="Textbox94">
+                                      <Textbox Name="Textbox50">
                                         <CanGrow>true</CanGrow>
                                         <KeepTogether>true</KeepTogether>
                                         <Paragraphs>
@@ -2181,19 +2352,19 @@ IIF
                                               </TextRun>
                                             </TextRuns>
                                             <Style>
-                                              <TextAlign>Left</TextAlign>
+                                              <TextAlign>Right</TextAlign>
                                             </Style>
                                           </Paragraph>
                                         </Paragraphs>
-                                        <rd:DefaultName>Textbox94</rd:DefaultName>
+                                        <rd:DefaultName>Textbox50</rd:DefaultName>
                                         <Style>
                                           <Border>
                                             <Color>LightGrey</Color>
                                             <Style>Solid</Style>
                                           </Border>
                                           <BackgroundColor>#004b8e</BackgroundColor>
-                                          <PaddingLeft>4pt</PaddingLeft>
-                                          <PaddingRight>2pt</PaddingRight>
+                                          <PaddingLeft>2pt</PaddingLeft>
+                                          <PaddingRight>4pt</PaddingRight>
                                           <PaddingTop>2pt</PaddingTop>
                                           <PaddingBottom>2pt</PaddingBottom>
                                         </Style>
@@ -2203,9 +2374,9 @@ IIF
                                   <TablixMembers>
                                     <TablixMember>
                                       <TablixHeader>
-                                        <Size>2.39579cm</Size>
+                                        <Size>1.01833cm</Size>
                                         <CellContents>
-                                          <Textbox Name="Textbox95">
+                                          <Textbox Name="Textbox63">
                                             <CanGrow>true</CanGrow>
                                             <KeepTogether>true</KeepTogether>
                                             <Paragraphs>
@@ -2221,19 +2392,19 @@ IIF
                                                   </TextRun>
                                                 </TextRuns>
                                                 <Style>
-                                                  <TextAlign>Left</TextAlign>
+                                                  <TextAlign>Center</TextAlign>
                                                 </Style>
                                               </Paragraph>
                                             </Paragraphs>
-                                            <rd:DefaultName>Textbox95</rd:DefaultName>
+                                            <rd:DefaultName>Textbox63</rd:DefaultName>
                                             <Style>
                                               <Border>
                                                 <Color>LightGrey</Color>
                                                 <Style>Solid</Style>
                                               </Border>
                                               <BackgroundColor>#004b8e</BackgroundColor>
-                                              <PaddingLeft>4pt</PaddingLeft>
-                                              <PaddingRight>2pt</PaddingRight>
+                                              <PaddingLeft>2pt</PaddingLeft>
+                                              <PaddingRight>4pt</PaddingRight>
                                               <PaddingTop>2pt</PaddingTop>
                                               <PaddingBottom>2pt</PaddingBottom>
                                             </Style>
@@ -2243,9 +2414,9 @@ IIF
                                       <TablixMembers>
                                         <TablixMember>
                                           <TablixHeader>
-                                            <Size>3.92631cm</Size>
+                                            <Size>1.23cm</Size>
                                             <CellContents>
-                                              <Textbox Name="Textbox96">
+                                              <Textbox Name="Textbox67">
                                                 <CanGrow>true</CanGrow>
                                                 <KeepTogether>true</KeepTogether>
                                                 <Paragraphs>
@@ -2261,22 +2432,19 @@ IIF
                                                       </TextRun>
                                                     </TextRuns>
                                                     <Style>
-                                                      <TextAlign>Left</TextAlign>
+                                                      <TextAlign>Center</TextAlign>
                                                     </Style>
                                                   </Paragraph>
                                                 </Paragraphs>
-                                                <rd:DefaultName>Textbox96</rd:DefaultName>
+                                                <rd:DefaultName>Textbox67</rd:DefaultName>
                                                 <Style>
                                                   <Border>
                                                     <Color>LightGrey</Color>
                                                     <Style>Solid</Style>
                                                   </Border>
-                                                  <RightBorder>
-                                                    <Style>None</Style>
-                                                  </RightBorder>
                                                   <BackgroundColor>#004b8e</BackgroundColor>
-                                                  <PaddingLeft>4pt</PaddingLeft>
-                                                  <PaddingRight>2pt</PaddingRight>
+                                                  <PaddingLeft>2pt</PaddingLeft>
+                                                  <PaddingRight>4pt</PaddingRight>
                                                   <PaddingTop>2pt</PaddingTop>
                                                   <PaddingBottom>2pt</PaddingBottom>
                                                 </Style>
@@ -2286,9 +2454,9 @@ IIF
                                           <TablixMembers>
                                             <TablixMember>
                                               <TablixHeader>
-                                                <Size>2.10475cm</Size>
+                                                <Size>1.49458cm</Size>
                                                 <CellContents>
-                                                  <Textbox Name="Textbox97">
+                                                  <Textbox Name="Textbox40">
                                                     <CanGrow>true</CanGrow>
                                                     <KeepTogether>true</KeepTogether>
                                                     <Paragraphs>
@@ -2304,23 +2472,19 @@ IIF
                                                           </TextRun>
                                                         </TextRuns>
                                                         <Style>
-                                                          <TextAlign>Left</TextAlign>
+                                                          <TextAlign>Center</TextAlign>
                                                         </Style>
                                                       </Paragraph>
                                                     </Paragraphs>
-                                                    <rd:DefaultName>Textbox97</rd:DefaultName>
+                                                    <rd:DefaultName>Textbox40</rd:DefaultName>
                                                     <Style>
                                                       <Border>
                                                         <Color>LightGrey</Color>
                                                         <Style>Solid</Style>
                                                       </Border>
-                                                      <LeftBorder>
-                                                        <Color>Red</Color>
-                                                        <Width>2pt</Width>
-                                                      </LeftBorder>
                                                       <BackgroundColor>#004b8e</BackgroundColor>
-                                                      <PaddingLeft>4pt</PaddingLeft>
-                                                      <PaddingRight>2pt</PaddingRight>
+                                                      <PaddingLeft>2pt</PaddingLeft>
+                                                      <PaddingRight>3pt</PaddingRight>
                                                       <PaddingTop>2pt</PaddingTop>
                                                       <PaddingBottom>2pt</PaddingBottom>
                                                     </Style>
@@ -2330,9 +2494,9 @@ IIF
                                               <TablixMembers>
                                                 <TablixMember>
                                                   <TablixHeader>
-                                                    <Size>1.75097cm</Size>
+                                                    <Size>1.99729cm</Size>
                                                     <CellContents>
-                                                      <Textbox Name="Textbox98">
+                                                      <Textbox Name="Textbox7">
                                                         <CanGrow>true</CanGrow>
                                                         <KeepTogether>true</KeepTogether>
                                                         <Paragraphs>
@@ -2348,25 +2512,112 @@ IIF
                                                               </TextRun>
                                                             </TextRuns>
                                                             <Style>
-                                                              <TextAlign>Left</TextAlign>
+                                                              <TextAlign>Right</TextAlign>
                                                             </Style>
                                                           </Paragraph>
                                                         </Paragraphs>
-                                                        <rd:DefaultName>Textbox98</rd:DefaultName>
+                                                        <rd:DefaultName>Textbox7</rd:DefaultName>
                                                         <Style>
                                                           <Border>
                                                             <Color>LightGrey</Color>
                                                             <Style>Solid</Style>
                                                           </Border>
                                                           <BackgroundColor>#004b8e</BackgroundColor>
-                                                          <PaddingLeft>4pt</PaddingLeft>
-                                                          <PaddingRight>2pt</PaddingRight>
+                                                          <PaddingLeft>2pt</PaddingLeft>
+                                                          <PaddingRight>3pt</PaddingRight>
                                                           <PaddingTop>2pt</PaddingTop>
                                                           <PaddingBottom>2pt</PaddingBottom>
                                                         </Style>
                                                       </Textbox>
                                                     </CellContents>
                                                   </TablixHeader>
+                                                  <TablixMembers>
+                                                    <TablixMember>
+                                                      <TablixHeader>
+                                                        <Size>3.74354cm</Size>
+                                                        <CellContents>
+                                                          <Textbox Name="Textbox23">
+                                                            <CanGrow>true</CanGrow>
+                                                            <KeepTogether>true</KeepTogether>
+                                                            <Paragraphs>
+                                                              <Paragraph>
+                                                                <TextRuns>
+                                                                  <TextRun>
+                                                                    <Value />
+                                                                    <Style>
+                                                                      <FontSize>12pt</FontSize>
+                                                                      <FontWeight>Bold</FontWeight>
+                                                                      <Color>White</Color>
+                                                                    </Style>
+                                                                  </TextRun>
+                                                                </TextRuns>
+                                                                <Style>
+                                                                  <TextAlign>Right</TextAlign>
+                                                                </Style>
+                                                              </Paragraph>
+                                                            </Paragraphs>
+                                                            <rd:DefaultName>Textbox23</rd:DefaultName>
+                                                            <Style>
+                                                              <Border>
+                                                                <Color>LightGrey</Color>
+                                                                <Style>Solid</Style>
+                                                              </Border>
+                                                              <BackgroundColor>#004b8e</BackgroundColor>
+                                                              <PaddingLeft>2pt</PaddingLeft>
+                                                              <PaddingRight>3pt</PaddingRight>
+                                                              <PaddingTop>2pt</PaddingTop>
+                                                              <PaddingBottom>2pt</PaddingBottom>
+                                                            </Style>
+                                                          </Textbox>
+                                                        </CellContents>
+                                                      </TablixHeader>
+                                                      <TablixMembers>
+                                                        <TablixMember>
+                                                          <TablixHeader>
+                                                            <Size>4.44586cm</Size>
+                                                            <CellContents>
+                                                              <Textbox Name="Textbox36">
+                                                                <CanGrow>true</CanGrow>
+                                                                <KeepTogether>true</KeepTogether>
+                                                                <Paragraphs>
+                                                                  <Paragraph>
+                                                                    <TextRuns>
+                                                                      <TextRun>
+                                                                        <Value />
+                                                                        <Style>
+                                                                          <FontSize>12pt</FontSize>
+                                                                          <FontWeight>Bold</FontWeight>
+                                                                          <Color>White</Color>
+                                                                        </Style>
+                                                                      </TextRun>
+                                                                    </TextRuns>
+                                                                    <Style>
+                                                                      <TextAlign>Right</TextAlign>
+                                                                    </Style>
+                                                                  </Paragraph>
+                                                                </Paragraphs>
+                                                                <rd:DefaultName>Textbox36</rd:DefaultName>
+                                                                <Style>
+                                                                  <Border>
+                                                                    <Color>LightGrey</Color>
+                                                                    <Style>Solid</Style>
+                                                                  </Border>
+                                                                  <BackgroundColor>#004b8e</BackgroundColor>
+                                                                  <PaddingLeft>2pt</PaddingLeft>
+                                                                  <PaddingRight>3pt</PaddingRight>
+                                                                  <PaddingTop>2pt</PaddingTop>
+                                                                  <PaddingBottom>2pt</PaddingBottom>
+                                                                </Style>
+                                                              </Textbox>
+                                                            </CellContents>
+                                                          </TablixHeader>
+                                                          <TablixMembers>
+                                                            <TablixMember />
+                                                          </TablixMembers>
+                                                        </TablixMember>
+                                                      </TablixMembers>
+                                                    </TablixMember>
+                                                  </TablixMembers>
                                                 </TablixMember>
                                               </TablixMembers>
                                             </TablixMember>
@@ -2390,8 +2641,974 @@ IIF
             <RepeatColumnHeaders>true</RepeatColumnHeaders>
             <RepeatRowHeaders>true</RepeatRowHeaders>
             <DataSetName>DataSet1</DataSetName>
-            <Height>2.5852cm</Height>
-            <Width>27.8905cm</Width>
+            <Height>2.84977cm</Height>
+            <Width>27.89051cm</Width>
+            <Style>
+              <Border>
+                <Style>None</Style>
+              </Border>
+            </Style>
+          </Tablix>
+          <Tablix Name="Tablix2">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn>
+                  <Width>4.75104cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>3.45354cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>3.45354cm</Width>
+                </TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>1.16065cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox114">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Summary Statistics</Value>
+                                  <Style>
+                                    <FontSize>16pt</FontSize>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox114</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                        <ColSpan>3</ColSpan>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell />
+                    <TablixCell />
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.6cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox125">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Total Number of Clients</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox125</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#2b70b1</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="TotNumClients">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>= 
+sum
+(
+	iif
+	(
+		(Fields!Pre_ID.Value &lt;&gt; Fields!Client_ID.Value)
+		,1
+		,0
+	)
+)</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#2b70b1</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox128">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value />
+                                  <Style>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox128</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#2b70b1</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.6cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox92">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Service Count devision</Value>
+                                  <Style>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox92</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#2b70b1</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox94">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Total Count</Value>
+                                  <Style>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox94</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#2b70b1</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox96">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>% of total</Value>
+                                  <Style>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox96</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#2b70b1</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.6cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox102">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>1 service</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox102</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="TotCountServ1">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=
+sum
+(
+	iif
+	( 
+		(Fields!Pre_ID.Value &lt;&gt; Fields!Client_ID.Value) and (Fields!ServiceCount.Value = 1)
+		,1
+		,0
+	)
+)</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="PerOfTot1">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>= Format((ReportItems!TotCountServ1.Value / ReportItems!TotNumClients.Value)*100,"#.#0") + "%"</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.6cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox105">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>2 services</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox105</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#e4eefc</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="TotCountServ2">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=
+sum
+(
+	iif
+	( 
+		(Fields!Pre_ID.Value &lt;&gt; Fields!Client_ID.Value) and (Fields!ServiceCount.Value = 2)
+		,1
+		,0
+	)
+)</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#e4eefc</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox107">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>= Format((ReportItems!TotCountServ2.Value / ReportItems!TotNumClients.Value)*100,"#.#0") + "%"</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox107</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#e4eefc</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.6cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox108">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>3 services</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox108</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="TotCountServ3">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=
+sum
+(
+	iif
+	( 
+		(Fields!Pre_ID.Value &lt;&gt; Fields!Client_ID.Value) and (Fields!ServiceCount.Value = 3)
+		,1
+		,0
+	)
+)</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox110">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>= Format((ReportItems!TotCountServ3.Value / ReportItems!TotNumClients.Value)*100,"#.#0") + "%"</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox110</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.6cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox111">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>4 services</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox111</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#e4eefc</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="TotCountServ4">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=
+sum
+(
+	iif
+	( 
+		(Fields!Pre_ID.Value &lt;&gt; Fields!Client_ID.Value) and (Fields!ServiceCount.Value = 4)
+		,1
+		,0
+	)
+)</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#e4eefc</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox113">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>= Format((ReportItems!TotCountServ4.Value / ReportItems!TotNumClients.Value)*100,"#.#0") + "%"</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox113</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#e4eefc</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.6cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox117">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>5 services</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox117</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="TotCountServ5">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=
+sum
+(
+	iif
+	( 
+		(Fields!Pre_ID.Value &lt;&gt; Fields!Client_ID.Value) and (Fields!ServiceCount.Value = 5)
+		,1
+		,0
+	)
+)</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox119">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>= Format((ReportItems!TotCountServ5.Value / ReportItems!TotNumClients.Value)*100,"#.#0") + "%"</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox119</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.6cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox120">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>6+ services</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox120</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#e4eefc</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="TotCountServ6">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=
+sum
+(
+	iif
+	( 
+		(Fields!Pre_ID.Value &lt;&gt; Fields!Client_ID.Value) and (Fields!ServiceCount.Value &gt;= 6)
+		,1
+		,0
+	)
+)</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#e4eefc</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox122">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>= Format((ReportItems!TotCountServ6.Value / ReportItems!TotNumClients.Value)*100,"#.#0") + "%"</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox122</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#e4eefc</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixRowHierarchy>
+            <DataSetName>DataSet1</DataSetName>
+            <Top>3.05605cm</Top>
+            <Height>5.96065cm</Height>
+            <Width>11.65812cm</Width>
+            <ZIndex>1</ZIndex>
             <Style>
               <Border>
                 <Style>None</Style>
@@ -2399,8 +3616,12 @@ IIF
             </Style>
           </Tablix>
         </ReportItems>
-        <Height>1.06988in</Height>
-        <Style />
+        <Height>3.54988in</Height>
+        <Style>
+          <Border>
+            <Style>None</Style>
+          </Border>
+        </Style>
       </Body>
       <Width>10.98052in</Width>
       <Page>
@@ -2475,7 +3696,7 @@ IIF
           </Style>
         </PageHeader>
         <PageFooter>
-          <Height>0.94206cm</Height>
+          <Height>1.16871cm</Height>
           <PrintOnFirstPage>true</PrintOnFirstPage>
           <PrintOnLastPage>true</PrintOnLastPage>
           <ReportItems>
@@ -2486,7 +3707,7 @@ IIF
                 <Paragraph>
                   <TextRuns>
                     <TextRun>
-                      <Value>="Report created on: " + CStr(Today())</Value>
+                      <Value>="Report created on: " + Format(Today(),"dd/MM/yyyy")</Value>
                       <Style />
                     </TextRun>
                   </TextRuns>
@@ -2494,8 +3715,8 @@ IIF
                 </Paragraph>
               </Paragraphs>
               <rd:DefaultName>Textbox1</rd:DefaultName>
-              <Top>0.34206cm</Top>
-              <Left>0.0635cm</Left>
+              <Top>0.23623cm</Top>
+              <Left>0.12698cm</Left>
               <Height>0.6cm</Height>
               <Width>11.17834cm</Width>
               <Style>
@@ -2590,6 +3811,16 @@ IIF
       </ValidValues>
       <MultiValue>true</MultiValue>
     </ReportParameter>
+    <ReportParameter Name="Organisation_Name_">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>Disabilities Children</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Organisation Name </Prompt>
+      <Hidden>true</Hidden>
+    </ReportParameter>
   </ReportParameters>
   <ReportParametersLayout>
     <GridLayoutDefinition>
@@ -2600,6 +3831,11 @@ IIF
           <ColumnIndex>0</ColumnIndex>
           <RowIndex>0</RowIndex>
           <ParameterName>ServiceType</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>Organisation_Name_</ParameterName>
         </CellDefinition>
       </CellDefinitions>
     </GridLayoutDefinition>
@@ -3142,6 +4378,12 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA///gyWADqVGJ0AAAAABJRU5ErkJggg==</ImageData>
     </EmbeddedImage>
   </EmbeddedImages>
+  <Variables>
+    <Variable Name="Var_ServCountString">
+      <Value />
+      <Writable>true</Writable>
+    </Variable>
+  </Variables>
   <rd:ReportUnitType>Cm</rd:ReportUnitType>
   <rd:ReportID>a0260999-9114-48ed-8a9d-d43405e81578</rd:ReportID>
 </Report>

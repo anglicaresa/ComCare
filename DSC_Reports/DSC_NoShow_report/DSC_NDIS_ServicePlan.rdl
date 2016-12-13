@@ -33,10 +33,9 @@
 	,J011.[Preferred_Name] as 'Provider_PreferredName'
 	,J011.[Last_Name] as 'Provider_lastName'
 	,CONVERT(date, J013.[GOC_Defined_Date]) as 'GOC_DefinedDate'
-
 	,CONVERT(date, J013.[Outcome_Date]) as 'GOC_OutcomeDate'
-
 	,J004.[RN] as 'RowNumber'
+	,J001.[Gender_Code]
 
 FROM --CLIENT
 (
@@ -47,6 +46,7 @@ FROM --CLIENT
 		,P.[Preferred_Name]
 		,CONVERT(date,P.[Deceased_Date]) as 'Deceased_Date'
 		,T.[Description] as 'Title'
+		,p.Gender_Code as 'Gender_Code'
 	from [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Client] CL WITH(NOLOCK)
 		Inner Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Person] P WITH(NOLOCK) on Cl.[Client_ID] = P.[Person_ID]
 		Inner Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Title] T on P.[Title_Code] = T.[Title_Code]
@@ -149,8 +149,6 @@ WHERE
 	AND J003.[Description]=N'NDIS Number'
 	AND J004.RN &lt; 3
 
-
-
 GROUP BY
 	J001.[Client_ID]
 	,J001.[Title]
@@ -168,7 +166,7 @@ GROUP BY
 	,CONVERT(date, J013.[GOC_Defined_Date]) 
 	,CONVERT(date, J013.[Outcome_Date])
 	,J004.[RN]
-
+	,J001.[Gender_Code]
 
 ORDER BY
 	J001.[Client_ID]
@@ -261,6 +259,10 @@ IIF
 	,""
 	," " &amp; Fields!Client_LastName.Value
 )</Value>
+        </Field>
+        <Field Name="Gender_Code">
+          <DataField>Gender_Code</DataField>
+          <rd:TypeName>System.Byte</rd:TypeName>
         </Field>
         <Field Name="Name_of_Contact">
           <Value>=
@@ -559,7 +561,7 @@ IIF
             <Top>8.75453cm</Top>
             <Left>1.02574cm</Left>
             <Height>3.48396cm</Height>
-            <Width>16.39062cm</Width>
+            <Width>19.38041cm</Width>
             <ZIndex>2</ZIndex>
             <Style>
               <Border>
@@ -1212,7 +1214,6 @@ IIF
               <BreakLocation>Start</BreakLocation>
             </PageBreak>
             <Top>12.87526cm</Top>
-            <Left>0cm</Left>
             <Height>7.39294cm</Height>
             <Width>27.6365cm</Width>
             <ZIndex>3</ZIndex>
@@ -1481,7 +1482,6 @@ IIF
               <BreakLocation>Start</BreakLocation>
             </PageBreak>
             <Top>20.32815cm</Top>
-            <Left>0cm</Left>
             <Height>1.80854cm</Height>
             <Width>27.63651cm</Width>
             <ZIndex>4</ZIndex>
@@ -1536,7 +1536,6 @@ IIF
             </Paragraphs>
             <rd:DefaultName>Textbox11</rd:DefaultName>
             <Top>22.51421cm</Top>
-            <Left>0cm</Left>
             <Height>1.09609cm</Height>
             <Width>27.6365cm</Width>
             <ZIndex>5</ZIndex>
@@ -1556,7 +1555,6 @@ IIF
             </PageBreak>
             <KeepTogether>true</KeepTogether>
             <Top>23.75141cm</Top>
-            <Left>0cm</Left>
             <Height>0.02646cm</Height>
             <Width>27.6365cm</Width>
             <ZIndex>6</ZIndex>
@@ -1773,7 +1771,7 @@ IIF
                     </Style>
                   </TextRun>
                   <TextRun>
-                    <Value>, liaising with his significant others, other therapists and educators to encourage consistency across the team as well as up to 10 minutes allocated to travel time.</Value>
+                    <Value>, liaising with their significant others, other therapists and educators to encourage consistency across the team as well as up to 10 minutes allocated to travel time.</Value>
                     <Style>
                       <FontStyle>Normal</FontStyle>
                       <FontFamily>Calibri</FontFamily>
@@ -2001,8 +1999,8 @@ IIF
                       <FontFamily>Calibri</FontFamily>
                       <FontSize>11pt</FontSize>
                       <FontWeight>Normal</FontWeight>
-                      <TextDecoration>Underline</TextDecoration>
-                      <Color>Blue</Color>
+                      <TextDecoration>None</TextDecoration>
+                      <Color>#000000</Color>
                     </Style>
                   </TextRun>
                 </TextRuns>
@@ -2022,8 +2020,8 @@ IIF
                       <FontFamily>Calibri</FontFamily>
                       <FontSize>11pt</FontSize>
                       <FontWeight>Normal</FontWeight>
-                      <TextDecoration>Underline</TextDecoration>
-                      <Color>Blue</Color>
+                      <TextDecoration>None</TextDecoration>
+                      <Color>#000000</Color>
                     </Style>
                   </TextRun>
                 </TextRuns>
@@ -2079,7 +2077,6 @@ IIF
             </Paragraphs>
             <rd:DefaultName>Textbox12</rd:DefaultName>
             <Top>23.88371cm</Top>
-            <Left>0cm</Left>
             <Height>11.79821cm</Height>
             <Width>27.6365cm</Width>
             <ZIndex>7</ZIndex>
@@ -2115,7 +2112,7 @@ IIF
             <Top>5.31533cm</Top>
             <Left>1.02574cm</Left>
             <Height>0.99688cm</Height>
-            <Width>3.8104cm</Width>
+            <Width>7.44049cm</Width>
             <ZIndex>8</ZIndex>
             <Style>
               <Border>
@@ -2156,8 +2153,8 @@ IIF
             <rd:DefaultName>Textbox4</rd:DefaultName>
             <Top>5.91709cm</Top>
             <Left>1.02574cm</Left>
-            <Height>2.1875cm</Height>
-            <Width>14.77667cm</Width>
+            <Height>2.45208cm</Height>
+            <Width>21.12667cm</Width>
             <ZIndex>9</ZIndex>
             <Style>
               <Border>
@@ -2283,7 +2280,6 @@ IIF
             </Paragraphs>
             <rd:DefaultName>Textbox8</rd:DefaultName>
             <Top>36.73143cm</Top>
-            <Left>0cm</Left>
             <Height>0.81167cm</Height>
             <Width>6.81813cm</Width>
             <ZIndex>17</ZIndex>
@@ -2320,7 +2316,6 @@ IIF
             </Paragraphs>
             <rd:DefaultName>Textbox9</rd:DefaultName>
             <Top>38.76924cm</Top>
-            <Left>0cm</Left>
             <Height>0.6cm</Height>
             <Width>4.52746cm</Width>
             <ZIndex>18</ZIndex>
@@ -2606,7 +2601,6 @@ IIF
               <Value>Logo_AnglicareSA</Value>
               <Sizing>FitProportional</Sizing>
               <Top>1.63229cm</Top>
-              <Left>0cm</Left>
               <Height>1.05021cm</Height>
               <Width>6.81813cm</Width>
               <Style>
@@ -2617,7 +2611,6 @@ IIF
             </Image>
             <Line Name="Line3">
               <Top>2.6825cm</Top>
-              <Left>0cm</Left>
               <Height>0cm</Height>
               <Width>27.7cm</Width>
               <ZIndex>1</ZIndex>
@@ -2632,7 +2625,6 @@ IIF
             <Rectangle Name="Rectangle2">
               <KeepTogether>true</KeepTogether>
               <Top>0.38465cm</Top>
-              <Left>0cm</Left>
               <Height>1.07125cm</Height>
               <Width>5cm</Width>
               <ZIndex>2</ZIndex>

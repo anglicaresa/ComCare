@@ -40,9 +40,8 @@ J002.[Client_ID] AS 'Client_ID'
 ,J008.[Post_Code] AS 'Contact_PostCode'
 ,J006.[Description] AS 'Client_CardType'
 ,J005.[Card_No] AS 'Client_CardNo'
---,J010.[Organisation_Name] AS 'DeliveryCentre'
 
-FROM [appsql-3\TRAIN].[ComCareTRAIN].[dbo].[WI_Activity] J001
+FROM [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[WI_Activity] J001
 INNER JOIN 
 (
 	Select
@@ -50,17 +49,17 @@ INNER JOIN
 		,P.Last_Name
 		,P.Preferred_Name
 		,T.Description as 'Title'
-	from [appsql-3\TRAIN].[ComCareTRAIN].[dbo].Client CL WITH(NOLOCK)
-		Inner Join [appsql-3\TRAIN].[ComCareTRAIN].[dbo].Person P WITH(NOLOCK) on Cl.Client_ID = P.Person_ID
-		Inner Join [appsql-3\TRAIN].[ComCareTRAIN].[dbo].Title T on P.Title_Code = T.Title_Code
+	from [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].Client CL WITH(NOLOCK)
+		Inner Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].Person P WITH(NOLOCK) on Cl.Client_ID = P.Person_ID
+		Inner Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].Title T on P.Title_Code = T.Title_Code
 )
 
 J002 ON J002.[Client_ID] = J001.[Client_ID]
 
-LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].[dbo].[Personal_Contact] J003 ON J003.[Person_ID] = J002.[Client_ID]
-LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].[dbo].[Personal_Contact_Type] J004 ON J004.[Personal_Contact_Type_Code] = J003.[Personal_Contact_Type_Code]
-LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].[dbo].[Card_Holder] J005 ON J005.[Person_ID] = J002.[Client_ID]
-LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].[dbo].[Card_Type] J006 ON J006.[Card_Type_ID] = J005.[Card_Type_ID]
+LEFT OUTER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Personal_Contact] J003 ON J003.[Person_ID] = J002.[Client_ID]
+LEFT OUTER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Personal_Contact_Type] J004 ON J004.[Personal_Contact_Type_Code] = J003.[Personal_Contact_Type_Code]
+LEFT OUTER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Card_Holder] J005 ON J005.[Person_ID] = J002.[Client_ID]
+LEFT OUTER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Card_Type] J006 ON J006.[Card_Type_ID] = J005.[Card_Type_ID]
 
 INNER JOIN 
 (
@@ -69,31 +68,12 @@ INNER JOIN
 		,P.Preferred_Name
 		,P.Last_Name
 		,T.Description as 'Title'
-	from [appsql-3\TRAIN].[ComCareTRAIN].[dbo].Person P  WITH(NOLOCK)
-		Inner Join [appsql-3\TRAIN].[ComCareTRAIN].[dbo].Title T on P.Title_Code = T.Title_Code
+	from [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].Person P  WITH(NOLOCK)
+		Inner Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].Title T on P.Title_Code = T.Title_Code
 ) 
 J007 ON J007.[Person_ID] = J003.[Contact_ID]
 
-LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].[dbo].[Person_Current_Address_Phone] J008 ON J008.[Person_id] = J007.[Person_ID]
-/*
-LEFT OUTER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Service_Delivery] J009 ON J009.[Client_ID] = J002.[Client_ID]
-
-INNER JOIN 
-(
-	Select
-		SD.Client_ID
-		,O.Organisation_Name
-		,SD.Service_Type_Code 
-	from [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].Service_Delivery SD
-		inner join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].Period_of_Residency PR on PR.Person_ID = SD.Client_ID
-		inner join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].Address A on A.Address_ID = PR.Address_ID
-		inner Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].Service_Provision SP on A.Suburb_ID = SP.Suburb_ID and SP.Service_Type_Code = SD.Service_Type_Code
-		inner Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].Organisation O on Sp.Centre_ID = O.Organisation_ID
-	Where PR.To_Date is null and PR.Display_Indicator  = 1
-) 
-J010 ON J010.[Client_ID] = J009.[Client_ID] AND J010.[Service_Type_Code] = J009.[Service_Type_Code]
-*/
-
+LEFT OUTER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Person_Current_Address_Phone] J008 ON J008.[Person_id] = J007.[Person_ID]
 
 WHERE
 	1=1
@@ -117,10 +97,12 @@ GROUP BY
 	,J008.[Post_Code]
 	,J006.[Description]
 	,J005.[Card_No]
---	,J010.[Organisation_Name]
+
 ORDER BY
 	J002.[Client_ID]
+	
 	,Case
+		WHEN J004.[Description] is null then J004.[Description]
 		WHEN J004.[Description] = 'Mother' then '1'
 		WHEN J004.[Description] = 'Father' then '2'
 		WHEN J004.[Description] = 'Parent' then '3'
@@ -130,6 +112,7 @@ ORDER BY
 		WHEN J004.[Description] = 'Guardian' then '7'
 		WHEN J004.[Description] = 'Foster Parent' then '8'
 		Else J004.[Description] END ASC
+		
 	,Case
 		WHEN J006.[Description] = 'NDIS Number' Then '1'
 		Else J006.[Description] END ASC</CommandText>
@@ -296,10 +279,10 @@ ORDER BY
 	,J002.[Description] as Billing_item
 	,J005.Description as Service_Type
 
- FROM [appsql-3\TRAIN].[ComCareTRAIN].[dbo].[Actual_Service_Charge_Item] J001
-Inner Join [appsql-3\TRAIN].[ComCareTRAIN].[dbo].[FB_Contract_Billing_Item] J002 on J001.Contract_Billing_Item_ID = J002.Contract_Billing_Item_ID
-Left Outer Join [appsql-3\TRAIN].[ComCareTRAIN].[dbo].[FB_Contract_Billing_Rate] J003 on J001.Contract_Billing_Rate_ID = J003.Contract_Billing_Rate_ID
-Left Outer Join [appsql-3\TRAIN].[ComCareTRAIN].[dbo].[Unit_of_Measure] J004 ON J003.[UOM_Code] = J004.[UOM_Code]
+ FROM [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Actual_Service_Charge_Item] J001
+Inner Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[FB_Contract_Billing_Item] J002 on J001.Contract_Billing_Item_ID = J002.Contract_Billing_Item_ID
+Left Outer Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[FB_Contract_Billing_Rate] J003 on J001.Contract_Billing_Rate_ID = J003.Contract_Billing_Rate_ID
+Left Outer Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Unit_of_Measure] J004 ON J003.[UOM_Code] = J004.[UOM_Code]
 Left outer join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Service_Type] J005 ON (replace((substring(J001.Line_Description,1,4)),' ','')) = J005.Service_Type_Code
 Where 
 	1=1
@@ -424,22 +407,22 @@ FROM
 (
 Select
 	CL.Client_ID
-from [appsql-3\TRAIN].[ComCareTRAIN].[dbo].Client CL WITH(NOLOCK)
-	Inner Join [appsql-3\TRAIN].[ComCareTRAIN].[dbo].Person P WITH(NOLOCK) on Cl.Client_ID = P.Person_ID
+from [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].Client CL WITH(NOLOCK)
+	Inner Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].Person P WITH(NOLOCK) on Cl.Client_ID = P.Person_ID
 ) J001
 
-LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].[dbo].[Service_Delivery] J002 ON J002.[Client_ID] = J001.[Client_ID]
+LEFT OUTER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Service_Delivery] J002 ON J002.[Client_ID] = J001.[Client_ID]
 INNER JOIN 
 (
 	Select 
 		SD.Client_ID
 		,O.Organisation_Name
 		,SD.Service_Type_Code 
-	from [appsql-3\TRAIN].[ComCareTRAIN].[dbo].Service_Delivery SD
-		join [appsql-3\TRAIN].[ComCareTRAIN].[dbo].Period_of_Residency PR on PR.Person_ID = SD.Client_ID
-		join [appsql-3\TRAIN].[ComCareTRAIN].[dbo].Address A on A.Address_ID = PR.Address_ID
-		Join [appsql-3\TRAIN].[ComCareTRAIN].[dbo].Service_Provision SP on A.Suburb_ID = SP.Suburb_ID and SP.Service_Type_Code = SD.Service_Type_Code
-		Join [appsql-3\TRAIN].[ComCareTRAIN].[dbo].Organisation O on Sp.Centre_ID = O.Organisation_ID
+	from [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].Service_Delivery SD
+		join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].Period_of_Residency PR on PR.Person_ID = SD.Client_ID
+		join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].Address A on A.Address_ID = PR.Address_ID
+		Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].Service_Provision SP on A.Suburb_ID = SP.Suburb_ID and SP.Service_Type_Code = SD.Service_Type_Code
+		Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].Organisation O on Sp.Centre_ID = O.Organisation_ID
 	Where PR.To_Date is null and PR.Display_Indicator  = 1
 ) J003 ON J003.[Client_ID] = J002.[Client_ID] AND J003.[Service_Type_Code] = J002.[Service_Type_Code]
 
