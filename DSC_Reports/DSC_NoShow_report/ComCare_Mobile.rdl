@@ -4,7 +4,7 @@
   <AutoRefresh>0</AutoRefresh>
   <DataSources>
     <DataSource Name="Ref_ASADWH">
-      <DataSourceReference>ASADWH</DataSourceReference>
+      <DataSourceReference>ComCareProd</DataSourceReference>
       <rd:SecurityType>None</rd:SecurityType>
       <rd:DataSourceID>0483480d-849b-4ad8-9d28-80f3211aa8e2</rd:DataSourceID>
     </DataSource>
@@ -22,12 +22,12 @@ J001.[Imei_Number]
 ,J006.[Comments]
 
 FROM
-[appsql-3\TRAIN].[ComCareTRAIN].[dbo].[WI_Registration] J001
-LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].[dbo].[WI_SIM_Tel] J002 ON J002.[Sim_Tel_ID] = J001.[Sim_Tel_ID]
-LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].[dbo].[WI_SIM] J003 ON J003.[Sim_Number] = J002.[Sim_Number]
-LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].[dbo].[WI_Device] J004 ON J004.[IMEI_Number] = J001.[Imei_Number]
-LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].[dbo].[Organisation] J005 ON J005.[Organisation_ID] = J001.[Organisation_ID]
-LEFT OUTER JOIN [appsql-3\TRAIN].[ComCareTRAIN].[dbo].[WI_Device] J006 ON J006.[IMEI_Number] = J001.[Imei_Number]
+[dbo].[WI_Registration] J001
+LEFT OUTER JOIN [dbo].[WI_SIM_Tel] J002 ON J002.[Sim_Tel_ID] = J001.[Sim_Tel_ID]
+LEFT OUTER JOIN [dbo].[WI_SIM] J003 ON J003.[Sim_Number] = J002.[Sim_Number]
+LEFT OUTER JOIN [dbo].[WI_Device] J004 ON J004.[IMEI_Number] = J001.[Imei_Number]
+LEFT OUTER JOIN [dbo].[Organisation] J005 ON J005.[Organisation_ID] = J001.[Organisation_ID]
+LEFT OUTER JOIN [dbo].[WI_Device] J006 ON J006.[IMEI_Number] = J001.[Imei_Number]
 Where
 1=1
 

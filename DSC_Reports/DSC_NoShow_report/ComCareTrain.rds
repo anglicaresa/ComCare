@@ -1,0 +1,8 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RptDataSource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Name="ComCareTrain">
+  <ConnectionProperties>
+    <Extension>SQL</Extension>
+    <ConnectString>Data Source = appsql-3\Train; initial catalog = comcaretrain</ConnectString>
+  </ConnectionProperties>
+  <DataSourceID>f6af4ca3-13c6-4d5d-ac5b-8cbadae1ea93</DataSourceID>
+</RptDataSource>

@@ -4,7 +4,7 @@
   <AutoRefresh>0</AutoRefresh>
   <DataSources>
     <DataSource Name="Ref_ASADWH">
-      <DataSourceReference>ASADWH</DataSourceReference>
+      <DataSourceReference>ComCareProd</DataSourceReference>
       <rd:SecurityType>None</rd:SecurityType>
       <rd:DataSourceID>104fdbb3-19ec-44e4-817f-bd5cc227f971</rd:DataSourceID>
     </DataSource>
@@ -36,9 +36,9 @@ J004.[Organisation_Name]
 ,iif(J001.[Activity_Duration] is null, 0, J001.[Activity_Duration]) as 'Activity_Duration'
 
 FROM
-[APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[WI_Activity] J001
-INNER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Client] J002 on J002.[Client_ID] = J001.[Client_ID]
-LEFT OUTER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Service_Delivery] J003 ON J003.[Client_ID] = J002.[Client_ID]
+[dbo].[WI_Activity] J001
+INNER JOIN [dbo].[Client] J002 on J002.[Client_ID] = J001.[Client_ID]
+LEFT OUTER JOIN [dbo].[Service_Delivery] J003 ON J003.[Client_ID] = J002.[Client_ID]
 
 INNER JOIN 
 (
@@ -46,11 +46,11 @@ INNER JOIN
 		SD.[Client_ID]
 		,O.[Organisation_Name]
 		,SD.[Service_Type_Code]
-	from [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Service_Delivery] SD
-		join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Period_of_Residency] PR on PR.[Person_ID] = SD.[Client_ID]
-		join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Address] A on A.[Address_ID] = PR.[Address_ID]
-		Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Service_Provision] SP on A.[Suburb_ID] = SP.[Suburb_ID] and SP.[Service_Type_Code] = SD.[Service_Type_Code]
-		Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Organisation] O on Sp.[Centre_ID] = O.[Organisation_ID]
+	from [dbo].[Service_Delivery] SD
+		join [dbo].[Period_of_Residency] PR on PR.[Person_ID] = SD.[Client_ID]
+		join [dbo].[Address] A on A.[Address_ID] = PR.[Address_ID]
+		Join [dbo].[Service_Provision] SP on A.[Suburb_ID] = SP.[Suburb_ID] and SP.[Service_Type_Code] = SD.[Service_Type_Code]
+		Join [dbo].[Organisation] O on Sp.[Centre_ID] = O.[Organisation_ID]
 	Where PR.[To_Date] is null and PR.[Display_Indicator]  = 1
 ) J004 ON J004.[Client_ID] = J003.[Client_ID] AND J004.[Service_Type_Code] = J003.[Service_Type_Code]
 
@@ -61,9 +61,9 @@ INNER JOIN
 		,P.[Preferred_Name]
 		,P.[Last_Name]
 		,T.[Description] as 'Title'
-	from [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Provider] Prov WITH(NOLOCK)
-		Inner Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Person] P WITH(NOLOCK) on Prov.[Provider_ID] = P.[Person_ID]
-		Inner Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Title] T on P.[Title_Code] = T.[Title_Code]
+	from [dbo].[Provider] Prov WITH(NOLOCK)
+		Inner Join [dbo].[Person] P WITH(NOLOCK) on Prov.[Provider_ID] = P.[Person_ID]
+		Inner Join [dbo].[Title] T on P.[Title_Code] = T.[Title_Code]
 ) J005 ON J005.[Provider_ID] = J001.[Provider_ID]
 
 WHERE
@@ -162,7 +162,7 @@ Switch
     <DataSet Name="DS_OrgList">
       <Query>
         <DataSourceName>Ref_ASADWH</DataSourceName>
-        <CommandText>Select Organisation_Name From [appsql-3\comcareprod].[comcareprod].[dbo].Organisation
+        <CommandText>Select Organisation_Name From [dbo].Organisation
 where
 left([Organisation_Name], 9) = 'Home Care'</CommandText>
       </Query>

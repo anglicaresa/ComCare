@@ -4,7 +4,7 @@
   <AutoRefresh>0</AutoRefresh>
   <DataSources>
     <DataSource Name="Ref_ASAWH">
-      <DataSourceReference>ASADWH</DataSourceReference>
+      <DataSourceReference>ComCareProd</DataSourceReference>
       <rd:SecurityType>None</rd:SecurityType>
       <rd:DataSourceID>e5f98024-5f16-4d6d-a4da-98e5d725e6b7</rd:DataSourceID>
     </DataSource>
@@ -14,6 +14,9 @@
       <Query>
         <DataSourceName>Ref_ASAWH</DataSourceName>
         <QueryParameters>
+          <QueryParameter Name="@Organisation">
+            <Value>=Parameters!Organisation.Value</Value>
+          </QueryParameter>
           <QueryParameter Name="@StartDate">
             <Value>=Parameters!StartDate.Value</Value>
           </QueryParameter>
@@ -22,56 +25,224 @@
           </QueryParameter>
         </QueryParameters>
         <CommandText>select
-	RegistrationNumber = 4050000734
---	,Replace(J007.[Card_No],' ','') as NDISNumber
-	,J007.[Card_No] as NDISNumber
-	,IIF(J006.[From_Date] IS not NULL, convert(varchar(10),CAST(J006.[From_Date] AS DATE)),'') as SupportsDeliveredFrom
-	,IIF(J006.[To_Date] is not null, convert(varchar(10),CAST(J006.[To_Date] AS DATE)),'') as SupportsDeliveredTo
-	,RIGHT(J002.Description,15) as SupportNumber
-	,ClaimReference = '' --------------------------------------a tech1 query needs to be sorted out with Jerry.
-	,FORMAT(J001.Unit, '###.#0') as Quantity
+	RegistrationNumber = 4050000734 --number refers to AnglicareSA
+	,IIF(J007.[Card_No] is null,'', J007.[Card_No]) 'NDISNumber'
+	,Format(J001.Visit_Date, 'yyyy-MM-dd') 'SupportsDeliveredFrom'
+	,Format
+	(
+		iif 
+		(
+			RIGHT(J002.Description,15) = '01_045_0115_1_1'
+			,(dateadd(day,1,J001.Visit_Date))
+			,J001.Visit_Date
+		)
+		,'yyyy-MM-dd'
+	) 'SupportsDeliveredTo'
+	,RIGHT(J002.Description,15) 'SupportNumber'
+	,ClaimReference = ''
+	,Case
+		when J004.Description = 'Visit' then FORMAT(J001.Unit, '##0.#0') 
+		when J004.Description = 'Unit' then FORMAT(J001.Unit, '##0.#0') 
+		else ''
+		end 'Quantity'
 	,Case 
-		When J004.Description = 'Hour' then Convert(varchar(5),Convert(time(0), CONVERT(datetime,DATEADD(MINUTE, 60*J001.Unit, 0))))
+		When J004.Description = 'Hour' then Convert(varchar(5),Convert(time(0), CONVERT(datetime,DATEADD(MINUTE, 60.00*J001.Unit, 0))))
 		ELSE ''
-		end as Hours
-	,Format(J001.Rate, '########.#0') as UnitPrice
+		end 'Hours'
+	,Format(J001.Rate, '#######0.#0') 'UnitPrice'
 	,GSTCode = 'P2'
 	,AuthorisedBy = ''
 	,ParticipantApproved = ''
 	,InKindFundingProgram = ''
---	,J001.Client_ID
+	,J004.Description 'unit_type'
+	,J001.[Client_ID]
+	,J008.[Description] 'CardType'
+	,1 'adjInd'
 
- FROM [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Actual_Service_Charge_Item] J001
-
-Inner Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[FB_Contract_Billing_Item] J002 on J001.Contract_Billing_Item_ID = J002.Contract_Billing_Item_ID
-Left Outer Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[FB_Contract_Billing_Rate] J003 on J001.Contract_Billing_Rate_ID = J003.Contract_Billing_Rate_ID
-Left Outer Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Unit_of_Measure] J004 ON J003.[UOM_Code] = J004.[UOM_Code]
-LEFT OUTER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Service_Delivery] J005 ON J001.[Client_ID] = J005.[Client_ID]
+FROM [dbo].[Actual_Service_Charge_Item] J001
+Inner Join [dbo].[FB_Contract_Billing_Item] J002 on J001.Contract_Billing_Item_ID = J002.Contract_Billing_Item_ID
+LEFT OUTER JOIN [dbo].[FB_Contract_Billing_Rate] J003 on J001.Contract_Billing_Rate_ID = J003.Contract_Billing_Rate_ID
+LEFT OUTER JOIN [dbo].[Unit_of_Measure] J004 ON J003.[UOM_Code] = J004.[UOM_Code]
+LEFT OUTER JOIN [dbo].[Service_Delivery] J005 ON J001.[Client_ID] = J005.[Client_ID]
 
 INNER JOIN 
 (
 	Select 
-		SD.Client_ID
-		,O.Organisation_Name
-		,SD.Service_Type_Code
+		SD.[Client_ID]
+		,O.[Organisation_Name]
+		,SD.[Service_Type_Code]
 		,SD.[From_Date]
 		,SD.[To_Date]
-	from [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Service_Delivery] SD
-		join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Period_of_Residency] PR on PR.Person_ID = SD.Client_ID
-		join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Address] A on A.Address_ID = PR.Address_ID
-		Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Service_Provision] SP on A.Suburb_ID = SP.Suburb_ID and SP.Service_Type_Code = SD.Service_Type_Code
-		Join [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Organisation] O on Sp.Centre_ID = O.Organisation_ID
-	Where PR.To_Date is null and PR.Display_Indicator  = 1
+		,ROW_NUMBER ()
+			over 
+			(
+				Partition by SD.[Client_ID] Order by
+					CASE
+					WHEN O.[Organisation_Name] = @Organisation THEN '1'
+					ELSE O.[Organisation_Name] END ASC
+			) AS 'RN'
+	from [dbo].[Service_Delivery] SD
+		JOIN [dbo].[Period_of_Residency] PR on PR.Person_ID = SD.Client_ID
+		JOIN [dbo].[Address] A on A.Address_ID = PR.Address_ID
+		JOIN [dbo].[Service_Provision] SP on A.Suburb_ID = SP.Suburb_ID AND SP.Service_Type_Code = SD.Service_Type_Code
+		JOIN [dbo].[Organisation] O on Sp.Centre_ID = O.Organisation_ID
+	Where PR.To_Date IS NULL AND PR.Display_Indicator  = 1
 ) J006 ON J006.[Client_ID] = J001.[Client_ID] AND J006.[Service_Type_Code] = J005.[Service_Type_Code]
 
-LEFT OUTER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Card_Holder] J007 ON J007.[Person_ID] = J001.[Client_ID]
-LEFT OUTER JOIN [APPSQL-3\COMCAREPROD].[comcareprod].[dbo].[Card_Type] J008 ON J008.[Card_Type_ID] = J007.[Card_Type_ID]
+LEFT OUTER JOIN 
+(
+	select
+		CCB.[Client_ID] as 'Client_ID'
+		,Org.[Organisation_Name] as 'Organisation_Name'
+		,CBG.[Description] as 'ContractBillingGroup'
+		,CCB.Client_CB_ID as 'Client_CB_ID'
+		,ROW_NUMBER ()
+			over 
+			(
+				Partition by CCB.[Client_ID] Order by
+					CASE
+					WHEN Org.[Organisation_Name] = 'NDIA National Disability Insurance Agency' THEN '1'
+					ELSE Org.[Organisation_Name] END ASC
+			) AS 'RN'
+	from [dbo].[FB_Client_Contract_Billing] CCB
+		LEFT OUTER JOIN [dbo].[FB_Contract_Billing_Group] CBG on CBG.[Contract_Billing_Group_ID] = CCB.[Contract_Billing_Group_ID]
+		LEFT OUTER JOIN [dbo].[FB_Client_Contract_Billed_To] CCBT on CCBT.[Client_CB_ID] = CCB.[Client_CB_ID]
+		LEFT OUTER JOIN  [dbo].[FB_Client_CB_Split] CCBS on CCBS.[Client_Contract_Billed_To_ID] = CCBT.[Client_Contract_Billed_To_ID]
+		LEFT OUTER JOIN [dbo].[Organisation] Org on CCBS.[Organisation_ID] = Org.[Organisation_ID]
+	where
+		Org.[Organisation_Name] = 'NDIA National Disability Insurance Agency'
+)J009 on J009.[Client_ID] = J001.[Client_ID]
+
+LEFT OUTER JOIN [dbo].[Card_Holder] J007 ON J007.[Person_ID] = J001.[Client_ID]
+LEFT OUTER JOIN [dbo].[Card_Type] J008 ON J008.[Card_Type_ID] = J007.[Card_Type_ID]
+
 Where 
 	1=1
-	and J006.[Organisation_Name] = 'Disabilities Children'
+	and J006.[Organisation_Name] = @Organisation
+	and J006.RN &lt; 2
+	and J009.RN &lt; 2
 	and J001.Visit_Date between @StartDate and @EndDate
 	and J001.Line_Description Not like 'HCP Daily Charges%'
-	and J008.[Description] = 'NDIS Number'</CommandText>
+	and J009.ContractBillingGroup &lt;&gt; 'DCSI'
+	and 
+	(
+		J008.[Description] = 'NDIS Number'
+		OR J008.[Description] is NULL
+	)
+	and J009.Organisation_Name = 'NDIA National Disability Insurance Agency'
+
+
+UNION all
+
+
+select
+	RegistrationNumber = 4050000734 --number refers to AnglicareSA
+	,IIF(J007.[Card_No] is null,'', J007.[Card_No]) 'NDISNumber'
+	,Format(J010.Effective_From_Date, 'yyyy-MM-dd') 'SupportsDeliveredFrom'
+	,Format(J010.Effective_To_Date, 'yyyy-MM-dd') 'SupportsDeliveredTo'
+	,J010.Comments 'SupportNumber'
+	,ClaimReference = ''
+	,'1.00' 'Quantity'
+	,'' 'Hours'
+	,Format(J010.Adjustment_Amount, '#######0.#0') 'UnitPrice'
+	,GSTCode = 'P2'
+	,AuthorisedBy = ''
+	,ParticipantApproved = ''
+	,InKindFundingProgram = ''
+	,unit_type = 'Unit'
+	,J001.[Client_ID]
+	,J008.[Description] 'CardType'
+	,2 'adjInd'
+
+from
+(
+	select
+		CCB.[Client_ID] as 'Client_ID'
+		,CCB.Client_CB_ID as 'Client_CB_ID'
+	from [dbo].[FB_Client_Contract_Billing] CCB
+		LEFT OUTER JOIN [dbo].[FB_Contract_Billing_Group] CBG on CBG.[Contract_Billing_Group_ID] = CCB.[Contract_Billing_Group_ID]
+		LEFT OUTER JOIN [dbo].[FB_Client_Contract_Billed_To] CCBT on CCBT.[Client_CB_ID] = CCB.[Client_CB_ID]
+		LEFT OUTER JOIN  [dbo].[FB_Client_CB_Split] CCBS on CCBS.[Client_Contract_Billed_To_ID] = CCBT.[Client_Contract_Billed_To_ID]
+		LEFT OUTER JOIN [dbo].[Organisation] Org on CCBS.[Organisation_ID] = Org.[Organisation_ID]
+	where
+		Org.[Organisation_Name] = 'NDIA National Disability Insurance Agency'
+	group by
+		CCB.[Client_ID]
+		,CCB.Client_CB_ID
+)J001
+
+LEFT OUTER JOIN [dbo].[Service_Delivery] J005 ON J001.[Client_ID] = J005.[Client_ID]
+
+INNER JOIN 
+(
+	Select 
+		SD.[Client_ID]
+		,O.[Organisation_Name]
+		,SD.[Service_Type_Code]
+		,SD.[From_Date]
+		,SD.[To_Date]
+		,ROW_NUMBER ()
+			over 
+			(
+				Partition by SD.[Client_ID] Order by
+					CASE
+					WHEN O.[Organisation_Name] = @Organisation THEN '1'
+					ELSE O.[Organisation_Name] END ASC
+			) AS 'RN'
+	from [dbo].[Service_Delivery] SD
+		JOIN [dbo].[Period_of_Residency] PR on PR.Person_ID = SD.Client_ID
+		JOIN [dbo].[Address] A on A.Address_ID = PR.Address_ID
+		JOIN [dbo].[Service_Provision] SP on A.Suburb_ID = SP.Suburb_ID AND SP.Service_Type_Code = SD.Service_Type_Code
+		JOIN [dbo].[Organisation] O on Sp.Centre_ID = O.Organisation_ID
+	Where PR.To_Date IS NULL AND PR.Display_Indicator  = 1
+) J006 ON J006.[Client_ID] = J001.[Client_ID] AND J006.[Service_Type_Code] = J005.[Service_Type_Code]
+
+LEFT OUTER JOIN 
+(
+	select
+		CCB.[Client_ID] as 'Client_ID'
+		,Org.[Organisation_Name] as 'Organisation_Name'
+		,CBG.[Description] as 'ContractBillingGroup'
+		,CCB.Client_CB_ID as 'Client_CB_ID'
+		,ROW_NUMBER ()
+			over 
+			(
+				Partition by CCB.[Client_ID] Order by
+					CASE
+					WHEN Org.[Organisation_Name] = 'NDIA National Disability Insurance Agency' THEN '1'
+					ELSE Org.[Organisation_Name] END ASC
+			) AS 'RN'
+	from [dbo].[FB_Client_Contract_Billing] CCB
+		LEFT OUTER JOIN [dbo].[FB_Contract_Billing_Group] CBG on CBG.[Contract_Billing_Group_ID] = CCB.[Contract_Billing_Group_ID]
+		LEFT OUTER JOIN [dbo].[FB_Client_Contract_Billed_To] CCBT on CCBT.[Client_CB_ID] = CCB.[Client_CB_ID]
+		LEFT OUTER JOIN  [dbo].[FB_Client_CB_Split] CCBS on CCBS.[Client_Contract_Billed_To_ID] = CCBT.[Client_Contract_Billed_To_ID]
+		LEFT OUTER JOIN [dbo].[Organisation] Org on CCBS.[Organisation_ID] = Org.[Organisation_ID]
+	where
+		Org.[Organisation_Name] = 'NDIA National Disability Insurance Agency'
+
+)J009 on J009.[Client_ID] = J001.[Client_ID]
+
+LEFT OUTER JOIN [dbo].[Card_Holder] J007 ON J007.[Person_ID] = J001.[Client_ID]
+LEFT OUTER JOIN [dbo].[Card_Type] J008 ON J008.[Card_Type_ID] = J007.[Card_Type_ID]
+LEFT OUTER JOIN [dbo].FB_Client_CB_Bill_Adjustment J010 ON J010.[Client_CB_ID] = J009.[Client_CB_ID] and J010.Effective_From_Date &gt;= @StartDate
+LEFT OUTER JOIN [dbo].FB_Adjustment_Type J011 ON J011.Adjustment_Type_Code = J010.Adjustment_Type_Code
+
+Where 
+	1=1
+	and J006.[Organisation_Name] = @Organisation
+	and J006.RN &lt; 2
+	and J009.RN &lt; 2
+	and J010.Effective_to_Date between @StartDate and @EndDate
+	and J009.ContractBillingGroup &lt;&gt; 'DCSI'
+	and 
+	(
+		J008.[Description] = 'NDIS Number'
+		OR J008.[Description] is NULL
+	)
+	and J009.Organisation_Name = 'NDIA National Disability Insurance Agency'
+
+Order by
+2,3,17</CommandText>
       </Query>
       <Fields>
         <Field Name="RegistrationNumber">
@@ -127,7 +298,49 @@ Where
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
         <Field Name="NDISNumber_Filtered">
-          <Value>=System.Text.RegularExpressions.Regex.Replace(Fields!NDISNumber.Value, "[^0-9,]", "")</Value>
+          <Value>=
+iif
+(
+	Fields!NDISNumber.Value = ""
+	,"&lt;font color = 'Red'&gt;-Not on record-&lt;br&gt;Cli_ID: " &amp; CStr(Fields!Client_ID.Value) &amp; "&lt;/font&gt;"
+	,System.Text.RegularExpressions.Regex.Replace(Fields!NDISNumber.Value, "[^0-9,]", "")
+)</Value>
+        </Field>
+        <Field Name="unit_type">
+          <DataField>unit_type</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Client_ID">
+          <DataField>Client_ID</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="CardType">
+          <DataField>CardType</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="adjInd">
+          <DataField>adjInd</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="DataSet2">
+      <Query>
+        <DataSourceName>Ref_ASAWH</DataSourceName>
+        <CommandText>Declare @Org table 
+(
+	Org VarChar(64)
+)
+insert into @Org values 
+	('Disabilities Children')
+	,('Disabilities Adult')
+
+Select * from @Org</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="Org">
+          <DataField>Org</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
         </Field>
       </Fields>
     </DataSet>
@@ -618,6 +831,7 @@ Where
                               <TextRuns>
                                 <TextRun>
                                   <Value>=Fields!NDISNumber_Filtered.Value</Value>
+                                  <MarkupType>HTML</MarkupType>
                                   <Style />
                                 </TextRun>
                               </TextRuns>
@@ -648,7 +862,9 @@ Where
                               <TextRuns>
                                 <TextRun>
                                   <Value>=Fields!SupportsDeliveredFrom.Value</Value>
-                                  <Style />
+                                  <Style>
+                                    <Format>yyyy-MM-dd</Format>
+                                  </Style>
                                 </TextRun>
                               </TextRuns>
                               <Style />
@@ -678,7 +894,9 @@ Where
                               <TextRuns>
                                 <TextRun>
                                   <Value>=Fields!SupportsDeliveredTo.Value</Value>
-                                  <Style />
+                                  <Style>
+                                    <Format>yyyy-MM-dd</Format>
+                                  </Style>
                                 </TextRun>
                               </TextRuns>
                               <Style />
@@ -1044,11 +1262,22 @@ Where
       </DefaultValue>
       <Prompt>End Date</Prompt>
     </ReportParameter>
+    <ReportParameter Name="Organisation">
+      <DataType>String</DataType>
+      <Prompt>Organisation</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>DataSet2</DataSetName>
+          <ValueField>Org</ValueField>
+          <LabelField>Org</LabelField>
+        </DataSetReference>
+      </ValidValues>
+    </ReportParameter>
   </ReportParameters>
   <ReportParametersLayout>
     <GridLayoutDefinition>
-      <NumberOfColumns>4</NumberOfColumns>
-      <NumberOfRows>2</NumberOfRows>
+      <NumberOfColumns>3</NumberOfColumns>
+      <NumberOfRows>1</NumberOfRows>
       <CellDefinitions>
         <CellDefinition>
           <ColumnIndex>0</ColumnIndex>
@@ -1059,6 +1288,11 @@ Where
           <ColumnIndex>1</ColumnIndex>
           <RowIndex>0</RowIndex>
           <ParameterName>EndDate</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>2</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>Organisation</ParameterName>
         </CellDefinition>
       </CellDefinitions>
     </GridLayoutDefinition>
