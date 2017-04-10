@@ -27,24 +27,28 @@
             <Value>=Parameters!ContractType.Value</Value>
           </QueryParameter>
         </QueryParameters>
-        <CommandText>--/*
+        <CommandText>---------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------
+--/*
 select * from
 (
 	select
-		J001.Client_ID
-		,J001.Provider_ID
+		J001.Client_ID 'Client_ID'
+		,J001.Provider_ID 'Provider_ID'
 		,IIF(J033.WiA_Schedule_TimeKILL = 'true', null, Cast (J033.Schedule_Time as Datetime)) 'Schedule_Visit_Time'	
-		,J033.Scheduled_Duration
+		,J033.Scheduled_Duration 'Scheduled_Duration'
 		,(Cast (cast(J001.Visit_Date as date) as Datetime) + Cast (Cast (J001.Visit_Time as Time) as Datetime)) 'Actual_Visit_Time'
 		,J001.Visit_Duration 'Actual_Duration'
 		,J088.CareModel 'CareModel'
 		,J004.[Description] 'task_Description'
-		,J001.Client_Not_Home
+		,J001.Client_Not_Home 'Client_Not_Home'
 		,IIF (J002.Client_ID IS NULL, 0, 1) 'Has_Charge_Item'
 		,convert (int ,'0') 'In_WiA_Only'
 		,J002.Line_Description 'Charge_Item_Line_Description'
-		,J002.Amount
-		,J088.funderContract
+		,J002.Amount 'Amount'
+		,J088.funderContract 'funderContract'
+		,iif(J001.Group_Activity_ID is Null, 0, 1) 'HasGroupActivity'
+		,J001.Travel_Km 'Travel_Km'
 
 	from [dbo].Actual_Service J001
 
@@ -174,7 +178,7 @@ select * from
 				(
 					Partition by CCB.[Client_ID] Order by
 						CASE
-						WHEN Org.[Organisation_Name] = 'NDIA National Disability Insurance Agency' THEN '1'
+						WHEN Org.[Organisation_Name] = @Organisation THEN '1'
 						ELSE Org.[Organisation_Name] END ASC
 				) 'RN'
 		from [dbo].[FB_Client_Contract_Billing] CCB
@@ -191,16 +195,19 @@ select * from
 	Where 
 		1=1
 --		and J001.Client_ID = @Client_ID_
-		and J006.[Organisation_Name] = @Organisation
 		and (J006.RN &lt; 2 or J006.RN is NULL)
 		and (J009.RN &lt; 2 or J009.rn is null)
 		and convert (datetime, J001.Visit_Date) between @StartDate and (DATEADD(s, 84599, @EndDate))
 		and J088.CareModel = 'Home Care Package'
+		
 
+		and J006.[Organisation_Name] = @Organisation
 --		AND (IIF (J088.funderContract is NULL,'No Contract',J088.funderContract) in (select * from @ContractType))
 		and (IIF (J088.funderContract is NULL,'No Contract',J088.funderContract) in (@ContractType))
 
 ) t1
+
+--group Activity filter
 
 ---------------------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------------------
@@ -220,7 +227,7 @@ Union
 select * from
 (
 	select
-		J001.Client_ID
+		J001.Client_ID 'Client_ID'
 		,J001.WiA_Provider_ID 'Provider_ID'
 		,IIF(J001.WiA_Schedule_TimeKILL = 'true', null, Cast (J001.WiA_Schedule_Time as Datetime)) 'Schedule_Visit_Time'	
 		,J001.WiA_Scheduled_Duration 'Scheduled_Duration'
@@ -228,13 +235,14 @@ select * from
 		,J001.AcS_Visit_Duration 'Actual_Duration'
 		,J088.CareModel 'CareModel'
 		,J004.[Description] 'task_Description'
-		,J001.Client_Not_Home
+		,J001.Client_Not_Home 'Client_Not_Home'
 		,IIF (J002.Client_ID IS NULL, 0, 1) 'Has_Charge_Item'
 		,IIF (J001.Client_Not_Home IS NULL, 1, 0) 'In_WiA_Only'
 		,J002.Line_Description 'Charge_Item_Line_Description'
-		,J002.Amount
-		,J088.funderContract
-
+		,J002.Amount 'Amount'
+		,J088.funderContract 'funderContract'
+		,iif(J001.Group_Activity_ID is Null, 0, 1) 'HasGroupActivity'
+		,J001.Travel_Km 'Travel_Km'
 	FROM 
 	(
 		Select
@@ -267,10 +275,13 @@ select * from
 			,IIF(Ac_S.Task_Type_Code is null,Wi_A.Schedule_Task_Type, Ac_S.Task_Type_Code) 'Task_Type_Code'
 			,Wi_A.[CAP_ID] 'CAP_ID'
 			,Wi_A.[Absence_Code]
+			,Wi_A.Group_Activity_ID 'Group_Activity_ID'
+			,AC_S.Travel_Km 'Travel_Km'
 			,ROW_NUMBER () -- sort by importance of 'covered' 'absent' and 'Un-Alocated'.
 			over 
 			(
-				Partition by Wi_A.Client_ID, Wi_A.[Activity_Date], Wi_A.[SPPID] Order by 
+				Partition by Wi_A.Client_ID, Wi_A.[Activity_Date], Wi_A.[SPPID], Wi_A.Schedule_Time
+				 Order by 
 					Case
 						when ((Wi_A.[Provider_ID] &gt; 0) and (Wi_A.[Absence_Code] is NULL)) then '1'
 						when (Wi_A.[Provider_ID] &gt; 0) and (Wi_A.[Absence_Code] is not NULL) then '2'
@@ -395,7 +406,7 @@ select * from
 				(
 					Partition by CCB.[Client_ID] Order by
 						CASE
-						WHEN Org.[Organisation_Name] = 'NDIA National Disability Insurance Agency' THEN '1'
+						WHEN Org.[Organisation_Name] = @Organisation THEN '1'
 						ELSE Org.[Organisation_Name] END ASC
 				) 'RN'
 		from [dbo].[FB_Client_Contract_Billing] CCB
@@ -412,7 +423,7 @@ select * from
 	Where 
 		1=1
 --		and J001.Client_ID = @Client_ID_
-		and J006.[Organisation_Name] = @Organisation
+		
 		and 1 = iif(J001.RN &gt; 1 and J001.WiA_Provider_ID = 0, 0, 1)
 		and (J006.RN &lt; 2 or J006.RN is null)
 		and (J009.RN &lt; 2 or J009.RN is null)
@@ -420,6 +431,7 @@ select * from
 		and J001.Client_ID IS NOT NULL
 		and J088.CareModel = 'Home Care Package'
 
+		and J006.[Organisation_Name] = @Organisation
 --		AND (IIF (J088.funderContract is NULL,'No Contract',J088.funderContract) in (select * from @ContractType))
 		and (IIF (J011.Description is NULL,'No Contract',J011.Description) in (@ContractType))
 
@@ -439,7 +451,11 @@ select * from
 		,J002.Line_Description 
 		,J002.Amount
 		,J088.funderContract
+		,iif(J001.Group_Activity_ID is Null, 0, 1)
+		,J001.Travel_Km
 )t2
+
+
 --*/
 --*/
 order by
@@ -501,6 +517,14 @@ order by
         <Field Name="funderContract">
           <DataField>funderContract</DataField>
           <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="HasGroupActivity">
+          <DataField>HasGroupActivity</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="Travel_Km">
+          <DataField>Travel_Km</DataField>
+          <rd:TypeName>System.Decimal</rd:TypeName>
         </Field>
       </Fields>
     </DataSet>
@@ -570,7 +594,13 @@ where
                   <Width>1.33583cm</Width>
                 </TablixColumn>
                 <TablixColumn>
+                  <Width>1.50812cm</Width>
+                </TablixColumn>
+                <TablixColumn>
                   <Width>1.97083cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1.52104cm</Width>
                 </TablixColumn>
                 <TablixColumn>
                   <Width>13.54729cm</Width>
@@ -815,6 +845,44 @@ where
                     <TablixCell />
                     <TablixCell>
                       <CellContents>
+                        <Textbox Name="Textbox6">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value />
+                                  <Style>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox6</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BottomBorder>
+                              <Style>None</Style>
+                            </BottomBorder>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
                         <Textbox Name="Textbox34">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
@@ -834,6 +902,44 @@ where
                             </Paragraph>
                           </Paragraphs>
                           <rd:DefaultName>Textbox34</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BottomBorder>
+                              <Style>None</Style>
+                            </BottomBorder>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox12">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value />
+                                  <Style>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox12</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -1267,6 +1373,42 @@ where
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
+                        <Textbox Name="Textbox8">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Km Traveled</Value>
+                                  <Style>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox8</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Style>None</Style>
+                            </TopBorder>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
                         <Textbox Name="Textbox25">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
@@ -1286,6 +1428,44 @@ where
                             </Paragraph>
                           </Paragraphs>
                           <rd:DefaultName>Textbox25</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Style>None</Style>
+                            </TopBorder>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox14">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Is Group Activity</Value>
+                                  <Style>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox14</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -1645,7 +1825,7 @@ IIF
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>=Fields!Provider_ID.Value</Value>
+                                  <Value>=iif(Fields!Provider_ID.Value = 0, "Not Allocated",Fields!Provider_ID.Value)</Value>
                                   <Style>
                                     <Color>=
 IIF
@@ -1757,6 +1937,51 @@ IIF
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
+                        <Textbox Name="Travel_Km">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=
+iif
+(
+isnothing(Fields!Travel_Km.Value)
+,"---"
+,Fields!Travel_Km.Value
+)</Value>
+                                  <Style>
+                                    <Color>=
+IIF
+(
+	Fields!Has_Charge_Item.Value = 1
+	,"Black"
+	,"Red"
+)</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Travel_Km</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
                         <Textbox Name="Has_Charge_Item">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
@@ -1788,6 +2013,47 @@ IIF
                             </Paragraph>
                           </Paragraphs>
                           <rd:DefaultName>Has_Charge_Item</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="HasGroupActivity">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=IIF(Fields!HasGroupActivity.Value = 1, "Yes", "No")</Value>
+                                  <Style>
+                                    <Color>=
+IIF
+(
+	Fields!Has_Charge_Item.Value = 1
+	,"Black"
+	,"Red"
+)</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>HasGroupActivity</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -1990,6 +2256,8 @@ IIF
                 <TablixMember />
                 <TablixMember />
                 <TablixMember />
+                <TablixMember />
+                <TablixMember />
               </TablixMembers>
             </TablixColumnHierarchy>
             <TablixRowHierarchy>
@@ -2001,7 +2269,23 @@ IIF
                   <KeepWithGroup>After</KeepWithGroup>
                 </TablixMember>
                 <TablixMember>
-                  <Group Name="Details" />
+                  <Group Name="Details">
+                    <Filters>
+                      <Filter>
+                        <FilterExpression>=1</FilterExpression>
+                        <Operator>Equal</Operator>
+                        <FilterValues>
+                          <FilterValue DataType="Integer">=
+Switch
+(
+	Parameters!GroupActivity.Value = 0, 1
+	,Parameters!GroupActivity.Value = 1, IIF(Fields!HasGroupActivity.Value = 0,1,0)
+	,Parameters!GroupActivity.Value = 2, Fields!HasGroupActivity.Value
+)</FilterValue>
+                        </FilterValues>
+                      </Filter>
+                    </Filters>
+                  </Group>
                   <Visibility>
                     <Hidden>=
 (
@@ -2022,7 +2306,7 @@ IIF
             <FixedRowHeaders>true</FixedRowHeaders>
             <DataSetName>DataSet1</DataSetName>
             <Height>2.38208cm</Height>
-            <Width>44.01126cm</Width>
+            <Width>47.04042cm</Width>
             <Style>
               <Border>
                 <Style>None</Style>
@@ -2033,10 +2317,10 @@ IIF
         <Height>0.93783in</Height>
         <Style />
       </Body>
-      <Width>17.32727in</Width>
+      <Width>18.51985in</Width>
       <Page>
         <PageHeader>
-          <Height>2.135cm</Height>
+          <Height>2.13501cm</Height>
           <PrintOnFirstPage>true</PrintOnFirstPage>
           <PrintOnLastPage>true</PrintOnLastPage>
           <ReportItems>
@@ -2044,9 +2328,9 @@ IIF
               <Source>Embedded</Source>
               <Value>Logo_AnglicareSA</Value>
               <Sizing>FitProportional</Sizing>
-              <Left>33.12395cm</Left>
+              <Left>40.28062cm</Left>
               <Height>1.95862cm</Height>
-              <Width>10.88731cm</Width>
+              <Width>6.7598cm</Width>
               <Style>
                 <Border>
                   <Style>None</Style>
@@ -2118,8 +2402,9 @@ IIF
                 </Paragraph>
               </Paragraphs>
               <rd:DefaultName>Textbox38</rd:DefaultName>
+              <Top>0.00001cm</Top>
               <Height>1.95862cm</Height>
-              <Width>33.12395cm</Width>
+              <Width>34.64499cm</Width>
               <ZIndex>1</ZIndex>
               <Style>
                 <Border>
@@ -2221,6 +2506,31 @@ IIF
       <MultiValue>true</MultiValue>
       <UsedInQuery>True</UsedInQuery>
     </ReportParameter>
+    <ReportParameter Name="GroupActivity">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>0</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Group Activity</Prompt>
+      <ValidValues>
+        <ParameterValues>
+          <ParameterValue>
+            <Value>0</Value>
+            <Label>Show Group Activity</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>1</Value>
+            <Label>Hide Group Acitity</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>2</Value>
+            <Label>Show Group Actity Only</Label>
+          </ParameterValue>
+        </ParameterValues>
+      </ValidValues>
+    </ReportParameter>
   </ReportParameters>
   <ReportParametersLayout>
     <GridLayoutDefinition>
@@ -2251,6 +2561,11 @@ IIF
           <ColumnIndex>0</ColumnIndex>
           <RowIndex>1</RowIndex>
           <ParameterName>ContractType</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>1</RowIndex>
+          <ParameterName>GroupActivity</ParameterName>
         </CellDefinition>
       </CellDefinitions>
     </GridLayoutDefinition>

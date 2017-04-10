@@ -106,6 +106,10 @@
       <FullPath>MonthlyServiceStatement.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
+      <Name>RAC_Allocation Report_Dutton.rdl</Name>
+      <FullPath>RAC_Allocation Report_Dutton.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
       <Name>RAC_Allocation.rdl</Name>
       <FullPath>RAC_Allocation.rdl</FullPath>
     </ProjectItem>
@@ -114,8 +118,16 @@
       <FullPath>RAC_Allocation_SL.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
+      <Name>RAC_Allocation_SL_rollback.rdl</Name>
+      <FullPath>RAC_Allocation_SL_rollback.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
       <Name>RAC_Roster.rdl</Name>
       <FullPath>RAC_Roster.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
+      <Name>RAC_Roster_Report_Allocation_port.rdl</Name>
+      <FullPath>RAC_Roster_Report_Allocation_port.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
       <Name>RAC_VacantShift.rdl</Name>
@@ -130,16 +142,8 @@
       <FullPath>z-Allocation Report.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>RAC_Allocation Report_Dutton.rdl</Name>
-      <FullPath>RAC_Allocation Report_Dutton.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>RAC_Roster_Report_Allocation_port.rdl</Name>
-      <FullPath>RAC_Roster_Report_Allocation_port.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>RAC_Allocation_SL_rollback.rdl</Name>
-      <FullPath>RAC_Allocation_SL_rollback.rdl</FullPath>
+      <Name>DA_DC_IndirctActivity_Report.rdl</Name>
+      <FullPath>DA_DC_IndirctActivity_Report.rdl</FullPath>
     </ProjectItem>
   </Reports>
   <Configurations>
