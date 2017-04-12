@@ -1,0 +1,1 @@
+select * FROM [appsql-3\comcareprod].[comcareprod].[dbo].[WI_Activity]

@@ -1,0 +1,154 @@
+<?xml version="1.0"?>
+<SqlWorkbenchSqlProject xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Name="SQL Switching to ComCare 6.7 test">
+  <Items>
+    <LogicalFolder Name="Connections" Type="2" Sorted="true">
+      <Items>
+        <ConnectionNode Name="appsql-3\comcareprod:ANGLICARE-SA\abhi.ryan">
+          <Created>2017-03-31T11:08:52.8896614+10:30</Created>
+          <Type>SQL</Type>
+          <Server>appsql-3\comcareprod</Server>
+          <UserName />
+          <Authentication>Windows Authentication</Authentication>
+          <InitialDB />
+          <LoginTimeout>15</LoginTimeout>
+          <ExecutionTimeout>0</ExecutionTimeout>
+          <ConnectionProtocol>NotSpecified</ConnectionProtocol>
+          <ApplicationName>Microsoft SQL Server Management Studio - Query</ApplicationName>
+        </ConnectionNode>
+        <ConnectionNode Name="appsql-3\Train:ANGLICARE-SA\abhi.ryan">
+          <Created>2017-03-31T10:54:12.1314849+10:30</Created>
+          <Type>SQL</Type>
+          <Server>appsql-3\Train</Server>
+          <UserName />
+          <Authentication>Windows Authentication</Authentication>
+          <InitialDB />
+          <LoginTimeout>15</LoginTimeout>
+          <ExecutionTimeout>0</ExecutionTimeout>
+          <ConnectionProtocol>NotSpecified</ConnectionProtocol>
+          <ApplicationName>Microsoft SQL Server Management Studio - Query</ApplicationName>
+        </ConnectionNode>
+        <ConnectionNode Name="appsql-3\Train:CCReports">
+          <Created>2017-03-31T10:54:51.9366037+10:30</Created>
+          <Type>SQL</Type>
+          <Server>appsql-3\Train</Server>
+          <UserName>CCReports</UserName>
+          <Authentication>SQL</Authentication>
+          <InitialDB />
+          <LoginTimeout>15</LoginTimeout>
+          <ExecutionTimeout>0</ExecutionTimeout>
+          <ConnectionProtocol>NotSpecified</ConnectionProtocol>
+          <ApplicationName>Microsoft SQL Server Management Studio - Query</ApplicationName>
+        </ConnectionNode>
+        <ConnectionNode Name="Devsql-1\DEV:ANGLICARE-SA\abhi.ryan">
+          <Created>2017-03-29T11:40:53.4227612+10:30</Created>
+          <Type>SQL</Type>
+          <Server>Devsql-1\DEV</Server>
+          <UserName />
+          <Authentication>Windows Authentication</Authentication>
+          <InitialDB />
+          <LoginTimeout>15</LoginTimeout>
+          <ExecutionTimeout>0</ExecutionTimeout>
+          <ConnectionProtocol>NotSpecified</ConnectionProtocol>
+          <ApplicationName />
+        </ConnectionNode>
+        <ConnectionNode Name="Devsql-1\WHOUSE:ANGLICARE-SA\abhi.ryan">
+          <Created>2017-03-29T14:10:14.612641+10:30</Created>
+          <Type>SQL</Type>
+          <Server>Devsql-1\WHOUSE</Server>
+          <UserName />
+          <Authentication>Windows Authentication</Authentication>
+          <InitialDB />
+          <LoginTimeout>15</LoginTimeout>
+          <ExecutionTimeout>0</ExecutionTimeout>
+          <ConnectionProtocol>NotSpecified</ConnectionProtocol>
+          <ApplicationName>Microsoft SQL Server Management Studio - Query</ApplicationName>
+        </ConnectionNode>
+      </Items>
+    </LogicalFolder>
+    <LogicalFolder Name="Queries" Type="0" Sorted="true">
+      <Items>
+        <FileNode Name="Bulk_Billing_upload_02.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>Bulk_Billing_upload_02.sql</FullPath>
+        </FileNode>
+        <FileNode Name="Bulk_Billing_upload_ORG.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:Devsql-1\DEV:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>Devsql-1\DEV</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>Bulk_Billing_upload_ORG.sql</FullPath>
+        </FileNode>
+        <FileNode Name="DS_DSC_ActualService_Vs_ChargeItem.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:Devsql-1\DEV:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>Devsql-1\DEV</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>DS_DSC_ActualService_Vs_ChargeItem.sql</FullPath>
+        </FileNode>
+        <FileNode Name="DS_DSC_Adjustments.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:Devsql-1\DEV:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>Devsql-1\DEV</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>DS_DSC_Adjustments.sql</FullPath>
+        </FileNode>
+        <FileNode Name="DS_DSC_Schedule_Vs_ServiceDelivery.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:Devsql-1\DEV:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>Devsql-1\DEV</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>DS_DSC_Schedule_Vs_ServiceDelivery.sql</FullPath>
+        </FileNode>
+        <FileNode Name="DS_DSC_Transaciton_Audit_UNION.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:Devsql-1\DEV:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>Devsql-1\DEV</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>DS_DSC_Transaciton_Audit_UNION.sql</FullPath>
+        </FileNode>
+        <FileNode Name="MonthlyReport_Pt1.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:Devsql-1\DEV:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>Devsql-1\DEV</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>MonthlyReport_Pt1.sql</FullPath>
+        </FileNode>
+        <FileNode Name="MonthlyReport_Pt2.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:Devsql-1\DEV:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>Devsql-1\DEV</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>MonthlyReport_Pt2.sql</FullPath>
+        </FileNode>
+        <FileNode Name="Roster_Report.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:Devsql-1\DEV:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>Devsql-1\DEV</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>Roster_Report.sql</FullPath>
+        </FileNode>
+        <FileNode Name="Vacant_Shift_Report.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:Devsql-1\DEV:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>Devsql-1\DEV</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>Vacant_Shift_Report.sql</FullPath>
+        </FileNode>
+        <FileNode Name="Vacant_Shift_Report_Centre.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:Devsql-1\DEV:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>Devsql-1\DEV</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>Vacant_Shift_Report_Centre.sql</FullPath>
+        </FileNode>
+        <FileNode Name="Vacant_Shift_Report_ServProv.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:Devsql-1\DEV:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>Devsql-1\DEV</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>Vacant_Shift_Report_ServProv.sql</FullPath>
+        </FileNode>
+        <FileNode Name="Vacant_Shift_Report_Team.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:Devsql-1\DEV:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>Devsql-1\DEV</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>Vacant_Shift_Report_Team.sql</FullPath>
+        </FileNode>
+      </Items>
+    </LogicalFolder>
+    <LogicalFolder Name="Miscellaneous" Type="3" Sorted="true">
+      <Items />
+    </LogicalFolder>
+  </Items>
+</SqlWorkbenchSqlProject>

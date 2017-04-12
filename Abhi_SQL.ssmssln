@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# SQL Server Management Studio Solution File, Format Version 13.00
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{4F2E2C19-372F-40D8-9FA7-9D2138C6997A}") = "SQL TestBed", "SQL TestBed\SQL TestBed.ssmssqlproj", "{02D76717-2990-4F42-AE74-2E36D9A3EB43}"
+EndProject
+Project("{4F2E2C19-372F-40D8-9FA7-9D2138C6997A}") = "SQL Disability", "SQL Disability\SQL Disability.ssmssqlproj", "{7F9AB24C-60ED-4E51-9D7D-3A3397A5276F}"
+EndProject
+Project("{4F2E2C19-372F-40D8-9FA7-9D2138C6997A}") = "SQL Common", "SQL Common\SQL Common.ssmssqlproj", "{827E1E91-8DC2-4978-B74D-CEB2962BEDC5}"
+EndProject
+Project("{4F2E2C19-372F-40D8-9FA7-9D2138C6997A}") = "SQL HomeCare", "SQL HomeCare\SQL HomeCare.ssmssqlproj", "{C8381300-F95E-4EFE-B490-6DE19E365FEC}"
+EndProject
+Project("{4F2E2C19-372F-40D8-9FA7-9D2138C6997A}") = "SQL Switching to ComCare 6.7 test", "SQL Switching to ComCare 6.7 test\SQL Switching to ComCare 6.7 test.ssmssqlproj", "{E1DC9F6D-BE9E-4D5A-AEEB-25F4939C7A55}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Default|Default = Default|Default
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{02D76717-2990-4F42-AE74-2E36D9A3EB43}.Default|Default.ActiveCfg = Default
+		{7F9AB24C-60ED-4E51-9D7D-3A3397A5276F}.Default|Default.ActiveCfg = Default
+		{827E1E91-8DC2-4978-B74D-CEB2962BEDC5}.Default|Default.ActiveCfg = Default
+		{C8381300-F95E-4EFE-B490-6DE19E365FEC}.Default|Default.ActiveCfg = Default
+		{E1DC9F6D-BE9E-4D5A-AEEB-25F4939C7A55}.Default|Default.ActiveCfg = Default
+		{695A4F7D-7036-42F1-B668-0666CDBDB910}.Default|Default.ActiveCfg = Default
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
