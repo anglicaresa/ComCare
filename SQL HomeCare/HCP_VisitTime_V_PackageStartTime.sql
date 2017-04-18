@@ -53,8 +53,8 @@ select * from dbo.Actual_Service where client_id = 10020694 order by visit_Date
 --select * from dbo.service_delivery where client_id = 10022806
 
 declare @Organisation Varchar(128) = 'Home Care North'
-declare @StartDate date = cast('2016-02-10' as date)
-declare @EndDate date = cast('2016-06-03' as date)
+declare @StartDate date = cast('2016-04-10' as date)
+declare @EndDate date = cast('2016-04-18' as date)
 --declare @ChargeItemTest int = 0
 
 ------------------------------------------------------------
@@ -159,7 +159,7 @@ Select * from
 	where
 		1=1
 		and J006.Organisation_Name In (@Organisation)
---		and J001.Client_ID = 10023456
+--		and J001.Client_ID = 10016362
 --		and J009.Client_ID is null
 )t1
 where 
