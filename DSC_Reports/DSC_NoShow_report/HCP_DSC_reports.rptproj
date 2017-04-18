@@ -46,6 +46,10 @@
       <FullPath>DA_DC_BulkUpload.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
+      <Name>DA_DC_IndirctActivity_Report.rdl</Name>
+      <FullPath>DA_DC_IndirctActivity_Report.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
       <Name>DA_DC_Roster.rdl</Name>
       <FullPath>DA_DC_Roster.rdl</FullPath>
     </ProjectItem>
@@ -138,12 +142,16 @@
       <FullPath>TEST_RAC_Allocation.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
+      <Name>VisitTime_Vs_ContractDates.rdl</Name>
+      <FullPath>VisitTime_Vs_ContractDates.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
       <Name>z-Allocation Report.rdl</Name>
       <FullPath>z-Allocation Report.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>DA_DC_IndirctActivity_Report.rdl</Name>
-      <FullPath>DA_DC_IndirctActivity_Report.rdl</FullPath>
+      <Name>HCP_VisitTime_V_PackageStartTime.rdl</Name>
+      <FullPath>HCP_VisitTime_V_PackageStartTime.rdl</FullPath>
     </ProjectItem>
   </Reports>
   <Configurations>
