@@ -10,11 +10,19 @@ select * from dbo.Indirect_Activity_Type
 
 
 DECLARE @StartDate AS DATETIME = '20170104 00:00:00.000'
-DECLARE @EndDate AS DATETIME = '20170104 00:00:00.000'
+DECLARE @EndDate AS DATETIME = '20170114 00:00:00.000'
 declare @Organisation VarChar(64) = 'Disabilities Children'
 
-Select * from
+--------------------------------------------------------------
+--------------------------------------------------------------
+--------------------------------------------------------------
+--------------------------------------------------------------
+--Main Query
+
+
+select * from
 (
+
 	select
 		J001.Activity_Date
 		,J001.Provider_ID
@@ -39,7 +47,7 @@ Select * from
 		,J006.Visit_Time 'AS_Visit_Time'
 		,J006.Visit_Duration 'AS_Visit_Duration'
 		,J006.Scheduled_Duration 'AS_Scheduled_Duration'
-		,J001.Activity_No 'J001.Activity_No'
+		,J001.Activity_No 'Activity_No'
 /*
 		------------------------------------------
 		--debug vals
@@ -98,18 +106,15 @@ Select * from
 		------------------------------------------
 		and J001.Provider_ID = 10067834
 --*/
-)t1
 
---*/
---------------------------------------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------------------------
-Union
---------------------------------------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------------------------
-Select * from
-(
+	--------------------------------------------------------------------------------------------------------------------------------
+	--------------------------------------------------------------------------------------------------------------------------------
+	--------------------------------------------------------------------------------------------------------------------------------
+	Union all
+	--------------------------------------------------------------------------------------------------------------------------------
+	--------------------------------------------------------------------------------------------------------------------------------
+	--------------------------------------------------------------------------------------------------------------------------------
+
 	select
 		J001.Activity_Date
 		,J001.Provider_ID
@@ -134,7 +139,7 @@ Select * from
 		,J006.Visit_Time 'AS_Visit_Time'
 		,J006.Visit_Duration 'AS_Visit_Duration'
 		,J006.Scheduled_Duration 'AS_Scheduled_Duration'
-		,J001.Activity_No 'J001.Activity_No'
+		,J001.Activity_No 'Activity_No'
 	/*
 		------------------------------------------
 		--debug vals
@@ -147,7 +152,6 @@ Select * from
 
 	--*/
 
-
 	From 
 	(
 		select * from
@@ -156,6 +160,7 @@ Select * from
 			1=1
 			and WIA.Provider_ID is not null
 			and WIA.Provider_ID <> 0
+			and WIA.Activity_Date between @StartDate and @EndDate
 	)J002
 
 	Left outer join
@@ -182,7 +187,7 @@ Select * from
 		from dbo.Activity_Work_Table AWT
 		where
 			1=1
-			and awt.Activity_Date between @StartDate and @EndDate
+	--		and awt.Activity_Date between @StartDate and @EndDate
 		
 	)J001 on J002.Activity_ID = J001.WI_Record_ID
 		Left outer join dbo.Service_Provision_Position J003 on J003.Service_Prov_Position_ID = J001.Service_Prov_Position_ID
@@ -204,6 +209,40 @@ Select * from
 		------------------------------------------
 		and J001.Provider_ID = 10067834
 --*/
-)t2
+
+)t1
+
+Group by
+	t1.Activity_Date
+	,t1.Provider_ID
+	,t1.Task_Type
+	,t1.Indirect_Activity_Type
+	,t1.Activity_Start_Time
+	,t1.Activity_Duration
+	,t1.Schedule_Time
+	,t1.Schedule_Duration
+	,t1.SPPID
+	,t1.RoundCode
+	,t1.Schedule_Indicator
+	,t1.WI_Activity_Date
+	,t1.WI_Activity_Start_Time
+	,t1.WI_Activity_Duration
+	,t1.Absence_Code
+	,t1.WI_Schedule_Time
+	,t1.WI_Schedule_Duration
+	,t1.WI_RoundCode
+	,t1.WI_SPPID
+	,t1.AS_Activity_Start_Time
+	,t1.AS_Visit_Time
+	,t1.AS_Visit_Duration
+	,t1.AS_Scheduled_Duration
+	,t1.Activity_No
 	
-order by t1.Provider_ID
+order by 
+	t1.Activity_Date
+	,t1.Provider_ID
+	,case
+		when t1.Activity_Start_Time is not null then cast(t1.Activity_Start_Time as varchar(128))
+		when t1.Activity_Start_Time is null and t1.Schedule_Time is not null then cast(t1.Schedule_Time as varchar(128))
+	end
+
