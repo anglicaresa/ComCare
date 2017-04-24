@@ -33,7 +33,7 @@ select * from
 		,J001.Schedule_Duration
 		,J001.Service_Prov_Position_ID 'SPPID'
 		,J001.Classn_Shift_Centre 'RoundCode'
-		,iif(J002.Provider_ID is null,'No_Schedule','Matched_Schedule') 'Schedule_Indicator'
+		,iif(J002.Provider_ID is null,'No_Schedule',IIF(J001.WI_Record_ID is null,'Forced_Match','Matched_Schedule')) 'Schedule_Indicator'
 		,cast(J002.Activity_Date as datetime) 'WI_Activity_Date'
 		,cast(J002.Activity_Start_Time as datetime) 'WI_Activity_Start_Time'
 		,J002.Activity_Duration 'WI_Activity_Duration'
