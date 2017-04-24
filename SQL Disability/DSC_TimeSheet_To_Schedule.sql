@@ -5,13 +5,13 @@ Select top 1 * from dbo.Activity_Work_Table where task_type_code is not null
 select top 1 * from dbo.WI_Activity where Activity_ID =848834
 select Top 1 * from dbo.Actual_Service -- where activity_No = 161906
 select * from dbo.Indirect_Activity_Type
-
 --*/
 
 
-DECLARE @StartDate AS DATETIME = '20170104 00:00:00.000'
-DECLARE @EndDate AS DATETIME = '20170114 00:00:00.000'
+DECLARE @StartDate AS DATETIME = '20170328 00:00:00.000'
+DECLARE @EndDate AS DATETIME = '20170328 00:00:00.000'
 declare @Organisation VarChar(64) = 'Disabilities Children'
+declare @Provider_ID int = 10068812
 
 --------------------------------------------------------------
 --------------------------------------------------------------
@@ -22,29 +22,28 @@ declare @Organisation VarChar(64) = 'Disabilities Children'
 
 select * from
 (
-
 	select
 		J001.Activity_Date
 		,J001.Provider_ID
 		,J007.Description 'Task_Type'
 		,J008.Description 'Indirect_Activity_Type'
-		,J001.Activity_Start_Time
+		,cast(J001.Activity_Start_Time as datetime) 'Activity_Start_Time'
 		,J001.Activity_Duration
-		,J001.Schedule_Time
+		,cast(J001.Schedule_Time as datetime) 'Schedule_Time'
 		,J001.Schedule_Duration
 		,J001.Service_Prov_Position_ID 'SPPID'
 		,J001.Classn_Shift_Centre 'RoundCode'
 		,iif(J002.Provider_ID is null,'No_Schedule','Matched_Schedule') 'Schedule_Indicator'
-		,J002.Activity_Date 'WI_Activity_Date'
-		,J002.Activity_Start_Time 'WI_Activity_Start_Time'
+		,cast(J002.Activity_Date as datetime) 'WI_Activity_Date'
+		,cast(J002.Activity_Start_Time as datetime) 'WI_Activity_Start_Time'
 		,J002.Activity_Duration 'WI_Activity_Duration'
 		,J002.Absence_Code
-		,J002.Schedule_Time 'WI_Schedule_Time'
+		,cast(J002.Schedule_Time as datetime) 'WI_Schedule_Time'
 		,J002.Schedule_Duration 'WI_Schedule_Duration'
 		,J002.Generated_Provider_Code 'WI_RoundCode'
 		,J002.SPPID 'WI_SPPID'
-		,J006.Activity_Start_Time 'AS_Activity_Start_Time'
-		,J006.Visit_Time 'AS_Visit_Time'
+		,cast(J006.Activity_Start_Time as datetime) 'AS_Activity_Start_Time'
+		,cast(J006.Visit_Time as datetime) 'AS_Visit_Time'
 		,J006.Visit_Duration 'AS_Visit_Duration'
 		,J006.Scheduled_Duration 'AS_Scheduled_Duration'
 		,J001.Activity_No 'Activity_No'
@@ -52,9 +51,9 @@ select * from
 		------------------------------------------
 		--debug vals
 		------------------------------------------
-		,J006.Activity_No 'J006.Activity_No'
-		,J001.WI_Record_ID 'J001.WI_Record_ID'
-		,J002.Activity_ID 'J002.Activity_ID'
+		,J006.Activity_No 'J006_Activity_No'
+		,J001.WI_Record_ID 'J001_WI_Record_ID'
+		,J002.Activity_ID 'J002_Activity_ID'
 
 --*/
 	from 
@@ -81,11 +80,26 @@ select * from
 		from dbo.Activity_Work_Table AWT
 		where
 			1=1
-			and awt.Activity_Date between @StartDate and @EndDate
+			and cast(awt.Activity_Date as date) between @StartDate and @EndDate
 		
 	)J001
 
-		Left outer join dbo.WI_Activity J002 on J002.Activity_ID = J001.WI_Record_ID
+		Left outer join dbo.WI_Activity J002 
+			on J002.Activity_ID = J001.WI_Record_ID
+			or 1 =
+			(
+				case
+					when 
+					J001.WI_Record_ID is null
+					and J002.Generated_Provider_Code = J001.Classn_Shift_Centre
+					and J002.Activity_Start_Time = J001.Schedule_Time
+					and J002.Provider_ID = J001.Provider_ID
+					and J002.SPPID = J001.Service_Prov_Position_ID
+					then 1
+					else 0
+				end
+			)
+
 		Left outer join dbo.Service_Provision_Position J003 on J003.Service_Prov_Position_ID = J001.Service_Prov_Position_ID
 		Left outer join dbo.Service_Delivery_Work_Team J004 on J004.Team_No = J003.Team_No and J004.Centre_ID = J003.Centre_ID
 		Left outer join dbo.Organisation J005 on J005.Organisation_ID = J004.Centre_ID
@@ -104,9 +118,8 @@ select * from
 		------------------------------------------
 		--debug vals
 		------------------------------------------
-		and J001.Provider_ID = 10067834
+		and J001.Provider_ID = @Provider_ID
 --*/
-
 	--------------------------------------------------------------------------------------------------------------------------------
 	--------------------------------------------------------------------------------------------------------------------------------
 	--------------------------------------------------------------------------------------------------------------------------------
@@ -120,38 +133,36 @@ select * from
 		,J001.Provider_ID
 		,J007.Description 'Task_Type'
 		,J008.Description 'Indirect_Activity_Type'
-		,J001.Activity_Start_Time
+		,cast(J001.Activity_Start_Time as datetime) 'Activity_Start_Time'
 		,J001.Activity_Duration
-		,J001.Schedule_Time
+		,cast(J001.Schedule_Time as datetime) 'Schedule_Time'
 		,J001.Schedule_Duration
 		,J001.Service_Prov_Position_ID 'SPPID'
 		,J001.Classn_Shift_Centre 'RoundCode'
 		,iif(J002.Provider_ID is null,'No_Schedule','Matched_Schedule') 'Schedule_Indicator'
-		,J002.Activity_Date 'WI_Activity_Date'
-		,J002.Activity_Start_Time 'WI_Activity_Start_Time'
+		,cast(J002.Activity_Date as datetime) 'WI_Activity_Date'
+		,cast(J002.Activity_Start_Time as datetime) 'WI_Activity_Start_Time'
 		,J002.Activity_Duration 'WI_Activity_Duration'
 		,J002.Absence_Code
-		,J002.Schedule_Time 'WI_Schedule_Time'
+		,cast(J002.Schedule_Time as datetime) 'WI_Schedule_Time'
 		,J002.Schedule_Duration 'WI_Schedule_Duration'
 		,J002.Generated_Provider_Code 'WI_RoundCode'
 		,J002.SPPID 'WI_SPPID'
-		,J006.Activity_Start_Time 'AS_Activity_Start_Time'
-		,J006.Visit_Time 'AS_Visit_Time'
+		,cast(J006.Activity_Start_Time as datetime) 'AS_Activity_Start_Time'
+		,cast(J006.Visit_Time as datetime) 'AS_Visit_Time'
 		,J006.Visit_Duration 'AS_Visit_Duration'
 		,J006.Scheduled_Duration 'AS_Scheduled_Duration'
 		,J001.Activity_No 'Activity_No'
-	/*
+/*
 		------------------------------------------
 		--debug vals
 		------------------------------------------
 		
-		,J006.Activity_No 'J006.Activity_No'
-		,J001.WI_Record_ID 'J001.WI_Record_ID'
-		,J002.Activity_ID 'J002.Activity_ID'
+		,J006.Activity_No 'J006_Activity_No'
+		,J001.WI_Record_ID 'J001_WI_Record_ID'
+		,J002.Activity_ID 'J002_Activity_ID'
 
-
-	--*/
-
+--*/
 	From 
 	(
 		select * from
@@ -160,7 +171,7 @@ select * from
 			1=1
 			and WIA.Provider_ID is not null
 			and WIA.Provider_ID <> 0
-			and WIA.Activity_Date between @StartDate and @EndDate
+			and cast(WIA.Activity_Date as date) between @StartDate and @EndDate
 	)J002
 
 	Left outer join
@@ -207,7 +218,7 @@ select * from
 		------------------------------------------
 		--debug vals
 		------------------------------------------
-		and J001.Provider_ID = 10067834
+		and J001.Provider_ID = @Provider_ID
 --*/
 
 )t1
@@ -237,12 +248,15 @@ Group by
 	,t1.AS_Visit_Duration
 	,t1.AS_Scheduled_Duration
 	,t1.Activity_No
-	
-order by 
+/*
+	,t1.J006_Activity_No
+	,t1.J001_WI_Record_ID
+	,t1.J002_Activity_ID
+--*/
+order by
 	t1.Activity_Date
 	,t1.Provider_ID
 	,case
 		when t1.Activity_Start_Time is not null then cast(t1.Activity_Start_Time as varchar(128))
 		when t1.Activity_Start_Time is null and t1.Schedule_Time is not null then cast(t1.Schedule_Time as varchar(128))
 	end
-
