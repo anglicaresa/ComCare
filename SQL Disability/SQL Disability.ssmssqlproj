@@ -169,6 +169,12 @@
           <AssociatedConnUserName />
           <FullPath>DSC_Statistics_Pt2.sql</FullPath>
         </FileNode>
+        <FileNode Name="DSC_TimeSheet_To_Schedule.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>DSC_TimeSheet_To_Schedule.sql</FullPath>
+        </FileNode>
         <FileNode Name="DSC_WaitingList.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
