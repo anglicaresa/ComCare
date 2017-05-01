@@ -3,7 +3,7 @@ use ComCareProd
 --Select * from dbo.WI_Timesheet_Directive --empty
 Select top 1 * from dbo.Activity_Work_Table where task_type_code is not null
 select top 1 * from dbo.WI_Activity where Activity_ID =848834
-select Top 1 * from dbo.Actual_Service -- where activity_No = 161906
+select Top 1 * from dbo.Actual_Service order by date_Finalised -- where activity_No = 161906
 select * from dbo.Indirect_Activity_Type
 --*/
 
@@ -25,6 +25,7 @@ select * from
 	select
 		J001.Activity_Date
 		,J001.Provider_ID
+		,Concat(J009.Last_Name,', ',J009.Preferred_Name) 'Provider_Name'
 		,J007.Description 'Task_Type'
 		,J008.Description 'Indirect_Activity_Type'
 		,cast(J001.Activity_Start_Time as datetime) 'Activity_Start_Time'
@@ -47,6 +48,7 @@ select * from
 		,J006.Visit_Duration 'AS_Visit_Duration'
 		,J006.Scheduled_Duration 'AS_Scheduled_Duration'
 		,J001.Activity_No 'Activity_No'
+		
 /*
 		------------------------------------------
 		--debug vals
@@ -108,6 +110,7 @@ select * from
 
 		Left outer join dbo.Task_Type J007 on J007.Task_Type_Code = J001.Task_Type_Code
 		Left outer join dbo.Indirect_Activity_Type J008 on J008.Indirect_Activity_Type_Code = J001.Indirect_Activity_Type_Code
+		Left outer join dbo.Person J009 on J009.Person_ID = J001.Provider_ID
 
 	Where
 		1=1
@@ -131,6 +134,7 @@ select * from
 	select
 		J001.Activity_Date
 		,J001.Provider_ID
+		,Concat(J009.Last_Name,', ',J009.Preferred_Name) 'Provider_Name'
 		,J007.Description 'Task_Type'
 		,J008.Description 'Indirect_Activity_Type'
 		,cast(J001.Activity_Start_Time as datetime) 'Activity_Start_Time'
@@ -209,6 +213,7 @@ select * from
 		
 		Left outer join dbo.Task_Type J007 on J007.Task_Type_Code = J001.Task_Type_Code
 		Left outer join dbo.Indirect_Activity_Type J008 on J008.Indirect_Activity_Type_Code = J001.Indirect_Activity_Type_Code
+		Left outer join dbo.Person J009 on J009.Person_ID  = J001.Provider_ID
 
 	Where
 		1=1
@@ -226,6 +231,7 @@ select * from
 Group by
 	t1.Activity_Date
 	,t1.Provider_ID
+	,t1.Provider_Name
 	,t1.Task_Type
 	,t1.Indirect_Activity_Type
 	,t1.Activity_Start_Time
