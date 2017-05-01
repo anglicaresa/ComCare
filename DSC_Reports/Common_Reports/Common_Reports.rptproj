@@ -26,32 +26,12 @@
   <DataSets />
   <Reports>
     <ProjectItem>
-      <Name>RAC_Allocation Report_Dutton.rdl</Name>
-      <FullPath>RAC_Allocation Report_Dutton.rdl</FullPath>
+      <Name>ComCare_Mobile.rdl</Name>
+      <FullPath>ComCare_Mobile.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>RAC_Allocation.rdl</Name>
-      <FullPath>RAC_Allocation.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>RAC_Allocation_SL.rdl</Name>
-      <FullPath>RAC_Allocation_SL.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>RAC_Allocation_SL_rollback.rdl</Name>
-      <FullPath>RAC_Allocation_SL_rollback.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>RAC_Roster.rdl</Name>
-      <FullPath>RAC_Roster.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>RAC_Roster_Report_Allocation_port.rdl</Name>
-      <FullPath>RAC_Roster_Report_Allocation_port.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>RAC_VacantShift.rdl</Name>
-      <FullPath>RAC_VacantShift.rdl</FullPath>
+      <Name>VisitTime_Vs_ContractDates.rdl</Name>
+      <FullPath>VisitTime_Vs_ContractDates.rdl</FullPath>
     </ProjectItem>
   </Reports>
   <Configurations>
@@ -62,7 +42,7 @@
         <OutputPath>bin\Debug</OutputPath>
         <TargetServerVersion>SSRS2016</TargetServerVersion>
         <TargetServerURL>http://localhost/reportserver</TargetServerURL>
-        <TargetFolder>RAC_Reports</TargetFolder>
+        <TargetFolder>Common_Reports</TargetFolder>
         <TargetDataSourceFolder>Data Sources</TargetDataSourceFolder>
         <TargetDatasetFolder>Datasets</TargetDatasetFolder>
         <TargetReportPartFolder>Report Parts</TargetReportPartFolder>
@@ -75,7 +55,7 @@
         <OutputPath>bin\DebugLocal</OutputPath>
         <TargetServerVersion>SSRS2016</TargetServerVersion>
         <TargetServerURL>http://localhost/reportserver</TargetServerURL>
-        <TargetFolder>RAC_Reports</TargetFolder>
+        <TargetFolder>Common_Reports</TargetFolder>
         <TargetDataSourceFolder>Data Sources</TargetDataSourceFolder>
         <TargetDatasetFolder>Datasets</TargetDatasetFolder>
         <TargetReportPartFolder>Report Parts</TargetReportPartFolder>
@@ -88,7 +68,7 @@
         <OutputPath>bin\Release</OutputPath>
         <TargetServerVersion>SSRS2016</TargetServerVersion>
         <TargetServerURL>http://localhost/reportserver</TargetServerURL>
-        <TargetFolder>RAC_Reports</TargetFolder>
+        <TargetFolder>Common_Reports</TargetFolder>
         <TargetDataSourceFolder>Data Sources</TargetDataSourceFolder>
         <TargetDatasetFolder>Datasets</TargetDatasetFolder>
         <TargetReportPartFolder>Report Parts</TargetReportPartFolder>

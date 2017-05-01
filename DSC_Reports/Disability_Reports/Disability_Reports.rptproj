@@ -86,8 +86,8 @@
       <FullPath>DC_TimeSheet_Vs_Schedule.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>MonthlyServiceStatement.rdl</Name>
-      <FullPath>MonthlyServiceStatement.rdl</FullPath>
+      <Name>DC_MonthlyServiceStatement.rdl</Name>
+      <FullPath>DC_MonthlyServiceStatement.rdl</FullPath>
     </ProjectItem>
   </Reports>
   <Configurations>

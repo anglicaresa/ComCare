@@ -26,10 +26,6 @@
   <DataSets />
   <Reports>
     <ProjectItem>
-      <Name>ComCare_Mobile.rdl</Name>
-      <FullPath>ComCare_Mobile.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
       <Name>HCP_BirthdayReport.rdl</Name>
       <FullPath>HCP_BirthdayReport.rdl</FullPath>
     </ProjectItem>
@@ -54,12 +50,8 @@
       <FullPath>HCP_VisitTime_V_PackageStartTime.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>VisitTime_Vs_ContractDates.rdl</Name>
-      <FullPath>VisitTime_Vs_ContractDates.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>z-Allocation Report.rdl</Name>
-      <FullPath>z-Allocation Report.rdl</FullPath>
+      <Name>HCP_Admin_Discharge.rdl</Name>
+      <FullPath>HCP_Admin_Discharge.rdl</FullPath>
     </ProjectItem>
   </Reports>
   <Configurations>
