@@ -26,10 +26,6 @@
   <DataSets />
   <Reports>
     <ProjectItem>
-      <Name>ComCare_Mobile.rdl</Name>
-      <FullPath>ComCare_Mobile.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
       <Name>DA_DC_ActualService_Vs_ChargeItem.rdl</Name>
       <FullPath>DA_DC_ActualService_Vs_ChargeItem.rdl</FullPath>
     </ProjectItem>
@@ -86,76 +82,12 @@
       <FullPath>DC_Statistics.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>HCP_BirthdayReport.rdl</Name>
-      <FullPath>HCP_BirthdayReport.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>HCP_DC_NoShowReport.rdl</Name>
-      <FullPath>HCP_DC_NoShowReport.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>HCP_PackageRemidiation.rdl</Name>
-      <FullPath>HCP_PackageRemidiation.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>HCP_PackageRemidiation_01.rdl</Name>
-      <FullPath>HCP_PackageRemidiation_01.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>HCP_StaffHours.rdl</Name>
-      <FullPath>HCP_StaffHours.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>HCP_VisitTime_V_PackageStartTime.rdl</Name>
-      <FullPath>HCP_VisitTime_V_PackageStartTime.rdl</FullPath>
+      <Name>DC_TimeSheet_Vs_Schedule.rdl</Name>
+      <FullPath>DC_TimeSheet_Vs_Schedule.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
       <Name>MonthlyServiceStatement.rdl</Name>
       <FullPath>MonthlyServiceStatement.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>RAC_Allocation Report_Dutton.rdl</Name>
-      <FullPath>RAC_Allocation Report_Dutton.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>RAC_Allocation.rdl</Name>
-      <FullPath>RAC_Allocation.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>RAC_Allocation_SL.rdl</Name>
-      <FullPath>RAC_Allocation_SL.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>RAC_Allocation_SL_rollback.rdl</Name>
-      <FullPath>RAC_Allocation_SL_rollback.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>RAC_Roster.rdl</Name>
-      <FullPath>RAC_Roster.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>RAC_Roster_Report_Allocation_port.rdl</Name>
-      <FullPath>RAC_Roster_Report_Allocation_port.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>RAC_VacantShift.rdl</Name>
-      <FullPath>RAC_VacantShift.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>TEST_RAC_Allocation.rdl</Name>
-      <FullPath>TEST_RAC_Allocation.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>VisitTime_Vs_ContractDates.rdl</Name>
-      <FullPath>VisitTime_Vs_ContractDates.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>z-Allocation Report.rdl</Name>
-      <FullPath>z-Allocation Report.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>DC_TimeSheet_Vs_Schedule.rdl</Name>
-      <FullPath>DC_TimeSheet_Vs_Schedule.rdl</FullPath>
     </ProjectItem>
   </Reports>
   <Configurations>
@@ -163,13 +95,13 @@
       <Name>Debug</Name>
       <Platform>Win32</Platform>
       <Options>
-        <OutputPath>bin</OutputPath>
+        <OutputPath>bin\Debug</OutputPath>
         <TargetServerVersion>SSRS2008R2</TargetServerVersion>
-        <TargetServerURL>http://devsql-1/Reports_WHOUSE</TargetServerURL>
-        <TargetFolder>http://devsql-1/Reports_WHOUSE/Pages/Folder.aspx?ItemPath=/ComCare</TargetFolder>
-        <TargetDataSourceFolder>http://devsql-1/Reports_WHOUSE/Pages/Folder.aspx</TargetDataSourceFolder>
-        <TargetDatasetFolder>http://devsql-1/Reports_WHOUSE/Pages/DataSet.aspx?ItemPath=/ComCare/SharedDataSets/</TargetDatasetFolder>
-        <TargetReportPartFolder>http://devsql-1/Reports_WHOUSE/Pages/Folder.aspx?ItemPath=/ComCare</TargetReportPartFolder>
+        <TargetServerURL>http://localhost/reportserver</TargetServerURL>
+        <TargetFolder>Disability_Reports</TargetFolder>
+        <TargetDataSourceFolder>Data Sources</TargetDataSourceFolder>
+        <TargetDatasetFolder>Datasets</TargetDatasetFolder>
+        <TargetReportPartFolder>Report Parts</TargetReportPartFolder>
       </Options>
     </Configuration>
     <Configuration>
@@ -179,7 +111,7 @@
         <OutputPath>bin\DebugLocal</OutputPath>
         <TargetServerVersion>SSRS2016</TargetServerVersion>
         <TargetServerURL>http://localhost/reportserver</TargetServerURL>
-        <TargetFolder>DSC_NoShow_report</TargetFolder>
+        <TargetFolder>Disability_Reports</TargetFolder>
         <TargetDataSourceFolder>Data Sources</TargetDataSourceFolder>
         <TargetDatasetFolder>Datasets</TargetDatasetFolder>
         <TargetReportPartFolder>Report Parts</TargetReportPartFolder>
@@ -192,7 +124,7 @@
         <OutputPath>bin\Release</OutputPath>
         <TargetServerVersion>SSRS2016</TargetServerVersion>
         <TargetServerURL>http://localhost/reportserver</TargetServerURL>
-        <TargetFolder>DSC_NoShow_report</TargetFolder>
+        <TargetFolder>Disability_Reports</TargetFolder>
         <TargetDataSourceFolder>Data Sources</TargetDataSourceFolder>
         <TargetDatasetFolder>Datasets</TargetDatasetFolder>
         <TargetReportPartFolder>Report Parts</TargetReportPartFolder>
