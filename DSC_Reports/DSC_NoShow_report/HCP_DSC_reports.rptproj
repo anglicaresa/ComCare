@@ -106,6 +106,10 @@
       <FullPath>HCP_StaffHours.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
+      <Name>HCP_VisitTime_V_PackageStartTime.rdl</Name>
+      <FullPath>HCP_VisitTime_V_PackageStartTime.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
       <Name>MonthlyServiceStatement.rdl</Name>
       <FullPath>MonthlyServiceStatement.rdl</FullPath>
     </ProjectItem>
@@ -150,8 +154,8 @@
       <FullPath>z-Allocation Report.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>HCP_VisitTime_V_PackageStartTime.rdl</Name>
-      <FullPath>HCP_VisitTime_V_PackageStartTime.rdl</FullPath>
+      <Name>DC_TimeSheet_Vs_Schedule.rdl</Name>
+      <FullPath>DC_TimeSheet_Vs_Schedule.rdl</FullPath>
     </ProjectItem>
   </Reports>
   <Configurations>
