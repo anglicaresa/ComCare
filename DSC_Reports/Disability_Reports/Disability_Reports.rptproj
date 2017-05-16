@@ -7,20 +7,20 @@
       <FullPath>ASADWH.rds</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>ComCareDev.rds</Name>
-      <FullPath>ComCareDev.rds</FullPath>
+      <Name>ComCareDEV Reports.rds</Name>
+      <FullPath>ComCareDEV Reports.rds</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>ComCareProd.rds</Name>
-      <FullPath>ComCareProd.rds</FullPath>
+      <Name>ComCareProd Reports.rds</Name>
+      <FullPath>ComCareProd Reports.rds</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>ComCareTrain.rds</Name>
-      <FullPath>ComCareTrain.rds</FullPath>
+      <Name>ComCareTrain Reports.rds</Name>
+      <FullPath>ComCareTrain Reports.rds</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>ComCareUAT.rds</Name>
-      <FullPath>ComCareUAT.rds</FullPath>
+      <Name>ComCareUAT Reports.rds</Name>
+      <FullPath>ComCareUAT Reports.rds</FullPath>
     </ProjectItem>
   </DataSources>
   <DataSets />
@@ -54,10 +54,6 @@
       <FullPath>DA_DC_Schedule_Vs_ServiceDelivery.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>DA_DC_TransactionAudit.rdl</Name>
-      <FullPath>DA_DC_TransactionAudit.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
       <Name>DA_DC_TransactionAudit_02.rdl</Name>
       <FullPath>DA_DC_TransactionAudit_02.rdl</FullPath>
     </ProjectItem>
@@ -74,6 +70,10 @@
       <FullPath>DA_Statistics.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
+      <Name>DC_MonthlyServiceStatement.rdl</Name>
+      <FullPath>DC_MonthlyServiceStatement.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
       <Name>DC_NDIS_ServicePlan.rdl</Name>
       <FullPath>DC_NDIS_ServicePlan.rdl</FullPath>
     </ProjectItem>
@@ -85,10 +85,6 @@
       <Name>DC_TimeSheet_Vs_Schedule.rdl</Name>
       <FullPath>DC_TimeSheet_Vs_Schedule.rdl</FullPath>
     </ProjectItem>
-    <ProjectItem>
-      <Name>DC_MonthlyServiceStatement.rdl</Name>
-      <FullPath>DC_MonthlyServiceStatement.rdl</FullPath>
-    </ProjectItem>
   </Reports>
   <Configurations>
     <Configuration>
@@ -97,11 +93,11 @@
       <Options>
         <OutputPath>bin\Debug</OutputPath>
         <TargetServerVersion>SSRS2008R2</TargetServerVersion>
-        <TargetServerURL>http://localhost/reportserver</TargetServerURL>
-        <TargetFolder>Disability_Reports</TargetFolder>
-        <TargetDataSourceFolder>Data Sources</TargetDataSourceFolder>
-        <TargetDatasetFolder>Datasets</TargetDatasetFolder>
-        <TargetReportPartFolder>Report Parts</TargetReportPartFolder>
+        <TargetServerURL>http://devsql-1/reportserver_WHouse</TargetServerURL>
+        <TargetFolder>/ComCare/DeploymentTest</TargetFolder>
+        <TargetDataSourceFolder>/</TargetDataSourceFolder>
+        <TargetDatasetFolder>/</TargetDatasetFolder>
+        <TargetReportPartFolder>/ComCare/DeploymentTest</TargetReportPartFolder>
       </Options>
     </Configuration>
     <Configuration>
@@ -128,6 +124,54 @@
         <TargetDataSourceFolder>Data Sources</TargetDataSourceFolder>
         <TargetDatasetFolder>Datasets</TargetDatasetFolder>
         <TargetReportPartFolder>Report Parts</TargetReportPartFolder>
+      </Options>
+    </Configuration>
+    <Configuration>
+      <Name>ComCareProd</Name>
+      <Options>
+        <OutputPath>bin</OutputPath>
+        <TargetServerVersion>SSRS2008R2</TargetServerVersion>
+        <TargetServerURL>http://devsql-1/reportserver_WHouse</TargetServerURL>
+        <TargetFolder>/ComCare/DeploymentMain/DisabilityChildrens</TargetFolder>
+        <TargetDataSourceFolder>/</TargetDataSourceFolder>
+        <TargetDatasetFolder>/</TargetDatasetFolder>
+        <TargetReportPartFolder>/ComCare/DeploymentMain/DisabilityChildrens</TargetReportPartFolder>
+      </Options>
+    </Configuration>
+    <Configuration>
+      <Name>ComCareUAT</Name>
+      <Options>
+        <OutputPath>bin</OutputPath>
+        <TargetServerVersion>SSRS2008R2</TargetServerVersion>
+        <TargetServerURL>http://devsql-1/reportserver_WHouse</TargetServerURL>
+        <TargetFolder>/ComCare/DeploymentMain/ComCareUAT/DisabilityChildrens</TargetFolder>
+        <TargetDataSourceFolder>/</TargetDataSourceFolder>
+        <TargetDatasetFolder>/</TargetDatasetFolder>
+        <TargetReportPartFolder>/ComCare/DeploymentMain/ComCareUAT/DisabilityChildrens</TargetReportPartFolder>
+      </Options>
+    </Configuration>
+    <Configuration>
+      <Name>ComCareTrain</Name>
+      <Options>
+        <OutputPath>bin</OutputPath>
+        <TargetServerVersion>SSRS2008R2</TargetServerVersion>
+        <TargetServerURL>http://devsql-1/reportserver_WHouse</TargetServerURL>
+        <TargetFolder>/ComCare/DeploymentMain/ComCareTrain/DisabilityChildrens</TargetFolder>
+        <TargetDataSourceFolder>/</TargetDataSourceFolder>
+        <TargetDatasetFolder>/</TargetDatasetFolder>
+        <TargetReportPartFolder>/ComCare/DeploymentMain/ComCareTrain/DisabilityChildrens</TargetReportPartFolder>
+      </Options>
+    </Configuration>
+    <Configuration>
+      <Name>ComCareDEV</Name>
+      <Options>
+        <OutputPath>bin</OutputPath>
+        <TargetServerVersion>SSRS2008R2</TargetServerVersion>
+        <TargetServerURL>http://devsql-1/reportserver_WHouse</TargetServerURL>
+        <TargetFolder>/ComCare/DeploymentMain/ComCareDEV/DisabilityChildrens</TargetFolder>
+        <TargetDataSourceFolder>/</TargetDataSourceFolder>
+        <TargetDatasetFolder>/</TargetDatasetFolder>
+        <TargetReportPartFolder>/ComCare/DeploymentMain/ComCareDEV/DisabilityChildrens</TargetReportPartFolder>
       </Options>
     </Configuration>
   </Configurations>

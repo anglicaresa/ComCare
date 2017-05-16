@@ -4,7 +4,7 @@
   <AutoRefresh>0</AutoRefresh>
   <DataSources>
     <DataSource Name="DataSource1">
-      <DataSourceReference>ComCareProd</DataSourceReference>
+      <DataSourceReference>ComCareProd Reports</DataSourceReference>
       <rd:SecurityType>None</rd:SecurityType>
       <rd:DataSourceID>a30e4eda-9c92-468e-b77d-c6893b5d3b57</rd:DataSourceID>
     </DataSource>
@@ -1650,7 +1650,7 @@ Switch
             </TablixRowHierarchy>
             <DataSetName>DataSet1</DataSetName>
             <Height>1.8cm</Height>
-            <Width>52.18374cm</Width>
+            <Width>52.18375cm</Width>
             <Style>
               <Border>
                 <Style>None</Style>

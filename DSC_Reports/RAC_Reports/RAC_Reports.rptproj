@@ -7,20 +7,20 @@
       <FullPath>ASADWH.rds</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>ComCareDev.rds</Name>
-      <FullPath>ComCareDev.rds</FullPath>
+      <Name>ComCareDEV Reports.rds</Name>
+      <FullPath>ComCareDEV Reports.rds</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>ComCareProd.rds</Name>
-      <FullPath>ComCareProd.rds</FullPath>
+      <Name>ComCareProd Reports.rds</Name>
+      <FullPath>ComCareProd Reports.rds</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>ComCareTrain.rds</Name>
-      <FullPath>ComCareTrain.rds</FullPath>
+      <Name>ComCareTrain Reports.rds</Name>
+      <FullPath>ComCareTrain Reports.rds</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>ComCareUAT.rds</Name>
-      <FullPath>ComCareUAT.rds</FullPath>
+      <Name>ComCareUAT Reports.rds</Name>
+      <FullPath>ComCareUAT Reports.rds</FullPath>
     </ProjectItem>
   </DataSources>
   <DataSets />
@@ -60,12 +60,12 @@
       <Platform>Win32</Platform>
       <Options>
         <OutputPath>bin\Debug</OutputPath>
-        <TargetServerVersion>SSRS2016</TargetServerVersion>
-        <TargetServerURL>http://localhost/reportserver</TargetServerURL>
-        <TargetFolder>RAC_Reports</TargetFolder>
-        <TargetDataSourceFolder>Data Sources</TargetDataSourceFolder>
-        <TargetDatasetFolder>Datasets</TargetDatasetFolder>
-        <TargetReportPartFolder>Report Parts</TargetReportPartFolder>
+        <TargetServerVersion>SSRS2008R2</TargetServerVersion>
+        <TargetServerURL>http://devsql-1/reportserver_WHouse</TargetServerURL>
+        <TargetFolder>/ComCare/DeploymentTest</TargetFolder>
+        <TargetDataSourceFolder>/</TargetDataSourceFolder>
+        <TargetDatasetFolder>/</TargetDatasetFolder>
+        <TargetReportPartFolder>/ComCare/DeploymentTest</TargetReportPartFolder>
       </Options>
     </Configuration>
     <Configuration>
@@ -74,7 +74,7 @@
       <Options>
         <OutputPath>bin\DebugLocal</OutputPath>
         <TargetServerVersion>SSRS2016</TargetServerVersion>
-        <TargetServerURL>http://localhost/reportserver</TargetServerURL>
+        <TargetServerURL>http://devsql-1/reportserver_WHouse</TargetServerURL>
         <TargetFolder>RAC_Reports</TargetFolder>
         <TargetDataSourceFolder>Data Sources</TargetDataSourceFolder>
         <TargetDatasetFolder>Datasets</TargetDatasetFolder>
@@ -92,6 +92,54 @@
         <TargetDataSourceFolder>Data Sources</TargetDataSourceFolder>
         <TargetDatasetFolder>Datasets</TargetDatasetFolder>
         <TargetReportPartFolder>Report Parts</TargetReportPartFolder>
+      </Options>
+    </Configuration>
+    <Configuration>
+      <Name>ComCareProd</Name>
+      <Options>
+        <OutputPath>bin</OutputPath>
+        <TargetServerVersion>SSRS2008R2</TargetServerVersion>
+        <TargetServerURL>http://devsql-1/reportserver_WHouse</TargetServerURL>
+        <TargetFolder>/ComCare/DeploymentMain/RAC</TargetFolder>
+        <TargetDataSourceFolder>/</TargetDataSourceFolder>
+        <TargetDatasetFolder>/</TargetDatasetFolder>
+        <TargetReportPartFolder>/ComCare/DeploymentMain/RAC</TargetReportPartFolder>
+      </Options>
+    </Configuration>
+    <Configuration>
+      <Name>ComCareUAT</Name>
+      <Options>
+        <OutputPath>bin</OutputPath>
+        <TargetServerVersion>SSRS2008R2</TargetServerVersion>
+        <TargetServerURL>http://devsql-1/reportserver_WHouse</TargetServerURL>
+        <TargetFolder>/ComCare/DeploymentMain/ComCareUAT/RAC</TargetFolder>
+        <TargetDataSourceFolder>/</TargetDataSourceFolder>
+        <TargetDatasetFolder>/</TargetDatasetFolder>
+        <TargetReportPartFolder>/ComCare/DeploymentMain/ComCareUAT/RAC</TargetReportPartFolder>
+      </Options>
+    </Configuration>
+    <Configuration>
+      <Name>ComCareTrain</Name>
+      <Options>
+        <OutputPath>bin</OutputPath>
+        <TargetServerVersion>SSRS2008R2</TargetServerVersion>
+        <TargetServerURL>http://devsql-1/reportserver_WHouse</TargetServerURL>
+        <TargetFolder>/ComCare/DeploymentMain/ComCareTrain/RAC</TargetFolder>
+        <TargetDataSourceFolder>/</TargetDataSourceFolder>
+        <TargetDatasetFolder>/</TargetDatasetFolder>
+        <TargetReportPartFolder>/ComCare/DeploymentMain/ComCareTrain/RAC</TargetReportPartFolder>
+      </Options>
+    </Configuration>
+    <Configuration>
+      <Name>ComCareDEV</Name>
+      <Options>
+        <OutputPath>bin</OutputPath>
+        <TargetServerVersion>SSRS2008R2</TargetServerVersion>
+        <TargetServerURL>http://devsql-1/reportserver_WHouse</TargetServerURL>
+        <TargetFolder>/ComCare/DeploymentMain/ComCareDEV/RAC</TargetFolder>
+        <TargetDataSourceFolder>/</TargetDataSourceFolder>
+        <TargetDatasetFolder>/</TargetDatasetFolder>
+        <TargetReportPartFolder>/ComCare/DeploymentMain/ComCareDEV/RAC</TargetReportPartFolder>
       </Options>
     </Configuration>
   </Configurations>

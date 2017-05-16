@@ -4,7 +4,7 @@
   <AutoRefresh>0</AutoRefresh>
   <DataSources>
     <DataSource Name="DataSource">
-      <DataSourceReference>ComCareProd</DataSourceReference>
+      <DataSourceReference>ComCareProd Reports</DataSourceReference>
       <rd:SecurityType>None</rd:SecurityType>
       <rd:DataSourceID>589394e3-7ddf-4da7-bae3-e386442e0057</rd:DataSourceID>
     </DataSource>

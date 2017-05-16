@@ -3,7 +3,7 @@
   <AutoRefresh>0</AutoRefresh>
   <DataSources>
     <DataSource Name="DataSource1">
-      <DataSourceReference>ComCareProd</DataSourceReference>
+      <DataSourceReference>ComCareProd Reports</DataSourceReference>
       <rd:SecurityType>None</rd:SecurityType>
       <rd:DataSourceID>fae7e54e-0be3-4d00-b7e5-c5405f4cd592</rd:DataSourceID>
     </DataSource>
@@ -62,7 +62,7 @@ J007.Description as Shift_Type
 ,J001.Schedule_Time as Time
 ,J001.[Schedule_Duration] as Schedule_Duration
 FROM
-dbo.[WI_Activity] J001
+(select * from dbo.[WI_Activity] WiA where convert(date ,WiA.Activity_Date) BETWEEN dateadd(day,-2,@Start_Date) AND dateadd(day,2,@End_Date)) J001
 INNER JOIN (
 Select
 		Prov.Provider_ID,

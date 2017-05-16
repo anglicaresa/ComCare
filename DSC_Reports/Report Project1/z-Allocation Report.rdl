@@ -3,7 +3,7 @@
   <AutoRefresh>0</AutoRefresh>
   <DataSources>
     <DataSource Name="DataSource1">
-      <DataSourceReference>/ASADWH</DataSourceReference>
+      <DataSourceReference>ASADWH</DataSourceReference>
       <rd:SecurityType>None</rd:SecurityType>
       <rd:DataSourceID>ddd6e43d-d0b3-4758-8979-78da1f4b6a89</rd:DataSourceID>
     </DataSource>

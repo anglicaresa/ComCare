@@ -3,7 +3,7 @@
   <AutoRefresh>0</AutoRefresh>
   <DataSources>
     <DataSource Name="Ref_ASADWH">
-      <DataSourceReference>ComCareProd</DataSourceReference>
+      <DataSourceReference>ComCareProd Reports</DataSourceReference>
       <rd:SecurityType>None</rd:SecurityType>
       <rd:DataSourceID>7697e670-0275-4042-bcf4-19f7d27cc1a4</rd:DataSourceID>
     </DataSource>
@@ -112,6 +112,7 @@ Select * from
 					end
 				) 'RN'
 		From [dbo].[Wi_Activity] WiA
+		where convert(date, Wia.Activity_Date) between dateadd(day,-7,@Start_Date) and dateadd(day,7,@End_Date)
 	)J001
 
 	Left Outer Join [dbo].[Person] J002 on J002.[Person_ID] = J001.[Provider_ID]

@@ -4,7 +4,7 @@
   <AutoRefresh>0</AutoRefresh>
   <DataSources>
     <DataSource Name="DataSource1">
-      <DataSourceReference>ComCareProd</DataSourceReference>
+      <DataSourceReference>ComCareProd Reports</DataSourceReference>
       <rd:SecurityType>None</rd:SecurityType>
       <rd:DataSourceID>866ee880-e152-43fd-b434-a63154270928</rd:DataSourceID>
     </DataSource>
@@ -1042,7 +1042,7 @@ Iif
                 <Paragraph>
                   <TextRuns>
                     <TextRun>
-                      <Value>Admission / Discharge Report</Value>
+                      <Value>Admission / Discharge Report just</Value>
                       <Style>
                         <FontSize>20pt</FontSize>
                         <FontWeight>Bold</FontWeight>
@@ -1078,7 +1078,6 @@ Iif
                 </Paragraph>
               </Paragraphs>
               <rd:DefaultName>Textbox8</rd:DefaultName>
-              <Top>0cm</Top>
               <Height>1.90527cm</Height>
               <Width>22.64583cm</Width>
               <Style>

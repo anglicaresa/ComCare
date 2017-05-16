@@ -7,24 +7,28 @@
       <FullPath>ASADWH.rds</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>ComCareDev.rds</Name>
-      <FullPath>ComCareDev.rds</FullPath>
+      <Name>ComCareDEV Reports.rds</Name>
+      <FullPath>ComCareDev Reports.rds</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>ComCareProd.rds</Name>
-      <FullPath>ComCareProd.rds</FullPath>
+      <Name>ComCareProd Reports.rds</Name>
+      <FullPath>ComCareProd Reports.rds</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>ComCareTrain.rds</Name>
-      <FullPath>ComCareTrain.rds</FullPath>
+      <Name>ComCareTrain Reports.rds</Name>
+      <FullPath>ComCareTrain Reports.rds</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>ComCareUAT.rds</Name>
-      <FullPath>ComCareUAT.rds</FullPath>
+      <Name>ComCareUAT Reports.rds</Name>
+      <FullPath>ComCareUAT Reports.rds</FullPath>
     </ProjectItem>
   </DataSources>
   <DataSets />
   <Reports>
+    <ProjectItem>
+      <Name>HCP_Admin_Discharge.rdl</Name>
+      <FullPath>HCP_Admin_Discharge.rdl</FullPath>
+    </ProjectItem>
     <ProjectItem>
       <Name>HCP_BirthdayReport.rdl</Name>
       <FullPath>HCP_BirthdayReport.rdl</FullPath>
@@ -49,10 +53,6 @@
       <Name>HCP_VisitTime_V_PackageStartTime.rdl</Name>
       <FullPath>HCP_VisitTime_V_PackageStartTime.rdl</FullPath>
     </ProjectItem>
-    <ProjectItem>
-      <Name>HCP_Admin_Discharge.rdl</Name>
-      <FullPath>HCP_Admin_Discharge.rdl</FullPath>
-    </ProjectItem>
   </Reports>
   <Configurations>
     <Configuration>
@@ -61,11 +61,12 @@
       <Options>
         <OutputPath>bin</OutputPath>
         <TargetServerVersion>SSRS2008R2</TargetServerVersion>
-        <TargetServerURL>http://devsql-1/Reports_WHOUSE</TargetServerURL>
-        <TargetFolder>http://devsql-1/Reports_WHOUSE/Pages/Folder.aspx?ItemPath=/ComCare</TargetFolder>
-        <TargetDataSourceFolder>http://devsql-1/Reports_WHOUSE/Pages/Folder.aspx</TargetDataSourceFolder>
-        <TargetDatasetFolder>http://devsql-1/Reports_WHOUSE/Pages/DataSet.aspx?ItemPath=/ComCare/SharedDataSets/</TargetDatasetFolder>
-        <TargetReportPartFolder>http://devsql-1/Reports_WHOUSE/Pages/Folder.aspx?ItemPath=/ComCare</TargetReportPartFolder>
+        <TargetServerURL>http://devsql-1/reportserver_WHouse</TargetServerURL>
+        <TargetFolder>/ComCare/DeploymentMain</TargetFolder>
+        <TargetDataSourceFolder>/</TargetDataSourceFolder>
+        <TargetDatasetFolder>/</TargetDatasetFolder>
+        <OverwriteDatasets>true</OverwriteDatasets>
+        <TargetReportPartFolder>/ComCare/DeploymentMain</TargetReportPartFolder>
       </Options>
     </Configuration>
     <Configuration>
@@ -92,6 +93,56 @@
         <TargetDataSourceFolder>Data Sources</TargetDataSourceFolder>
         <TargetDatasetFolder>Datasets</TargetDatasetFolder>
         <TargetReportPartFolder>Report Parts</TargetReportPartFolder>
+      </Options>
+    </Configuration>
+    <Configuration>
+      <Name>ComCareProd</Name>
+      <Options>
+        <OutputPath>bin</OutputPath>
+        <TargetServerVersion>SSRS2008R2</TargetServerVersion>
+        <TargetServerURL>http://devsql-1/reportserver_WHouse</TargetServerURL>
+        <TargetFolder>/ComCare/DeploymentMain/HomeCare</TargetFolder>
+        <TargetDataSourceFolder>/</TargetDataSourceFolder>
+        <TargetDatasetFolder>/</TargetDatasetFolder>
+        <OverwriteDatasets>true</OverwriteDatasets>
+        <TargetReportPartFolder>/ComCare/DeploymentMain/HomeCare</TargetReportPartFolder>
+      </Options>
+    </Configuration>
+    <Configuration>
+      <Name>ComCareUAT</Name>
+      <Options>
+        <OutputPath>bin</OutputPath>
+        <TargetServerVersion>SSRS2008R2</TargetServerVersion>
+        <TargetServerURL>http://devsql-1/reportserver_WHouse</TargetServerURL>
+        <TargetFolder>/ComCare/DeploymentMain/ComCareUAT/HomeCare</TargetFolder>
+        <TargetDataSourceFolder>/</TargetDataSourceFolder>
+        <TargetDatasetFolder>/</TargetDatasetFolder>
+        <OverwriteDatasets>true</OverwriteDatasets>
+        <TargetReportPartFolder>/ComCare/DeploymentMain/ComCareUAT/HomeCare</TargetReportPartFolder>
+      </Options>
+    </Configuration>
+    <Configuration>
+      <Name>ComCareTrain</Name>
+      <Options>
+        <OutputPath>bin</OutputPath>
+        <TargetServerVersion>SSRS2008R2</TargetServerVersion>
+        <TargetServerURL>http://devsql-1/reportserver_WHouse</TargetServerURL>
+        <TargetFolder>/ComCare/DeploymentMain/ComCareTrain/HomeCare</TargetFolder>
+        <TargetDataSourceFolder>/</TargetDataSourceFolder>
+        <TargetDatasetFolder>/</TargetDatasetFolder>
+        <TargetReportPartFolder>/ComCare/DeploymentMain/ComCareTrain/HomeCare</TargetReportPartFolder>
+      </Options>
+    </Configuration>
+    <Configuration>
+      <Name>ComCareDEV</Name>
+      <Options>
+        <OutputPath>bin</OutputPath>
+        <TargetServerVersion>SSRS2008R2</TargetServerVersion>
+        <TargetServerURL>http://devsql-1/reportserver_WHouse</TargetServerURL>
+        <TargetFolder>/ComCare/DeploymentMain/ComCareDEV/HomeCare</TargetFolder>
+        <TargetDataSourceFolder>/</TargetDataSourceFolder>
+        <TargetDatasetFolder>/</TargetDatasetFolder>
+        <TargetReportPartFolder>/ComCare/DeploymentMain/ComCareDEV/HomeCare</TargetReportPartFolder>
       </Options>
     </Configuration>
   </Configurations>
