@@ -13,6 +13,8 @@ Project("{F14B399A-7131-4C87-9E4B-1186C45EF12D}") = "Common_Reports", "Common_Re
 EndProject
 Project("{F14B399A-7131-4C87-9E4B-1186C45EF12D}") = "zOld_Reports", "Report Project1\zOld_Reports.rptproj", "{9B1EC0E8-83AD-4A3F-A063-3D39E4CA7487}"
 EndProject
+Project("{F14B399A-7131-4C87-9E4B-1186C45EF12D}") = "Unsorted_DL_FromOriginal", "Unsorted_DL_FromOriginal\Unsorted_DL_FromOriginal.rptproj", "{DCF7763D-56C2-4947-A7BC-C887007E33DF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		ComCareDEV|Default = ComCareDEV|Default
@@ -112,6 +114,26 @@ Global
 		{9B1EC0E8-83AD-4A3F-A063-3D39E4CA7487}.Release|Default.ActiveCfg = Release
 		{9B1EC0E8-83AD-4A3F-A063-3D39E4CA7487}.Release|Default.Build.0 = Release
 		{9B1EC0E8-83AD-4A3F-A063-3D39E4CA7487}.Release|Default.Deploy.0 = Release
+		{DCF7763D-56C2-4947-A7BC-C887007E33DF}.ComCareDEV|Default.ActiveCfg = Release
+		{DCF7763D-56C2-4947-A7BC-C887007E33DF}.ComCareDEV|Default.Build.0 = Release
+		{DCF7763D-56C2-4947-A7BC-C887007E33DF}.ComCareDEV|Default.Deploy.0 = Release
+		{DCF7763D-56C2-4947-A7BC-C887007E33DF}.ComCareProd|Default.ActiveCfg = Release
+		{DCF7763D-56C2-4947-A7BC-C887007E33DF}.ComCareProd|Default.Build.0 = Release
+		{DCF7763D-56C2-4947-A7BC-C887007E33DF}.ComCareProd|Default.Deploy.0 = Release
+		{DCF7763D-56C2-4947-A7BC-C887007E33DF}.ComCareTrain|Default.ActiveCfg = Release
+		{DCF7763D-56C2-4947-A7BC-C887007E33DF}.ComCareTrain|Default.Build.0 = Release
+		{DCF7763D-56C2-4947-A7BC-C887007E33DF}.ComCareTrain|Default.Deploy.0 = Release
+		{DCF7763D-56C2-4947-A7BC-C887007E33DF}.ComCareUAT|Default.ActiveCfg = Release
+		{DCF7763D-56C2-4947-A7BC-C887007E33DF}.ComCareUAT|Default.Build.0 = Release
+		{DCF7763D-56C2-4947-A7BC-C887007E33DF}.ComCareUAT|Default.Deploy.0 = Release
+		{DCF7763D-56C2-4947-A7BC-C887007E33DF}.Debug|Default.ActiveCfg = Debug
+		{DCF7763D-56C2-4947-A7BC-C887007E33DF}.Debug|Default.Build.0 = Debug
+		{DCF7763D-56C2-4947-A7BC-C887007E33DF}.Debug|Default.Deploy.0 = Debug
+		{DCF7763D-56C2-4947-A7BC-C887007E33DF}.DebugLocal|Default.ActiveCfg = DebugLocal
+		{DCF7763D-56C2-4947-A7BC-C887007E33DF}.DebugLocal|Default.Build.0 = DebugLocal
+		{DCF7763D-56C2-4947-A7BC-C887007E33DF}.Release|Default.ActiveCfg = Release
+		{DCF7763D-56C2-4947-A7BC-C887007E33DF}.Release|Default.Build.0 = Release
+		{DCF7763D-56C2-4947-A7BC-C887007E33DF}.Release|Default.Deploy.0 = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

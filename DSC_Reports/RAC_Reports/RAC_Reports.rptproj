@@ -46,8 +46,8 @@
       <FullPath>RAC_Roster.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>RAC_Roster_Report_Allocation_port.rdl</Name>
-      <FullPath>RAC_Roster_Report_Allocation_port.rdl</FullPath>
+      <Name>RAC_Roster_Report_Allocation.rdl</Name>
+      <FullPath>RAC_Roster_Report_Allocation.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
       <Name>RAC_VacantShift.rdl</Name>

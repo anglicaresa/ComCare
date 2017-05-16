@@ -238,7 +238,7 @@ Left Outer Join
 				end Desc
 			) AS 'RN'
 	From [dbo].[Wi_Activity] WiA
-
+	where convert(date, Wia.Activity_Date) between dateadd(day,-2,@Start_Date) and dateadd(day,2,@End_Date)
 )J006 on J006.[SPPID] = J003.[Service_Prov_Position_ID] and (J006.[Activity_Date] = J005.[date_seq] or J006.[Activity_Date] = J009.[date_seq])
 
 Left Outer Join [dbo].[Person] J007 on J007.[Person_ID] = J006.[Provider_ID]
