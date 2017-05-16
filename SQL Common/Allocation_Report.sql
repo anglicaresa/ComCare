@@ -130,6 +130,7 @@ Select * from
 					end
 				) 'RN'
 		From [dbo].[Wi_Activity] WiA
+		where convert(date, Wia.Activity_Date) between dateadd(day,-7,@Start_Date) and dateadd(day,7,@End_Date)
 	)J001
 
 	Left Outer Join [dbo].[Person] J002 on J002.[Person_ID] = J001.[Provider_ID]

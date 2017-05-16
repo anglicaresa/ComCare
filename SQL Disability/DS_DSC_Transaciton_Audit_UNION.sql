@@ -44,8 +44,11 @@ select * from
 			, 'NDIS funded'
 			,IIF(J009.Client_ID IS NULL,'No Contract Billing','Self Managed')
 		) 'Funding_type'
-
-	from [dbo].Actual_Service J001
+--/*
+	from 
+	(select * from[dbo].Actual_Service A_S where convert(date, A_S.Visit_Date) between @StartDate and @EndDate)J001
+--*/
+--	from [dbo].Actual_Service J001
 
 	Left outer Join
 	(
@@ -82,6 +85,10 @@ left outer join
 		,Wi_A.Round_Allocation_ID 'Round_Allocation_ID'
 	from [dbo].wi_activity Wi_A
 	left outer join [dbo].activity_work_table AWT on AWT.Allocated_Task_ID = Wi_A.Round_Allocation_ID and AWT.activity_date = Wi_A.activity_date
+--/*
+	Where
+	 convert (date, Wi_A.Activity_Date) between dateadd(Day,-7,@StartDate) and dateadd(day,+7,@EndDate)
+--*/
 )J033 ON 
 		J033.Client_ID = J001.Client_ID 
 		and J033.Activity_Date = J001.Visit_Date 
@@ -227,7 +234,8 @@ select * from
 					else 'z'
 				end
 			) AS 'RN'
-		from dbo.WI_Activity Wi_A
+		from (select * from dbo.WI_Activity Wi_A1 where convert(date, Wi_A1.Activity_Date) between dateadd(Day,-7,@StartDate) and dateadd(day,+7,@EndDate)) Wi_A
+--		from dbo.WI_Activity Wi_A
 		Left Outer Join dbo.Actual_Service Ac_S 
 		ON 
 			1=1
@@ -235,18 +243,10 @@ select * from
 			and Wi_A.SPPID = Ac_S.Service_Prov_Position_ID
 			and Wi_A.Activity_Date = Ac_S.Visit_Date
 			and Wi_A.Round_Allocation_ID = Ac_S.Allocated_Task_ID
-			/*
-			and (
-					Wi_A.Schedule_Time = Ac_S.Activity_Start_Time 
-					or Wi_A.Activity_Start_Time = Ac_S.Activity_Start_Time 
-					or Cast (Wi_A.Schedule_Time as time) = Cast (Ac_S.Visit_Time as Time)
-				)
-			--and 1 = iif(Wi_A.Provider_ID=0 and Ac_S.Provider_ID <> 0, 0,1) 
-			*/
 		where
 			1=1
 			and Wi_A.Cancellation_Date is NULL
-			and Wi_A.Client_ID IS NOT NULL		
+			and Wi_A.Client_ID IS NOT NULL	
 	)J001
 
 	Left outer Join
