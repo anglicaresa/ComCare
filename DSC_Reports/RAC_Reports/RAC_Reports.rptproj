@@ -60,7 +60,7 @@
       <Platform>Win32</Platform>
       <Options>
         <OutputPath>bin\Debug</OutputPath>
-        <TargetServerVersion>SSRS2016</TargetServerVersion>
+        <TargetServerVersion>SSRS2008R2</TargetServerVersion>
         <TargetServerURL>http://localhost/reportserver</TargetServerURL>
         <TargetFolder>RAC_Reports</TargetFolder>
         <TargetDataSourceFolder>Data Sources</TargetDataSourceFolder>
