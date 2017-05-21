@@ -1038,7 +1038,7 @@ order by alld.FullName,alld.Activity_Date asc</CommandText>
             </Style>
           </Tablix>
         </ReportItems>
-        <Height>1.89105in</Height>
+        <Height>0.81813in</Height>
         <Style />
       </Body>
       <Width>10.50795in</Width>
