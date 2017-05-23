@@ -53,6 +53,10 @@
       <Name>HCP_VisitTime_V_PackageStartTime.rdl</Name>
       <FullPath>HCP_VisitTime_V_PackageStartTime.rdl</FullPath>
     </ProjectItem>
+    <ProjectItem>
+      <Name>CHSP_TransactionAudit_01.rdl</Name>
+      <FullPath>CHSP_TransactionAudit_01.rdl</FullPath>
+    </ProjectItem>
   </Reports>
   <Configurations>
     <Configuration>

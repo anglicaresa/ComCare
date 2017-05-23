@@ -154,7 +154,7 @@
       <Platform>Win32</Platform>
       <Options>
         <OutputPath>bin\Release</OutputPath>
-        <TargetServerVersion>SSRS2016</TargetServerVersion>
+        <TargetServerVersion>SSRS2008R2</TargetServerVersion>
         <TargetServerURL>http://localhost/reportserver</TargetServerURL>
         <TargetFolder>Unsorted_DL_FromOriginal</TargetFolder>
         <TargetDataSourceFolder>Data Sources</TargetDataSourceFolder>

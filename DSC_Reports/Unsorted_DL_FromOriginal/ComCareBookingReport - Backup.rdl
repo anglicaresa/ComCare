@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+<Report xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner" xmlns:cl="http://schemas.microsoft.com/sqlserver/reporting/2010/01/componentdefinition" xmlns="http://schemas.microsoft.com/sqlserver/reporting/2010/01/reportdefinition">
   <AutoRefresh>0</AutoRefresh>
   <DataSources>
     <DataSource Name="asadwh">
       <ConnectionProperties>
         <DataProvider>SQL</DataProvider>
         <ConnectString>Data Source=devsql-1\whouse;Initial Catalog=asadwh</ConnectString>
-        <Prompt>Specify a user name and password for data source asadwh:</Prompt>
       </ConnectionProperties>
       <rd:SecurityType>DataBase</rd:SecurityType>
       <rd:DataSourceID>8bd336f8-06fd-47c3-ade4-0188d7016f36</rd:DataSourceID>
@@ -20,24 +19,37 @@
           <QueryParameter Name="@ClientId">
             <Value>=Parameters!ClientId.Value</Value>
           </QueryParameter>
+          <QueryParameter Name="@StartDate">
+            <Value>=Parameters!StartDate.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Enddate">
+            <Value>=Parameters!EndDate.Value</Value>
+          </QueryParameter>
         </QueryParameters>
         <CommandText>select a.client_id,a.Provider_ID,datename(WEEKDAY,a.Activity_Date) as WorkDay,convert(date,a.Activity_Date,103) as Activity_date,a.Schedule_Task_Type,
 substring(convert(varchar,a.schedule_time,108),1,5) as schedule_Start_time,
 substring(convert(varchar,dateadd(minute,a.schedule_duration,convert(time,a.schedule_time)),108),1,5) as schedule_End_time,
 
 cast(a.Schedule_Duration as float)/60 as Hours,
-d.Preferred_Name,e.Description as Task_Description,f.Preferred_Name+' '+f.Last_Name as client_name,i.Description as Program
+case j.provider_contract_type_code
+when '3' then 'Agency'
+else d.Preferred_Name
+end as Preferred_Name ,e.Description as Task_Description,f.Preferred_Name+' '+f.Last_Name as client_name,i.Description as Program
 from  [appsql-3\comcareprod].[comcareprod].[dbo].WI_Activity a
 inner join [appsql-3\comcareprod].[comcareprod].[dbo].Round_Allocation as b on a.Round_Allocation_ID=b.Allocated_Round_ID
-inner join [appsql-3\comcareprod].[comcareprod].[dbo].Task_Schedule_Allocation as c on b.Schedule_Sequence_No=c.Schedule_Sequence_No and c.Period_Type_Code&lt;&gt;'SINGLE'
+inner join [appsql-3\comcareprod].[comcareprod].[dbo].Task_Schedule_Allocation as c on b.Schedule_Sequence_No=c.Schedule_Sequence_No 
+--and c.Period_Type_Code&lt;&gt;'SINGLE'
 inner join [appsql-3\comcareprod].[comcareprod].[dbo].person as d on a.provider_id=d.Person_ID
 inner join [appsql-3\comcareprod].[comcareprod].[dbo].Task_Type as e on e.Task_Type_Code=a.Schedule_Task_Type
 inner join [appsql-3\comcareprod].[comcareprod].[dbo].person as f on a.client_id=f.Person_ID
-inner join [appsql-3\comcareprod].[comcareprod].[dbo].FC_Client_Contract as g on a.client_id=g.client_id
+inner join (select client_id,min(program_id) as Program_id from  [appsql-3\comcareprod].[comcareprod].[dbo].FC_Client_Contract where Effective_To_Date is null group by client_id) as g on a.client_id=g.client_id
 inner join [appsql-3\comcareprod].[comcareprod].[dbo].PT_Program as i on i.Program_ID=g.Program_ID
+inner join [appsql-3\comcareprod].[comcareprod].[dbo].provider_contract as j on a.provider_id=j.provider_id
 where a.client_id=@ClientId
-and  a.Activity_Date&gt;=convert(datetime, convert(varchar, getdate(), 103), 103)
-and   a.Activity_Date&lt;=convert(datetime, convert(varchar, getdate()+28, 103), 103)
+and  a.Activity_Date&gt;=convert(datetime, @StartDate, 103)
+and   a.Activity_Date&lt;=convert(datetime, @Enddate, 103)
+--and g.Effective_To_Date is null
+and j.Effective_date_to is null 
 order by a.Activity_Date,a.Schedule_Time asc </CommandText>
       </Query>
       <Fields>
@@ -91,6 +103,30 @@ order by a.Activity_Date,a.Schedule_Time asc </CommandText>
         </Field>
       </Fields>
     </DataSet>
+    <DataSet Name="startdate">
+      <Query>
+        <DataSourceName>asadwh</DataSourceName>
+        <CommandText> select convert(varchar, getdate(), 103) as startdate</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="startdate">
+          <DataField>startdate</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="endate">
+      <Query>
+        <DataSourceName>asadwh</DataSourceName>
+        <CommandText> select convert(varchar, getdate()+28, 103) as endate</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="endate">
+          <DataField>endate</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
   </DataSets>
   <ReportSections>
     <ReportSection>
@@ -100,25 +136,25 @@ order by a.Activity_Date,a.Schedule_Time asc </CommandText>
             <TablixBody>
               <TablixColumns>
                 <TablixColumn>
-                  <Width>3.21438cm</Width>
+                  <Width>2.78812cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>2.89687cm</Width>
+                  <Width>2.51484cm</Width>
                 </TablixColumn>
                 <TablixColumn>
                   <Width>3.74354cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>2.73812cm</Width>
+                  <Width>2.18249cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>2.73812cm</Width>
+                  <Width>1.83854cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>6.15125cm</Width>
+                  <Width>5.38396cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>2.34125cm</Width>
+                  <Width>1.70625cm</Width>
                 </TablixColumn>
               </TablixColumns>
               <TablixRows>
@@ -614,6 +650,7 @@ order by a.Activity_Date,a.Schedule_Time asc </CommandText>
                                   <Value>=Fields!Hours.Value</Value>
                                   <Style>
                                     <FontSize>9pt</FontSize>
+                                    <Format>f2</Format>
                                   </Style>
                                 </TextRun>
                               </TextRuns>
@@ -670,7 +707,7 @@ order by a.Activity_Date,a.Schedule_Time asc </CommandText>
             <Top>3.04582cm</Top>
             <Left>1.64042cm</Left>
             <Height>1.22646cm</Height>
-            <Width>23.82353cm</Width>
+            <Width>20.15774cm</Width>
             <Style>
               <Border>
                 <Style>None</Style>
@@ -831,7 +868,7 @@ order by a.Activity_Date,a.Schedule_Time asc </CommandText>
             <Top>1.37266cm</Top>
             <Left>1.60275cm</Left>
             <Height>0cm</Height>
-            <Width>23.86121cm</Width>
+            <Width>20.19541cm</Width>
             <ZIndex>6</ZIndex>
             <Style>
               <Border>
@@ -844,7 +881,7 @@ order by a.Activity_Date,a.Schedule_Time asc </CommandText>
         <Height>4.96875in</Height>
         <Style />
       </Body>
-      <Width>10.94185in</Width>
+      <Width>8.94185in</Width>
       <Page>
         <PageHeight>21cm</PageHeight>
         <PageWidth>29.7cm</PageWidth>
@@ -864,20 +901,27 @@ order by a.Activity_Date,a.Schedule_Time asc </CommandText>
       <DataType>String</DataType>
       <Prompt>ClientId</Prompt>
     </ReportParameter>
+    <ReportParameter Name="StartDate">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>startdate</DataSetName>
+          <ValueField>startdate</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <Prompt>StartDate(dd/mm/yyyy)</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="EndDate">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>endate</DataSetName>
+          <ValueField>endate</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <Prompt>EndDate(dd/mm/yyyy)</Prompt>
+    </ReportParameter>
   </ReportParameters>
-  <ReportParametersLayout>
-    <GridLayoutDefinition>
-      <NumberOfColumns>1</NumberOfColumns>
-      <NumberOfRows>1</NumberOfRows>
-      <CellDefinitions>
-        <CellDefinition>
-          <ColumnIndex>0</ColumnIndex>
-          <RowIndex>0</RowIndex>
-          <ParameterName>ClientId</ParameterName>
-        </CellDefinition>
-      </CellDefinitions>
-    </GridLayoutDefinition>
-  </ReportParametersLayout>
   <EmbeddedImages>
     <EmbeddedImage Name="AnglicareSA1">
       <MIMEType>image/png</MIMEType>

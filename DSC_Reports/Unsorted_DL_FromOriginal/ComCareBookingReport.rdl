@@ -1,12 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Report xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner" xmlns:cl="http://schemas.microsoft.com/sqlserver/reporting/2010/01/componentdefinition" xmlns="http://schemas.microsoft.com/sqlserver/reporting/2010/01/reportdefinition">
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
   <AutoRefresh>0</AutoRefresh>
   <DataSources>
     <DataSource Name="asadwh">
-      <ConnectionProperties>
-        <DataProvider>SQL</DataProvider>
-        <ConnectString>Data Source=devsql-1\whouse;Initial Catalog=asadwh</ConnectString>
-      </ConnectionProperties>
+      <DataSourceReference>ComCareProd Reports</DataSourceReference>
       <rd:SecurityType>DataBase</rd:SecurityType>
       <rd:DataSourceID>8bd336f8-06fd-47c3-ade4-0188d7016f36</rd:DataSourceID>
     </DataSource>
@@ -16,41 +13,69 @@
       <Query>
         <DataSourceName>asadwh</DataSourceName>
         <QueryParameters>
-          <QueryParameter Name="@ClientId">
-            <Value>=Parameters!ClientId.Value</Value>
-          </QueryParameter>
           <QueryParameter Name="@StartDate">
             <Value>=Parameters!StartDate.Value</Value>
           </QueryParameter>
-          <QueryParameter Name="@Enddate">
+          <QueryParameter Name="@EndDate">
             <Value>=Parameters!EndDate.Value</Value>
           </QueryParameter>
+          <QueryParameter Name="@ClientId">
+            <Value>=Parameters!ClientId.Value</Value>
+          </QueryParameter>
         </QueryParameters>
-        <CommandText>select a.client_id,a.Provider_ID,datename(WEEKDAY,a.Activity_Date) as WorkDay,convert(date,a.Activity_Date,103) as Activity_date,a.Schedule_Task_Type,
-substring(convert(varchar,a.schedule_time,108),1,5) as schedule_Start_time,
-substring(convert(varchar,dateadd(minute,a.schedule_duration,convert(time,a.schedule_time)),108),1,5) as schedule_End_time,
+        <CommandText>select 
+	J001.client_id
+	,J001.Provider_ID
+	,datename(WEEKDAY,J001.Activity_Date) 'WorkDay'
+	,convert(date,J001.Activity_Date,103) 'Activity_date'
+	,J001.Schedule_Task_Type
+	,substring(convert(varchar,J001.schedule_time,108),1,5) 'schedule_Start_time'
+	,substring(convert(varchar,dateadd(minute,J001.schedule_duration,convert(time,J001.schedule_time)),108),1,5) 'schedule_End_time'
+	,cast(J001.Schedule_Duration as float)/60 'Hours'
+	,case J009.provider_contract_type_code
+		when '3' then 'Agency'
+		else J004.Preferred_Name
+		end 'Preferred_Name'
+	,J005.Description 'Task_Description'
+	,(J006.Preferred_Name+' '+J006.Last_Name) 'client_name'
+	,J008.Description 'Program'
+from (select * from dbo.WI_Activity where cast(Activity_Date as Date) Between Cast(@StartDate as Date) and Cast(@EndDate as Date)) J001
+Left outer join dbo.Round_Allocation J002 on J001.Round_Allocation_ID = J002.Allocated_Round_ID
+Left outer join dbo.Task_Schedule_Allocation J003 on J002.Schedule_Sequence_No = J003.Schedule_Sequence_No
+Left outer join dbo.person J004 on J001.provider_id = J004.Person_ID
+Left Outer Join dbo.Task_Type J005 on J005.Task_Type_Code=J001.Schedule_Task_Type
+Left Outer Join dbo.person J006 on J001.client_id = J006.Person_ID
 
-cast(a.Schedule_Duration as float)/60 as Hours,
-case j.provider_contract_type_code
-when '3' then 'Agency'
-else d.Preferred_Name
-end as Preferred_Name ,e.Description as Task_Description,f.Preferred_Name+' '+f.Last_Name as client_name,i.Description as Program
-from  [appsql-3\comcareprod].[comcareprod].[dbo].WI_Activity a
-inner join [appsql-3\comcareprod].[comcareprod].[dbo].Round_Allocation as b on a.Round_Allocation_ID=b.Allocated_Round_ID
-inner join [appsql-3\comcareprod].[comcareprod].[dbo].Task_Schedule_Allocation as c on b.Schedule_Sequence_No=c.Schedule_Sequence_No 
---and c.Period_Type_Code&lt;&gt;'SINGLE'
-inner join [appsql-3\comcareprod].[comcareprod].[dbo].person as d on a.provider_id=d.Person_ID
-inner join [appsql-3\comcareprod].[comcareprod].[dbo].Task_Type as e on e.Task_Type_Code=a.Schedule_Task_Type
-inner join [appsql-3\comcareprod].[comcareprod].[dbo].person as f on a.client_id=f.Person_ID
-inner join (select client_id,min(program_id) as Program_id from  [appsql-3\comcareprod].[comcareprod].[dbo].FC_Client_Contract where Effective_To_Date is null group by client_id) as g on a.client_id=g.client_id
-inner join [appsql-3\comcareprod].[comcareprod].[dbo].PT_Program as i on i.Program_ID=g.Program_ID
-inner join [appsql-3\comcareprod].[comcareprod].[dbo].provider_contract as j on a.provider_id=j.provider_id
-where a.client_id=@ClientId
-and  a.Activity_Date&gt;=convert(datetime, @StartDate, 103)
-and   a.Activity_Date&lt;=convert(datetime, @Enddate, 103)
---and g.Effective_To_Date is null
-and j.Effective_date_to is null 
-order by a.Activity_Date,a.Schedule_Time asc </CommandText>
+--Inner Join
+
+Left Outer Join 
+(
+	select 
+		FC_CC.client_id 'Client_ID'
+		,min(FC_CC.program_id) 'Program_ID'
+	from dbo.FC_Client_Contract FC_CC
+	where
+		1=1 
+		and FC_CC.Effective_To_Date is null 
+	group by 
+		FC_CC.client_id
+
+)J007 on J001.client_id = J007.client_id
+Inner Join dbo.PT_Program J008 on J008.Program_ID = J007.Program_ID
+Left Outer Join dbo.provider_contract J009 on J001.provider_id = J009.provider_id
+
+where 
+	1=1
+	and J001.client_id = @ClientId
+--	and cast(J001.Activity_Date as Date) between @StartDate and @EndDate
+	and J009.Effective_date_to is null
+	-------------------------------
+	--DEBUG-- 
+--	and J001.Provider_ID = 0
+--	and J001.Client_ID is not null
+order by 
+	J001.Activity_Date
+	,J001.Schedule_Time asc</CommandText>
       </Query>
       <Fields>
         <Field Name="client_id">
@@ -505,7 +530,14 @@ order by a.Activity_Date,a.Schedule_Time asc </CommandText>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>=Fields!Preferred_Name.Value</Value>
+                                  <Value>=
+IIF
+(
+	IsNothing(Fields!Preferred_Name.Value)
+	,"&lt;font/ color = 'Red'&gt; Not Allocated &lt;Font/&gt;"
+	,Fields!Preferred_Name.Value
+)</Value>
+                                  <MarkupType>HTML</MarkupType>
                                   <Style>
                                     <FontSize>9pt</FontSize>
                                   </Style>
@@ -900,28 +932,52 @@ order by a.Activity_Date,a.Schedule_Time asc </CommandText>
     <ReportParameter Name="ClientId">
       <DataType>String</DataType>
       <Prompt>ClientId</Prompt>
+      <UsedInQuery>True</UsedInQuery>
     </ReportParameter>
     <ReportParameter Name="StartDate">
-      <DataType>String</DataType>
+      <DataType>DateTime</DataType>
       <DefaultValue>
-        <DataSetReference>
-          <DataSetName>startdate</DataSetName>
-          <ValueField>startdate</ValueField>
-        </DataSetReference>
+        <Values>
+          <Value>=DateAdd(DateInterval.Day,-13,Today())</Value>
+        </Values>
       </DefaultValue>
-      <Prompt>StartDate(dd/mm/yyyy)</Prompt>
+      <Prompt>StartDate</Prompt>
+      <UsedInQuery>True</UsedInQuery>
     </ReportParameter>
     <ReportParameter Name="EndDate">
-      <DataType>String</DataType>
+      <DataType>DateTime</DataType>
       <DefaultValue>
-        <DataSetReference>
-          <DataSetName>endate</DataSetName>
-          <ValueField>endate</ValueField>
-        </DataSetReference>
+        <Values>
+          <Value>=Today()</Value>
+        </Values>
       </DefaultValue>
-      <Prompt>EndDate(dd/mm/yyyy)</Prompt>
+      <Prompt>EndDate</Prompt>
+      <UsedInQuery>True</UsedInQuery>
     </ReportParameter>
   </ReportParameters>
+  <ReportParametersLayout>
+    <GridLayoutDefinition>
+      <NumberOfColumns>2</NumberOfColumns>
+      <NumberOfRows>2</NumberOfRows>
+      <CellDefinitions>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>ClientId</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>StartDate</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>1</RowIndex>
+          <ParameterName>EndDate</ParameterName>
+        </CellDefinition>
+      </CellDefinitions>
+    </GridLayoutDefinition>
+  </ReportParametersLayout>
   <EmbeddedImages>
     <EmbeddedImage Name="AnglicareSA1">
       <MIMEType>image/png</MIMEType>
