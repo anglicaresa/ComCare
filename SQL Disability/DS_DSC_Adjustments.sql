@@ -16,8 +16,8 @@ select * from [dbo].FB_Client_CB_Bill_Adjustment
 Declare @Client_ID_ as INT
 set @Client_ID_ = 10076603
 
-DECLARE @StartDate AS DATETIME = '20170102 00:00:00.000'
-DECLARE @EndDate AS DATETIME = '20170115 23:59:59.998'
+DECLARE @StartDate AS DATETIME = '20161201 00:00:00.000'
+DECLARE @EndDate AS DATETIME = getdate()
 declare @Organisation varchar(64) = 'Disabilities Children'
 --declare @Organisation varchar(64) = 'Disabilities Adults'
 
@@ -52,18 +52,13 @@ select
 	,J014.Description 'GST_Type'
 	,J012.Description 'Funder_Contract'
 	,IIF(J009.Organisation_Name = 'NDIA National Disability Insurance Agency', 'NDIS funded',IIF(J009.Client_ID IS NULL,'No Contract Billing','Self Managed')) 'Funding_type'
---	,J009.RN
---	,J009.ContractBillingGroup
---	,J009.Organisation_Name
---	,J009.Client_Contract_Billed_To_ID
---	,J009.[Client_CB_ID]
+	,iif(J011.Description like '%eduction%',0,1)'AdjustmentType'
 
 from
 (
 	select
 		CCB.[Client_ID] 'Client_ID'
 		,CCB.[Client_CB_ID] 'Client_CB_ID'
-	--	,CCB.[Funder_Contract_ID] 'Funder_Contract_ID'
 	from [dbo].[FB_Client_Contract_Billing] CCB
 		LEFT OUTER JOIN [dbo].[FB_Contract_Billing_Group] CBG on CBG.[Contract_Billing_Group_ID] = CCB.[Contract_Billing_Group_ID]
 		LEFT OUTER JOIN [dbo].[FB_Client_Contract_Billed_To] CCBT on CCBT.[Client_CB_ID] = CCB.[Client_CB_ID]
@@ -75,7 +70,6 @@ from
 	group by
 		CCB.[Client_ID]
 		,CCB.Client_CB_ID
-	--	,CCB.[Funder_Contract_ID]
 )J001
 
 LEFT OUTER JOIN [dbo].[Service_Delivery] J005 ON J001.[Client_ID] = J005.[Client_ID]
@@ -165,6 +159,7 @@ group by
 	,J012.Description
 	,IIF(J009.Organisation_Name = 'NDIA National Disability Insurance Agency', 'NDIS funded',IIF(J009.Client_ID IS NULL,'No Contract Billing','Self Managed'))
 	,J009.RN
+	,iif(J011.Description like '%eduction%',0,1)
 --	,J009.ContractBillingGroup
 --	,J009.Organisation_Name
 --	,J009.Client_Contract_Billed_To_ID

@@ -299,7 +299,6 @@ Select * from
 
 	Left outer join [dbo].Team_Position J011 on J011.[Service_Prov_Position_ID] = J003.[Service_Prov_Position_ID]
 
-
 	---------------------------------------------------------------
 	----------------------the wi_activity table has correct values, just need to switch to it at the right time.
 	---------------------------------------------------------------

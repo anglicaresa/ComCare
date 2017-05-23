@@ -1,16 +1,23 @@
 /*
-select * from [dbo].[Organisation]
+select Organisation_Name from [dbo].[Organisation]
 where 
 	1=1
 	and organisation_type_code = 1
-	and Organisation_Name like 'Home Care %'
+	and Organisation_Name like 'Home Care%'
 */
 use ComCareProd
 
 Declare @Client_ID_ as INT = 10075769
 DECLARE @StartDate AS DATETIME = '20170104 00:00:00.000'
 DECLARE @EndDate AS DATETIME = '20170104 00:00:00.000'
-declare @Organisation VarChar(64) = 'Home Care West'
+
+declare @Organisation Table (Org VarChar(64))
+Insert INTO @Organisation
+select Organisation_Name from [dbo].[Organisation]
+where 
+	1=1
+	and organisation_type_code = 1
+	and Organisation_Name like 'Home Care%'
 
 Declare @ContractType Table (ContractType varchar(64))
 Insert INTO @ContractType 
@@ -21,7 +28,7 @@ select
 from [dbo].[FC_Funder_Contract]
 where 
 	1=1
-	AND (Description like '%Care at Home' )
+	AND (Description like 'CHSP%' )
 order by 1
 
 ---------------------------------------------------------------------------------------------------------------------------
@@ -46,12 +53,7 @@ select * from
 		,J002.Line_Description 'Charge_Item_Line_Description'
 		,J002.Amount
 
-		,IIF
-		(
-			J009.Organisation_Name = 'NDIA National Disability Insurance Agency'
-			,'NDIS funded'
-			,IIF(J009.Client_ID IS NULL,'No Contract Billing','Self Managed')
-		) 'Funding_type'
+		,J009.Organisation_Name 'Funding_type'
 
 	from [dbo].Actual_Service J001
 
@@ -111,7 +113,8 @@ left outer join
 				(
 					Partition by SD.[Client_ID] Order by
 						CASE
-						WHEN O.[Organisation_Name] = @Organisation THEN '1'
+--						WHEN O.[Organisation_Name] in (select * from @Organisation) THEN '1'
+						WHEN O.[Organisation_Name] in (@Organisation) THEN '1'
 						ELSE O.[Organisation_Name] END ASC
 				)'RN'
 		from [dbo].[Service_Delivery] SD
@@ -132,10 +135,7 @@ left outer join
 			,ROW_NUMBER ()
 				over 
 				(
-					Partition by CCB.[Client_ID] Order by
-						CASE
-						WHEN Org.[Organisation_Name] = 'NDIA National Disability Insurance Agency' THEN '1'
-						ELSE Org.[Organisation_Name] END ASC
+					Partition by CCB.[Client_ID] Order by Org.[Organisation_Name] ASC
 				) 'RN'
 		from [dbo].[FB_Client_Contract_Billing] CCB
 			left outer join [dbo].[FB_Contract_Billing_Group] CBG on CBG.[Contract_Billing_Group_ID] = CCB.[Contract_Billing_Group_ID]
@@ -151,13 +151,14 @@ left outer join
 	Where 
 		1=1
 --		and J001.Client_ID = @Client_ID_
-		and J006.[Organisation_Name] = @Organisation
+--		and J006.[Organisation_Name] in (select * from @Organisation)
+		and J006.[Organisation_Name] in (@Organisation)
 		and (J006.RN < 2 or J006.RN is NULL)
 		and (J009.RN < 2 or J009.rn is null)
 		and convert (datetime, J001.Visit_Date) between @StartDate and (DATEADD(s, 84599, @EndDate))
-		and (J009.ContractBillingGroup <> 'DCSI' or J009.ContractBillingGroup is null)
-		AND (IIF (J011.Description is NULL,'No Contract',J011.Description) in (select * from @ContractType))
---		and (IIF (J011.Description is NULL,'No Contract',J011.Description) in (@ContractType))
+--		and (J009.ContractBillingGroup <> 'DCSI' or J009.ContractBillingGroup is null)
+--		AND (IIF (J011.Description is NULL,'No Contract',J011.Description) in (select * from @ContractType))
+		and (IIF (J011.Description is NULL,'No Contract',J011.Description) in (@ContractType))
 
 ) t1
 
@@ -192,7 +193,7 @@ select * from
 		,IIF (J001.Client_Not_Home IS NULL, 1, 0) 'In_WiA_Only'
 		,J002.Line_Description 'Charge_Item_Line_Description'
 		,J002.Amount
-		,IIF(J009.Organisation_Name = 'NDIA National Disability Insurance Agency', 'NDIS funded',IIF(J009.Client_ID IS NULL,'No Contract Billing','Self Managed')) 'Funding_Type'
+		,J009.Organisation_Name 'Funding_Type'
 
 	FROM 
 	(
@@ -286,7 +287,8 @@ select * from
 				(
 					Partition by SD.[Client_ID] Order by
 						CASE
-						WHEN O.[Organisation_Name] = @Organisation THEN '1'
+--						WHEN O.[Organisation_Name] in (select * from @Organisation) THEN '1'
+						WHEN O.[Organisation_Name] in (@Organisation) THEN '1'
 						ELSE O.[Organisation_Name] END ASC
 				) AS 'RN'
 		from [dbo].[Service_Delivery] SD
@@ -306,10 +308,7 @@ select * from
 			,ROW_NUMBER ()
 				over 
 				(
-					Partition by CCB.[Client_ID] Order by
-						CASE
-						WHEN Org.[Organisation_Name] = 'NDIA National Disability Insurance Agency' THEN '1'
-						ELSE Org.[Organisation_Name] END ASC
+					Partition by CCB.[Client_ID] Order by Org.[Organisation_Name] ASC
 				) 'RN'
 		from [dbo].[FB_Client_Contract_Billing] CCB
 			left outer join [dbo].[FB_Contract_Billing_Group] CBG on CBG.[Contract_Billing_Group_ID] = CCB.[Contract_Billing_Group_ID]
@@ -325,16 +324,17 @@ select * from
 	Where 
 		1=1
 --		and J001.Client_ID = @Client_ID_
-		and J006.[Organisation_Name] = @Organisation
+--		and J006.[Organisation_Name] in (select * from @Organisation)
+		and J006.[Organisation_Name] in (@Organisation)
 		and 1 = iif(J001.RN > 1 and J001.WiA_Provider_ID = 0, 0, 1)
 		and (J006.RN < 2 or J006.RN is null)
 		and (J009.RN < 2 or J009.RN is null)
 		and convert(datetime, J001.WiA_Schedule_Time) between @StartDate and (DATEADD(s, 84599, @EndDate))
-		and (J009.ContractBillingGroup <> 'DCSI' or J009.ContractBillingGroup is null)
+--		and (J009.ContractBillingGroup <> 'DCSI' or J009.ContractBillingGroup is null)
 		and J001.Client_ID IS NOT NULL
 
-		AND (IIF (J011.Description is NULL,'No Contract',J011.Description) in (select * from @ContractType))
---		and (IIF (J011.Description is NULL,'No Contract',J011.Description) in (@ContractType))
+--		AND (IIF (J011.Description is NULL,'No Contract',J011.Description) in (select * from @ContractType))
+		and (IIF (J011.Description is NULL,'No Contract',J011.Description) in (@ContractType))
 
 
 	Group by
@@ -352,7 +352,7 @@ select * from
 		,IIF (J001.Client_Not_Home IS NULL, 1, 0)
 		,J002.Line_Description
 		,J002.Amount
-		,IIF(J009.Organisation_Name = 'NDIA National Disability Insurance Agency', 'NDIS funded',IIF(J009.Client_ID IS NULL,'No Contract Billing','Self Managed'))
+		,J009.Organisation_Name
 )t2
 --*/
 order by
