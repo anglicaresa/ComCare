@@ -1,105 +1,111 @@
-use asadwh;
-declare @Code int;
-set @Code= 1 --@RAC_Site
+use ComCareProd
+Declare @Client_ID_ as INT = 10075769
+DECLARE @StartDate AS DATETIME = '20170104 00:00:00.000'
+DECLARE @EndDate AS DATETIME = '20170304 00:00:00.000'
+declare @Organisation VarChar(64) = 'Disabilities Children'
+declare @DuplicateChargeItem as int = 1
 
-SELECT
-J007.Description as Shift_Type
-,J002.[Provider_ID] as Provider_ID
-,J002.[Given_Names] as Given_Name
-,J002.[Last_Name] as Last_Name
-,J004.[Centre_ID] as Centre_ID
- ,J004.[Centre] as Organisation_Name
-,J001.[Absence_Code] as Absence
-,J006.[Description] as Provider_Classification
-,J005.[Generated_Provider_Code] as Round_Code
-,J009.[Description] as Team_Name
-,convert(date,J001.[Activity_Date]) as Date
-,max( convert(varchar, datepart(hour,J001.schedule_time)) + ':' +
-			case len(convert(varchar,datepart(minute,J001.schedule_time ))) 
-				when 1 
-				then convert(varchar,datepart(minute,J001.schedule_time ))+'0' 
-				else convert(varchar,datepart(minute,J001.schedule_time)) 
-			end ) as Start_Time
-,max( convert(varchar,datepart(hour, dateadd(minute, J001.Schedule_duration, J001.schedule_time)))+ ':' + 
-			case len(convert(varchar,datepart(minute, dateadd(minute, J001.Schedule_duration, J001.schedule_time)))) 
-				when 1 
-				then convert(varchar,datepart(minute, dateadd(minute, J001.Schedule_duration, J001.schedule_time)))+'0'
-				else convert(varchar,datepart(minute, dateadd(minute, J001.Schedule_duration, J001.schedule_time))) 
-			end) as End_Time
-,J001.Schedule_Time as Time
-,J001.[Schedule_Duration] as Schedule_Duration
-FROM
-[appsql-3\comcareprod].[comcareprod].dbo.[WI_Activity] J001
-INNER JOIN (
-Select
-		Prov.Provider_ID,
-		prov.ComCare_Provider_No,
-		prov.Employee_No,
-		prov.Creation_Date,
-		prov.Creator_User_Name,
-		prov.Last_Modified_Date,
-		Prov.Last_Modified_User_Name,
-		Prov.Trainer,
-		P.Preferred_Name,
-		P.Last_Name,
-		P.Given_Names,
-		P.Salutation,
-		P.Birth_Date,
-		CONVERT(datetime,P.Deceased_Date) [Deceased_Date],
-		P.Estimated_DOB_Flag,
-		P.Dummy_PID,
-		P.Source_System,
-		P.Source_System_Person_ID,
-		G.Description as 'Gender',
-		T.Description as 'Title',
-		C.Description as 'Country',
-		L.Description as 'Language',
-		ES.Description as 'Employment Status',
-		MS.Description as 'Marital Status',
-		INS.Description as 'Interpreter Status'
-from [appsql-3\comcareprod].[comcareprod].dbo.Provider Prov WITH(NOLOCK)
-Inner Join [appsql-3\comcareprod].[comcareprod].dbo.Person P WITH(NOLOCK) on Prov.Provider_ID = P.Person_ID
-Inner Join [appsql-3\comcareprod].[comcareprod].dbo.Title T on P.Title_Code = T.Title_Code
-Left Outer Join [appsql-3\comcareprod].[comcareprod].dbo.Gender G on P.Gender_Code = G.Gender_Code
-Left Outer Join [appsql-3\comcareprod].[comcareprod].dbo.Country C on P.Country_Code = C.Country_Code
-Left Outer Join [appsql-3\comcareprod].[comcareprod].dbo.Language L on P.Language_Code = L.Language_Code
-Left Outer Join [appsql-3\comcareprod].[comcareprod].dbo.Employment_Status ES on P.Employment_Status_ID = ES.Employment_Status_ID
-Left Outer Join [appsql-3\comcareprod].[comcareprod].dbo.Marital_Status MS on P.Marital_Status_ID = MS.Marital_Status_ID
-Left Outer Join [appsql-3\comcareprod].[comcareprod].dbo.Interpreter_Status INS on P.Interpreter_Status_ID = INS.Interpreter_Status_ID
-Left Outer Join [appsql-3\comcareprod].[comcareprod].dbo.Ethnicity_Classification EC on P.Ethnicity_Class_Code = EC.Ethnicity_Class_Code
-) J002 ON J002.[Provider_ID] = J001.[Provider_ID]
-LEFT OUTER JOIN [appsql-3\comcareprod].[comcareprod].dbo.Provider_Contract J003 ON J003.[Provider_ID] = J002.[Provider_ID]
-LEFT OUTER JOIN (
-SELECT C.Centre_ID,C.Centre_Code, O.Organisation_Name [Centre] from [appsql-3\comcareprod].[comcareprod].dbo.Centre C	
-JOIN [appsql-3\comcareprod].[comcareprod].dbo.Organisation O ON C.Centre_ID = O.Organisation_ID
-) J004 ON J004.[Centre_ID] = J003.[Organisation_ID]
-LEFT OUTER JOIN [appsql-3\comcareprod].[comcareprod].dbo.Service_Provision_Position J005 ON J005.[Service_Prov_Position_ID] = J001.[SPPID]
-LEFT OUTER JOIN [appsql-3\comcareprod].[comcareprod].dbo.Provider_Classification J006 ON J006.[Provider_Class_Code] = J005.[Provider_Class_Code]
-LEFT OUTER JOIN [appsql-3\comcareprod].[comcareprod].dbo.Shift J007 ON J007.[Shift_Code] = J005.[Shift_Code]
-INNER JOIN [appsql-3\comcareprod].[comcareprod].dbo.[Team_Position] J008 ON J008.[Service_Prov_Position_ID] = J005.[Service_Prov_Position_ID]
-LEFT OUTER JOIN [appsql-3\comcareprod].[comcareprod].dbo.[Service_Delivery_Work_Team] J009 ON J009.[Centre_ID] = J008.[Centre_ID] AND J009.[Team_No] = J008.[Team_No]
-WHERE
+Declare @ContractType Table (ContractType varchar(64))
+Insert INTO @ContractType 
+	select 'No Contract' Description where 1=1
+union
+select
+	Description
+from [dbo].[FC_Funder_Contract]
+where 
+	1=1
+	AND ((Description like 'DC %' and @Organisation = 'Disabilities Children')OR (Description like 'DA %' and @Organisation = 'Disabilities Adult'))
 
-J004.[Centre_ID] = @Code and
-J006.Provider_Class_Code in(@Provider_Classification)
-and J001.[Activity_Date] BETWEEN @Start_Date AND @End_Date
- and J001.[Schedule_Duration] is not null
- and J003.Effective_date_to is null
 
-GROUP BY
-J007.Description
-,J002.[Last_Name]
-,J005.[Generated_Provider_Code]
-,J004.[Centre_ID]
-,J001.[Absence_Code]
-,J006.[Description]
-,J009.[Description]
-,J001.Schedule_Time
- ,J004.[Centre]
-,convert(date,J001.[Activity_Date])
-,J002.[Provider_ID]
-,J002.[Given_Names]
-,(CONVERT(datetime,Scheduled_Visit_End_Time))
-,J001.[Schedule_Duration]
-ORDER BY
-Time,Last_Name
+	select
+		J002.Client_ID
+		,J002.Provider_ID
+		,cast(J002.Visit_Date as datetime) 'Schedule_Visit_Time'
+		,null 'Scheduled_Duration'
+		,null 'Actual_Visit_Time'
+		,null 'Actual_Duration'
+		,null 'contract_type'
+		,null 'task_Description'
+		,null 'Client_Not_Home'
+		,null 'Has_Charge_Item'
+		,null 'In_WiA_Only'
+		,J002.Line_Description 'Charge_Item_Line_Description'
+		,J002.Amount
+		,IIF(J009.Organisation_Name = 'NDIA National Disability Insurance Agency', 'NDIS funded',IIF(J009.Client_ID IS NULL,'No Contract Billing','Self Managed')) 'Funding_Type'
+		,J002.RN 'ChrgDup'
+	from
+	(
+		select 
+			
+			
+			ACSI.Client_ID	
+			,ACSI.Visit_Date
+			,ACSI.Visit_No
+			,ACSI.Provider_ID
+			,ACSI.Service_Prov_Position_ID
+			,ACSI.Amount
+			,ACSI.Line_Description
+			
+			,row_number()over(partition by ACSI.Client_ID,ACSI.Provider_ID,ACSI.Visit_Date,ACSI.Visit_No,ACSI.Line_Description order by ACSI.Visit_Date,ACSI.Visit_No)'RN'
+		from [dbo].[Actual_Service_Charge_Item] ACSI
+
+	)J002
+	Left Outer Join dbo.Service_Delivery J005 ON J002.[Client_ID] = J005.[Client_ID]
+	left outer join 
+	(
+		Select 
+			SD.[Client_ID]
+			,O.[Organisation_Name]
+			,SD.[Service_Type_Code]
+			,ROW_NUMBER ()
+				over 
+				(
+					Partition by SD.[Client_ID] Order by
+						CASE
+						WHEN O.[Organisation_Name] = @Organisation THEN '1'
+						ELSE O.[Organisation_Name] END ASC
+				)'RN'
+		from [dbo].[Service_Delivery] SD
+			join [dbo].[Period_of_Residency] PR on PR.Person_ID = SD.Client_ID
+			join [dbo].[Address] A on A.Address_ID = PR.Address_ID
+			Join [dbo].[Service_Provision] SP on A.Suburb_ID = SP.Suburb_ID and SP.Service_Type_Code = SD.Service_Type_Code
+			Join [dbo].[Organisation] O on Sp.Centre_ID = O.Organisation_ID
+		Where PR.To_Date is null and PR.Display_Indicator  = 1
+	) J006 ON J006.[Client_ID] = J002.[Client_ID] AND J006.[Service_Type_Code] = J005.[Service_Type_Code]
+	
+	Left outer Join
+	(
+		select
+			CCB.[Client_ID] 'Client_ID'
+			,Org.[Organisation_Name] 'Organisation_Name'
+			,CBG.[Description] 'ContractBillingGroup'
+			,ROW_NUMBER ()
+				over 
+				(
+					Partition by CCB.[Client_ID] Order by
+						CASE
+						WHEN Org.[Organisation_Name] = 'NDIA National Disability Insurance Agency' THEN '1'
+						ELSE Org.[Organisation_Name] END ASC
+				) 'RN'
+		from [dbo].[FB_Client_Contract_Billing] CCB
+			left outer join [dbo].[FB_Contract_Billing_Group] CBG on CBG.[Contract_Billing_Group_ID] = CCB.[Contract_Billing_Group_ID]
+			left outer Join [dbo].[FB_Client_Contract_Billed_To] CCBT on CCBT.[Client_CB_ID] = CCB.[Client_CB_ID]
+			left outer Join [dbo].[FB_Client_CB_Split] CCBS on CCBS.[Client_Contract_Billed_To_ID] = CCBT.[Client_Contract_Billed_To_ID]
+			left outer Join [dbo].[Organisation] Org on CCBS.[Organisation_ID] = Org.[Organisation_ID]
+
+	)J009 on J009.[Client_ID] = J002.[Client_ID]
+
+	where
+	J002.RN = 2
+	and convert(date, J002.Visit_Date) between @StartDate and @EndDate
+	and J006.[Organisation_Name] = @Organisation
+
+	Group by
+	J002.Client_ID
+		,J002.Provider_ID
+		,cast(J002.Visit_Date as datetime)
+
+		,J002.Line_Description
+		,J002.Amount
+		,IIF(J009.Organisation_Name = 'NDIA National Disability Insurance Agency', 'NDIS funded',IIF(J009.Client_ID IS NULL,'No Contract Billing','Self Managed'))
+		,J002.RN
