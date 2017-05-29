@@ -151,14 +151,14 @@ left outer join
 	Where 
 		1=1
 --		and J001.Client_ID = @Client_ID_
---		and J006.[Organisation_Name] in (select * from @Organisation)
-		and J006.[Organisation_Name] in (@Organisation)
+		and J006.[Organisation_Name] in (select * from @Organisation)
+--		and J006.[Organisation_Name] in (@Organisation)
 		and (J006.RN < 2 or J006.RN is NULL)
 		and (J009.RN < 2 or J009.rn is null)
 		and convert (datetime, J001.Visit_Date) between @StartDate and (DATEADD(s, 84599, @EndDate))
 --		and (J009.ContractBillingGroup <> 'DCSI' or J009.ContractBillingGroup is null)
---		AND (IIF (J011.Description is NULL,'No Contract',J011.Description) in (select * from @ContractType))
-		and (IIF (J011.Description is NULL,'No Contract',J011.Description) in (@ContractType))
+		AND (IIF (J011.Description is NULL,'No Contract',J011.Description) in (select * from @ContractType))
+--		and (IIF (J011.Description is NULL,'No Contract',J011.Description) in (@ContractType))
 
 ) t1
 
@@ -324,8 +324,8 @@ select * from
 	Where 
 		1=1
 --		and J001.Client_ID = @Client_ID_
---		and J006.[Organisation_Name] in (select * from @Organisation)
-		and J006.[Organisation_Name] in (@Organisation)
+		and J006.[Organisation_Name] in (select * from @Organisation)
+--		and J006.[Organisation_Name] in (@Organisation)
 		and 1 = iif(J001.RN > 1 and J001.WiA_Provider_ID = 0, 0, 1)
 		and (J006.RN < 2 or J006.RN is null)
 		and (J009.RN < 2 or J009.RN is null)
@@ -333,8 +333,8 @@ select * from
 --		and (J009.ContractBillingGroup <> 'DCSI' or J009.ContractBillingGroup is null)
 		and J001.Client_ID IS NOT NULL
 
---		AND (IIF (J011.Description is NULL,'No Contract',J011.Description) in (select * from @ContractType))
-		and (IIF (J011.Description is NULL,'No Contract',J011.Description) in (@ContractType))
+		AND (IIF (J011.Description is NULL,'No Contract',J011.Description) in (select * from @ContractType))
+--		and (IIF (J011.Description is NULL,'No Contract',J011.Description) in (@ContractType))
 
 
 	Group by
