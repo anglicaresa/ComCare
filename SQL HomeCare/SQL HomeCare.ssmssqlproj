@@ -55,6 +55,12 @@
           <AssociatedConnUserName />
           <FullPath>HCP_Booking.sql</FullPath>
         </FileNode>
+        <FileNode Name="HCP_LevelChanges.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>HCP_LevelChanges.sql</FullPath>
+        </FileNode>
         <FileNode Name="HCP_Package_Remediation.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>

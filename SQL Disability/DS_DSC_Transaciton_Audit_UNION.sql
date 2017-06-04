@@ -367,7 +367,7 @@ select * from
 		,null 'Scheduled_Duration'
 		,null 'Actual_Visit_Time'
 		,null 'Actual_Duration'
-		,'---' 'contract_type'
+		,'Inconclusive' 'contract_type'
 		,'---' 'task_Description'
 		,null 'Client_Not_Home'
 		,2 'Has_Charge_Item'
@@ -436,7 +436,8 @@ select * from
 	)J009 on J009.[Client_ID] = J002.[Client_ID]
 
 	where
-	J002.RN = 2
+	J002.RN > 1
+	and (J009.RN < 2 or J009.RN is null)
 	and convert(date, J002.Visit_Date) between @StartDate and @EndDate
 	and J006.[Organisation_Name] = @Organisation
 	and (J009.ContractBillingGroup <> 'DCSI' or J009.ContractBillingGroup is null)
@@ -444,4 +445,5 @@ select * from
 
 --*/
 order by
-1,3,5,8,2
+1,3,5,8,2,12
+--1,2,12
