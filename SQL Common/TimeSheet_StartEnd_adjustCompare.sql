@@ -1,3 +1,6 @@
+
+
+
 use ComCareProd
 
 declare @stringDate varchar(32) = '2017-05-17'
@@ -241,7 +244,7 @@ insert into @RawResult
 	1,2,3
 
 --select * from @RawResult
-
+--/*
 
 Declare @i_RowNum int = 1
 Declare @i_MaxRow int = (select top 1 RR.Row_Count from @RawResult RR)
@@ -273,7 +276,7 @@ begin
 	set  @i_BaseCount = @i_Temp + 1
 	set @i_Temp = @i_RowNum
 	set @i_RowNum = @i_Temp + 1 --Cycle mechanic
-
+--	print @i_RowNum
 	if 
 	(@i_PID <> (select RR.Provider_ID from @RawResult RR where RR.RowNumber = @i_RowNum)) 
 	or (@t_ActivityDate <> (select RR.Activity_Date from @RawResult RR where RR.RowNumber = @i_RowNum)) 

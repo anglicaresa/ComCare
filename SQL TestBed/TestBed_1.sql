@@ -1,6 +1,6 @@
 use ComCareProd
 
-select * from dbo.Position_Allocation
+select * from dbo.Provider_Classification
 --/*
 where 
 	1=1

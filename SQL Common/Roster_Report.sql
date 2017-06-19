@@ -308,7 +308,7 @@ Left Outer Join
 )J010 on (J010.[date_seq] = J005.[date_seq] and J004.[Working_Week_No] is NOT NULL) or (J010.[date_seq] = J009.[date_seq] and J004.[Working_Week_No] IS NULL)
 
 Left outer join [dbo].Team_Position J011 on J011.[Service_Prov_Position_ID] = J003.[Service_Prov_Position_ID]
-Left outer join [dbo].Provider_Payroll_Options J050 on J050.Provider_ID = J006.Provider_ID
+Left outer join [dbo].Provider_Payroll_Options J050 on J050.Provider_ID = J006.Provider_ID and J050.Effective_To_Date is null
 
 where
 	1=1

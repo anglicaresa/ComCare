@@ -1,6 +1,6 @@
 
-declare @Start_Date	Date = getdate()
-declare @RAC_Site varchar(128) = 51
+declare @Start_Date	Date = '20170619'--getdate()
+declare @RAC_Site int = 54
 declare @Provider_Classification varchar(128) = 'PCW'
 -------------------------------------------------------------------------
 
@@ -519,7 +519,7 @@ INNER JOIN
 	from dbo.Provider Prov WITH(NOLOCK)
 	Inner Join dbo.Person P WITH(NOLOCK) on Prov.Provider_ID = P.Person_ID
 	Inner Join dbo.Title T on P.Title_Code = T.Title_Code
-	left outer join dbo.Provider_Payroll_Options O on Prov.Provider_ID = O.Provider_ID
+	left outer join dbo.Provider_Payroll_Options O on Prov.Provider_ID = O.Provider_ID and o.Effective_To_Date is null
 	Left Outer Join dbo.Gender G on P.Gender_Code = G.Gender_Code
 	Left Outer Join dbo.Country C on P.Country_Code = C.Country_Code
 	Left Outer Join dbo.Language L on P.Language_Code = L.Language_Code
@@ -1068,7 +1068,7 @@ INNER JOIN
 	from dbo.Provider Prov WITH(NOLOCK)
 		Inner Join dbo.Person P WITH(NOLOCK) on Prov.Provider_ID = P.Person_ID
 		Inner Join dbo.Title T on P.Title_Code = T.Title_Code
-		left outer join dbo.Provider_Payroll_Options O on Prov.Provider_ID = O.Provider_ID
+		left outer join dbo.Provider_Payroll_Options O on Prov.Provider_ID = O.Provider_ID and o.Effective_To_Date is Null
 		Left Outer Join dbo.Gender G on P.Gender_Code = G.Gender_Code
 		Left Outer Join dbo.Country C on P.Country_Code = C.Country_Code
 		Left Outer Join dbo.Language L on P.Language_Code = L.Language_Code
@@ -1621,7 +1621,7 @@ INNER JOIN
 	from dbo.Provider Prov WITH(NOLOCK)
 	Inner Join dbo.Person P WITH(NOLOCK) on Prov.Provider_ID = P.Person_ID
 	Inner Join dbo.Title T on P.Title_Code = T.Title_Code
-	left outer join dbo.Provider_Payroll_Options O on Prov.Provider_ID = O.Provider_ID
+	left outer join dbo.Provider_Payroll_Options O on Prov.Provider_ID = O.Provider_ID  and o.Effective_To_Date is Null
 	Left Outer Join dbo.Gender G on P.Gender_Code = G.Gender_Code
 	Left Outer Join dbo.Country C on P.Country_Code = C.Country_Code
 	Left Outer Join dbo.Language L on P.Language_Code = L.Language_Code
