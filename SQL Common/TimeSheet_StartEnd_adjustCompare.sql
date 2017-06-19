@@ -1,122 +1,86 @@
 use ComCareProd
-/*
---(
-	select 
-		S1.Provider_ID
-		,S1.Activity_Date
-		,MIN(S1.Device_Timestamp)over(partition by S1.Activity_Date) 'DeviceTime_Start'
-		,MAX(S1.Device_Timestamp)over(partition by S1.Activity_Date) 'DeviceTime_End'
-		,S1.Start_Time
-		,S1.End_Time
-		,S1.RN
-		,S1.count_
-		,S1.Edit_Action
-		,S1.NextEditAction
-	from
-	(
-		Select 
-			WI_EL.Provider_ID
-			,WI_EL.Device_Timestamp
-			,WI_EL_Cont.Edit_Type
-			,WI_EL_Cont.Edit_Action
-			,WI_EL_Cont.Wi_Record
-			,WI_EL_Cont.Activity_Date
-			,WI_EL_Cont.Start_Time
-			,WI_EL_Cont.End_Time
-			,Row_Number()over(partition by WI_EL.Provider_ID,WI_EL_Cont.Activity_Date order by WI_EL.Provider_ID,WI_EL.Device_Timestamp)'RN'
-			,Count(WI_EL_Cont.Activity_Date) over (Partition by WI_EL.Provider_ID,WI_EL_Cont.Activity_Date) 'count_'
-			,LEAD(WI_EL_Cont.Edit_Action,1,0) over (Order by WI_EL.Provider_ID, WI_EL_Cont.Activity_Date, WI_EL.Device_Timestamp) 'NextEditAction'
-		
-		from (select * from dbo.WI_Event_Log where content like 'WI_Timesheet_Edit %' and Device_Timestamp between cast('2017-05-09' as datetime) and cast('2017-05-11' as datetime)) WI_EL
-		inner join
-		(
-			select
-				WI_EL_C.Provider_ID
-				,WI_EL_C.Device_Timestamp
-				,cast (Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 1),'''','') as Varchar(128)) 'Edit_Type'
-				,cast (Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 2),'''','')as Varchar(128)) 'Edit_Action'
-				,cast ((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 3) as int) 'Wi_Record'
-			--	,cast ((select Text from dbo.Split(WI_EL.Content, ',') where Record_Number = 10) as Varchar(128)) 'SPPID'
-				,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 5),'''','')as Date) 'Activity_Date'
-				,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 14),'''','')as datetime2) 'Start_Time'
-				,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 15),'''','')as datetime2) 'End_Time'
-			from (select * from dbo.WI_Event_Log where content like 'WI_Timesheet_Edit %' and Device_Timestamp between cast('2017-05-09' as datetime) and cast('2017-05-11' as datetime)) WI_EL_C
-		)WI_EL_Cont on WI_EL_Cont.Provider_ID = WI_EL.Provider_ID and WI_EL_Cont.Device_Timestamp = WI_EL.Device_Timestamp
 
-		where 
-			1=1
---			and cast(WI_EL.Created as date) between dateadd(day,-90, getdate()) and Getdate()
-			and WI_EL_Cont.Activity_Date = cast('2017-05-10' as date)
-			and WI_EL.provider_id = 10052616
-			--and WI_EL.content like 'WI_Timesheet_Edit %'
-	)S1
-	where 
-		1=1
---		and S1.Activity_Date = cast('2017-05-15' as Date)
-		and S1.RN = iif( S1.NextEditAction = ' F',(S1.count_ - 1),S1.count_)
-		and S1.Edit_Action <> ' F'
---		and S1.Provider_ID = 10052616
---)J044
-Order by
-1,2,3
---*/
-/*
-----------------------------------
-	Centre's
-----------------------------------
-	Transitional Care Program
-	Home Care West
-	Allied Health Services
-	Home Care South
-	Exceptional Needs
-	Home Care North
-	Disabilities Children
-	Home Care East
-	Home Care Barossa Yorke Peninsula
-	Disabilities Adult
-	AnglicareSA Corporate Office
-	Dutton Court --has buddy team
-	All Hallows Court
-	Canterbury Close
-	Ian George Court
-	St Laurences Court
-	Grandview Court
-	Anglicaresa Oats
-	----------------------------------
-	Provider Class Codes
-	----------------------------------
-	ADM   
-	CK1   
-	CK2   
-	EN    
-	HW    
-	LA    
-	LE    
-	MGR   
-	MN    
-	PCW   
-	RC    
-	RN    
-	RNIC  
-	TL    
-
-	select top 1 * from dbo.wi_activity
-	where cast(schedule_time as datetime) = '2017-04-04 09:42:00.000'
-	--*/
-
---test settings
---/*
-declare @stringDate varchar(32) = '2017-05-15'
-declare @stringDate2 varchar(32) = '2017-05-16'--'2017-01-20'
+declare @stringDate varchar(32) = '2017-05-17'
+declare @stringDate2 varchar(32) = '2017-05-17'--'2017-01-20'
 declare @Start_Date date = convert(date, @stringDate)
 declare @End_Date date = convert(date, @stringDate2)
 declare @Centre varchar(32) = 'Dutton Court'
+
 declare @ShowVacantOnly int = 1
 declare @NoBuddyShifts int = 1
 declare @hideUnAss int = 0
-declare @ClassCodeFilter VarChar(8)= 'PCW'
-declare @TeamFilt VarChar(128) = 'Buddy Team'
+
+-----------------------------------------------------------------------------------------------
+declare @ClassCodeFilter Table (Provider_Class_Code VarChar(128),Description VarChar(128))
+insert into @ClassCodeFilter
+select 
+	J003.Provider_Class_Code
+	,J004.Description
+
+from [dbo].[Organisation] J001
+
+inner join [dbo].[Service_Delivery_Work_Team] J002 on J002.[Centre_ID] = J001.[Organisation_ID]
+left outer join [dbo].[Service_Provision_Position] J003 on J003.[Centre_ID] = J002.[Centre_ID] and J003.Team_No = J002.Team_No
+inner join [dbo].[Provider_Classification] J004 on J004.Provider_Class_Code = J003.Provider_Class_Code
+
+where
+	1=1
+	and J001.Organisation_Name = @Centre
+
+Group by
+	J003.Provider_Class_Code
+	,J004.Description
+
+Order by
+	J004.Description
+-----------------------------------------------------------------------------------------------
+declare @TeamFilt table (description varchar(128))
+insert into @TeamFilt
+select 
+	J002.Description 'Team'
+
+from [dbo].[Organisation] J001
+
+inner join [dbo].[Service_Delivery_Work_Team] J002 on J002.[Centre_ID] = J001.[Organisation_ID]
+left outer join [dbo].[Service_Provision_Position] J003 on J003.[Centre_ID] = J002.[Centre_ID] and J003.Team_No = J002.Team_No
+--inner join [dbo].[Provider_Classification] J004 on J004.Provider_Class_Code = J003.Provider_Class_Code
+
+where
+	1=1
+	and J001.Organisation_Name = @Centre
+	and J002.Effective_Date_To is null
+	and J003.Provider_Class_Code in (select Provider_Class_Code from @ClassCodeFilter)
+
+group by J002.Description
+order by 1
+
+--declare @ClassCodeFilter VarChar(8)= 'PCW'
+--declare @TeamFilt VarChar(128) = 'Banksia Central'
+--declare @TeamFilt VarChar(128) = 'Buddy Team'
 declare @SortBy VarChar(32) = 'StartTime'
+--------------------------------------------------DeBug
+declare @forceProv_ID int = 0
+
+--declare @Prov_ID int = 10048668 --Hill, Nerissa has split shift CLEAN
+--declare @Prov_ID int = 10048524 --Norrie, Carol has split shift CLEAN
+--declare @Prov_ID int = 10049327 --Sparrow, Carrie has split shift CLEAN
+--declare @Prov_ID int = 10075347 --Kneebone, Helen Has split shift **second shift not not recorded.* has dule StartEnd.
+--declare @Prov_ID int = 10048181 --Kneebone, Helen Has split shift CLEAN
+--declare @Prov_ID int = 10046817 --Nelson, Margaret Has split shift **Only 1 sign off
+declare @Prov_ID int = 10048536 --Broderick, Josie **Record Duplicate
+
+------------------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------------------------------
+--Copy from here down
+------------------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+declare @EventBracket1 int = -1
+declare @EventBracket2 int = 13
 --------------------------------------------------------------
 --------------------------------------------------------------
 
@@ -124,32 +88,18 @@ declare @SortBy VarChar(32) = 'StartTime'
 declare @date_Start date = @Start_Date
 declare @date_End date = @End_Date
 
---Create DateRange and set start of week
-SET DATEFIRST 1
-
----------------------------
---Main quiry
----------------------------
-Select * from 
+---------------------------------------------------------------
+--Pre assemble Provider list for performance reasons
+---------------------------------------------------------------
+declare @Provs Table
 (
-	select
-		J004.[Description] 'Team'
-		,J003.[Generated_Provider_Code] 'ServiceProvision'
-		,J003.[Provider_Class_Code]
-		,J007.[Description] 'Provider_Class'
-		,J001.Activity_Date 'Activity_Date'
-		,J001.Schedule_StartTime 'StartTime'
-		,J001.Schedule_EndTime 'EndTime'
-		,J001.[Provider_ID]
-		,(J002.[Last_Name] + ', ' + J002.[Preferred_Name]) 'ProviderName'
-
-		--DeBug Info.
---		/*
-		,J003.[Service_Prov_Position_ID] 'SPPID'
-		,J001.[RN]
-		--*/
-		--END DeBug Info.
-
+	Provider_ID int
+	,ProviderName varChar(128)
+)
+insert into @Provs
+	Select
+		X001.Provider_ID
+		,(X002.Last_Name + ', ' + X002.Preferred_Name) 'ProviderName'
 	From 
 	(
 		Select
@@ -172,137 +122,227 @@ Select * from
 					end
 				) 'RN'
 		From [dbo].[Wi_Activity] WiA
-		where convert(date, Wia.Activity_Date) between dateadd(day,-2,@Start_Date) and dateadd(day,2,@End_Date)
-	)J001
+		where convert(date, Wia.Activity_Date) between dateadd(day,@EventBracket1,@Start_Date) and dateadd(day,@EventBracket2,@End_Date)
+	)X001
 
-	Left Outer Join [dbo].[Person] J002 on J002.[Person_ID] = J001.[Provider_ID]
-	Left outer join [dbo].[Service_Provision_Position] J003 on J003.Service_Prov_Position_ID = J001.SPPID
-	Left outer join [dbo].[Service_Delivery_Work_Team] J004 on J004.Team_No = J003.Team_No and J004.Centre_ID = J003.Centre_ID
-	Left outer join [dbo].Organisation J005 on J005.Organisation_ID = J004.Centre_ID
-	Left outer join [dbo].[Service_Provision_Allocation] J006 on J006.[Service_Prov_Position_ID] = J003.[Service_Prov_Position_ID]
-	Left outer join [dbo].[Provider_Classification] J007 on J007.[Provider_Class_Code] = J003.[Provider_Class_Code]
---/*
-	Inner Join
+	Inner Join dbo.Person X002 on X002.Person_ID = X001.Provider_ID
+	Inner Join dbo.Service_Provision_Position X003 on X003.Service_Prov_Position_ID = X001.SPPID
+	Inner join dbo.Service_Delivery_Work_Team X004 on X004.Team_No = X003.Team_No and X004.Centre_ID = X003.Centre_ID
+	Inner join dbo.Organisation X005 on X005.Organisation_ID = X004.Centre_ID
+	Left outer join dbo.Service_Provision_Allocation X006 on X006.Service_Prov_Position_ID = X003.Service_Prov_Position_ID
+	Left outer join dbo.Provider_Classification X007 on X007.Provider_Class_Code = X003.Provider_Class_Code
+		where
+		1=1
+		and X001.RN < 2
+			and X001.Schedule_Duration is not null
+			and cast(X001.Activity_Date as date) between @date_Start and @date_End
+		and 
+		(
+			1 = IIF
+			(
+				1 <> @forceProv_ID
+				and X001.[Provider_ID] <> 0
+				and X005.Organisation_Name = @Centre
+				and X003.Provider_Class_Code in (select Provider_Class_Code from @ClassCodeFilter)
+				and X004.Description in (select * from @TeamFilt)
+--				and X003.Provider_Class_Code in (@ClassCodeFilter)
+--				and X004.Description in (@TeamFilt)
+				,1
+				,0
+			)
+			or
+			1 = IIF
+			(
+				1 = @forceProv_ID
+				and X001.[Provider_ID] = @Prov_ID
+				,1
+				,0 
+			)
+		)
+
+		
+	Group by
+		X001.Provider_ID
+		,(X002.Last_Name + ', ' + X002.Preferred_Name)
+	order by
+		1
+--select * from @Provs
+	
+
+
+
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+declare @RawResult Table
+(
+	Provider_ID int
+	,ProviderName varChar(128)
+	,Device_Timestamp DateTime
+	,Edit_Action varChar(128)
+	,Activity_Date DateTime
+	,Start_Time DateTime
+	,End_Time DateTime
+	,Edit_Type varChar(128)
+	,RN int
+	,Count_ int
+	,Wi_Record int
+	,FirstTimeStamp DateTime
+	,LastTimeStamp DateTime
+	,Row_Count int
+	,RowNumber int
+)
+insert into @RawResult
+	Select
+		SJ001.Provider_ID
+		,SJ001.ProviderName
+		,SJ001.Device_Timestamp
+		,SJ001.Edit_Action
+		,SJ001.Activity_Date
+		,SJ001.Start_Time
+		,SJ001.End_Time
+		,SJ001.Edit_Type
+		,Row_Number()over(Partition by SJ001.Provider_ID,SJ001.Edit_Action,SJ001.Activity_Date Order by SJ001.Activity_Date,SJ001.Device_Timestamp)'RN'
+		,Count(SJ001.Edit_Action) over (partition by SJ001.Provider_ID,SJ001.Edit_Action,SJ001.Activity_Date,SJ001.Wi_Record Order by SJ001.Activity_Date,SJ001.Device_Timestamp)'Count_'
+		,SJ001.Wi_Record
+		,MIN(SJ001.Device_Timestamp) over (partition by SJ001.Provider_ID,SJ001.Activity_Date )'FirstTimeStamp'
+		,Max(SJ001.Device_Timestamp) over (partition by SJ001.Provider_ID,SJ001.Activity_Date )'LastTimeStamp'
+		,Count(SJ001.Provider_ID)over (partition by null )'Row_Count'
+		,Row_Number() over(Partition by null order by SJ001.Provider_ID, SJ001.ProviderName, SJ001.Device_Timestamp)'RowNumber'
+	From
 	(
-		select 
-			S1.Provider_ID
-			,S1.Activity_Date
-			,MIN(S1.Device_Timestamp)over(partition by S1.Activity_Date) 'DeviceTime_Start'
-			,MAX(S1.Device_Timestamp)over(partition by S1.Activity_Date) 'DeviceTime_End'
-			,S1.Start_Time
-			,S1.End_Time
-			,S1.RN
-			,S1.count_
-			,S1.Edit_Action
-			,S1.NextEditAction
+		select
+			WI_EL_C.Provider_ID
+			,Provs.ProviderName
+		--	,WI_EL_C.Content
+		--	,WI_EL_C.Directive_Type_ID
+			,cast(WI_EL_C.Device_Timestamp as datetime2)'Device_Timestamp'
+			,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 1),'''','') as Varchar(128)) 'Edit_Type'
+			,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 2),'''','')as Varchar(128)) 'Edit_Action'
+			,cast((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 3) as int) 'Wi_Record'
+			,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 5),'''','')as Date) 'Activity_Date'
+			,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 14),'''','')as datetime2) 'Start_Time'
+			,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 15),'''','')as datetime2) 'End_Time'
 		from
 		(
-			Select 
-				WI_EL.Provider_ID
-				,cast(WI_EL.Device_Timestamp as dateTime2)'Device_Timestamp'
-				,WI_EL_Cont.Edit_Type
-				,WI_EL_Cont.Edit_Action
-				,WI_EL_Cont.Wi_Record
-				,WI_EL_Cont.Activity_Date
-				,WI_EL_Cont.Start_Time
-				,WI_EL_Cont.End_Time
-				,Row_Number()over(partition by WI_EL_Cont.Activity_Date order by WI_EL.Provider_ID,WI_EL.Device_Timestamp)'RN'
-				,Count(WI_EL_Cont.Activity_Date) over (Partition by WI_EL.Provider_ID,WI_EL_Cont.Activity_Date) 'count_'
-				,LEAD(WI_EL_Cont.Edit_Action,1,0) over (Order by WI_EL.Provider_ID, WI_EL_Cont.Activity_Date, WI_EL.Device_Timestamp) 'NextEditAction'
-			from (select * from dbo.WI_Event_Log where content like 'WI_Timesheet_Edit %' and Device_Timestamp between dateadd(day,-2,cast(@Start_Date as datetime)) and dateadd(day,2,cast(@End_Date as datetime))) WI_EL
-
-			inner join
-			(
-				select
-				WI_EL_C.Provider_ID
-				,cast(WI_EL_C.Device_Timestamp as datetime2)'Device_Timestamp'
-				,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 1),'''','') as Varchar(128)) 'Edit_Type'
-				,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 2),'''','')as Varchar(128)) 'Edit_Action'
-				,cast((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 3) as int) 'Wi_Record'
-				,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 5),'''','')as Date) 'Activity_Date'
-				,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 14),'''','')as datetime2) 'Start_Time'
-				,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 15),'''','')as datetime2) 'End_Time'
-				from (select * from dbo.WI_Event_Log where content like 'WI_Timesheet_Edit %' and Device_Timestamp between dateadd(day,-2,cast(@Start_Date as datetime)) and dateadd(day,2,cast(@End_Date as datetime))) WI_EL_C
-			)WI_EL_Cont on WI_EL_Cont.Provider_ID = WI_EL.Provider_ID and WI_EL_Cont.Device_Timestamp = cast(WI_EL.Device_Timestamp as datetime2)
-
+			select * from dbo.WI_Event_Log Z 
 			where 
-				1=1
-				and WI_EL_Cont.Activity_Date between @Start_Date and @End_Date
-				and WI_EL.content like 'WI_Timesheet_Edit %'
-		)S1
-		where 
 			1=1
-			and S1.RN = iif( S1.NextEditAction = ' F',(S1.count_ - 1),S1.count_)
-			and S1.Edit_Action <> ' F'
-
-	)J044 on 
-		J044.Provider_ID = J001.Provider_ID
-		and J044.Activity_Date = cast(J001.Activity_Date as date)
-		and J044.Start_Time Between dateadd(MINUTE, -60, cast(J001.Schedule_StartTime as datetime)) and dateadd(MINUTE, 60, cast(J001.Schedule_StartTime as datetime))
-		and J044.End_Time Between dateadd(MINUTE, -60, cast(J001.Schedule_EndTime as datetime)) and dateadd(MINUTE, 60, cast(J001.Schedule_EndTime as datetime))
---*/
+			and Z.Directive_Type_ID = 114 
+			and Z.Device_Timestamp between dateadd(day,@EventBracket1,cast(@Start_Date as datetime)) and dateadd(day,@EventBracket2,cast(@End_Date as datetime))
+			and Z.Provider_ID in (Select p.Provider_ID from @Provs p)
+		)WI_EL_C
+		Inner Join @Provs Provs on Provs.Provider_ID = WI_EL_C.Provider_ID
+	)SJ001
 	where
 		1=1
-		and J001.RN < 2
-		and J001.Schedule_Duration is not null
-		and cast(J001.Activity_Date as date) between @date_Start and @date_End
-		and J005.[Organisation_Name] = @Centre
-		and J003.[Provider_Class_Code] in (@ClassCodeFilter)
-		and 1 = IIF --Hide Buddy shifts
-				(
-					J004.[Description] Like '%uddy%'
-					,@NoBuddyShifts
-					,1
-				)
-		and 1 = IIF --Hide un allocated shifts
-				(
-					J001.[Provider_ID]=0
-					,@hideUnAss
-					,1
-				)
-		and J004.Description in (@TeamFilt)
-	----------------------
-	--	Debug filters	--
-	----------------------
---		and J003.[Generated_Provider_Code] = 'HW-RES-DC2413-2'
---		and J003.[Generated_Provider_Code] = 'LA-RES-DCD11-2'
---		and J003.[Generated_Provider_Code] = 'CK1-RES-DC7D7-1'
-	--	and J002.[Description] = 'Giles'
-	--	and J003.[Generated_Provider_Code] = 'PCW-RES-SL7V7-4'
-	--	and J003.[Generated_Provider_Code] = 'PCW-RES-AH7V5-2'
-	--	and J003.[Generated_Provider_Code] = 'LA-RES-CC7D11-7'
-) as T1
+		and SJ001.Activity_Date between @Start_Date and @End_Date
+	Order by
+	1,2,3
 
-group by 
-	T1.Team
-	,T1.[ServiceProvision]
-	,T1.[Provider_Class_Code]
-	,T1.[Provider_Class]
-	,t1.Activity_Date
-	,t1.StartTime
-	,t1.EndTime
-	,t1.Provider_ID
-	,t1.ProviderName
+--select * from @RawResult
 
-	--DeBug Info.
---	/*
-	,t1.SPPID
-	,t1.RN
---*/
 
-order by
-	t1.Activity_Date
-	,Case
-		when @SortBy = 'StartTime' then cast(cast(t1.StartTime as time) as varchar(128))
-		When @SortBy = 'ProviderName' then cast(t1.ProviderName as varchar(128))
-		When @SortBy = 'Team_ClassCode' then cast(T1.ServiceProvision as varchar(128))
-		end
-	,Case
-		when @SortBy = 'StartTime' then cast(t1.ProviderName as varchar(128))
-		When @SortBy = 'ProviderName' then cast(cast(t1.StartTime as time) as varchar(128))
-		When @SortBy = 'Team_ClassCode' then cast(T1.Provider_Class_Code as varchar(128))
-		end
+Declare @i_RowNum int = 1
+Declare @i_MaxRow int = (select top 1 RR.Row_Count from @RawResult RR)
+Declare @i_PID int = null
+Declare @t_ActivityDate DateTime = null
+declare @J_Edit_Action VarChar(255) = null
+declare @i_BaseCount int = 1
+Declare @i_TriggerFirstTaskEntry int	= 1
+Declare @JoinedEdit_Actions table (Provider_ID int, Activity_Date datetime,Joined_Edit_Action VarChar(255))
+declare @i_Temp int = 0
 
---reset of defults
-SET DATEFIRST 7
+
+while @i_RowNum <= @i_MaxRow
+begin
+	
+	set @i_PID = (select RR.Provider_ID from @RawResult RR where RR.RowNumber = @i_RowNum)--baseValue setup
+	Set @t_ActivityDate = (select RR.Activity_Date from @RawResult RR where RR.RowNumber = @i_RowNum)
+		
+	if @i_BaseCount = 1
+	begin
+		set @J_Edit_Action = (select RR.Edit_Action from @RawResult RR where RR.RowNumber = @i_RowNum)
+	end
+		
+	if @i_BaseCount <> 1
+	begin
+		set @J_Edit_Action = @J_Edit_Action + ', ' + (select RR.Edit_Action from @RawResult RR where RR.RowNumber = @i_RowNum)
+	end
+	set @i_Temp = @i_BaseCount
+	set  @i_BaseCount = @i_Temp + 1
+	set @i_Temp = @i_RowNum
+	set @i_RowNum = @i_Temp + 1 --Cycle mechanic
+
+	if 
+	(@i_PID <> (select RR.Provider_ID from @RawResult RR where RR.RowNumber = @i_RowNum)) 
+	or (@t_ActivityDate <> (select RR.Activity_Date from @RawResult RR where RR.RowNumber = @i_RowNum)) 
+	or  @i_RowNum = @i_MaxRow
+	begin
+		set @i_TriggerFirstTaskEntry = 0
+	end
+	
+
+	if @i_TriggerFirstTaskEntry = 0
+	begin
+		insert into @JoinedEdit_Actions Values ( @i_PID,@t_ActivityDate,@J_Edit_Action)
+		set @i_TriggerFirstTaskEntry = 1
+		set @i_BaseCount = 1
+	end
+
+end
+
+--select * from @JoinedEdit_Actions
+--select * from @RawResult
+
+--/*
+Select
+	J001.Provider_ID
+	,J001.ProviderName
+	,J001.Activity_Date
+	,J001.FirstTimeStamp 'StartTime_Raw'
+	,J001.Start_Time 'StartTime_Alt'
+	,J001.LastTimeStamp 'EndTime_Raw'
+	,J001.End_Time 'EndTime_Alt'
+--	,J001.Prev_StartTime
+	,J001.LogDuration_Raw
+	,J001.LogDuration_Alt
+	,(J001.LogDuration_Raw - J001.LogDuration_Alt)'Diff'
+--	,IIF(JS001.Start_Time
+--	,J001.EndTime_Alt
+	,J002.Joined_Edit_Action 'editActions'
+	,J001.Wi_Record
+
+From 
+(
+	select
+		RR.*
+--		,Lag(RR.Start_Time)over(Partition by RR.Provider_ID, RR.Activity_Date order by RR.Device_Timestamp)'Prev_StartTime'
+		,DateDiff(MINUTE,RR.FirstTimeStamp,RR.LastTimeStamp)'LogDuration_Raw'
+		,DateDiff(MINUTE,RR.Start_Time,RR.End_Time)'LogDuration_Alt'
+	--	,Max(RR.Device_Timestamp)over(partition by DateAdd(Minute,-10,RR.Device_Timestamp))'SessionLastStamp'
+	from @RawResult RR
+)J001
+
+left outer join @JoinedEdit_Actions J002 on J002.Provider_ID = J001.Provider_ID and J002.Activity_Date = J001.Activity_Date
+
+where
+	1=1
+	and J001.Start_Time IS not null
+	and J001.End_Time is not null
+--/*
+Group by
+	J001.Provider_ID
+	,J001.ProviderName
+	,J001.Activity_Date
+	,J001.FirstTimeStamp
+	,J001.Start_Time
+	,J001.LastTimeStamp
+	,J001.End_Time
+--	,J001.Prev_StartTime
+	,J001.LogDuration_Raw
+	,J001.LogDuration_Alt
+	,(J001.LogDuration_Raw - J001.LogDuration_Alt)
+	,J002.Joined_Edit_Action
+	,J001.Wi_Record
 --*/

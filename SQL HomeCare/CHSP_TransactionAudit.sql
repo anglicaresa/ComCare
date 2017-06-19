@@ -1,5 +1,5 @@
 /*
-select Organisation_Name from [dbo].[Organisation]
+select Organisation_Name from dbo.Organisation
 where 
 	1=1
 	and organisation_type_code = 1
@@ -8,12 +8,12 @@ where
 use ComCareProd
 
 Declare @Client_ID_ as INT = 10075769
-DECLARE @StartDate AS DATETIME = '20170104 00:00:00.000'
-DECLARE @EndDate AS DATETIME = '20170104 00:00:00.000'
+DECLARE @StartDate AS DATETIME = '20170331 00:00:00.000'
+DECLARE @EndDate AS DATETIME = '20170501 00:00:00.000'
 
 declare @Organisation Table (Org VarChar(64))
 Insert INTO @Organisation
-select Organisation_Name from [dbo].[Organisation]
+select Organisation_Name from dbo.Organisation
 where 
 	1=1
 	and organisation_type_code = 1
@@ -25,7 +25,7 @@ Insert INTO @ContractType
 union
 select
 	Description
-from [dbo].[FC_Funder_Contract]
+from dbo.FC_Funder_Contract
 where 
 	1=1
 	AND (Description like 'CHSP%' )
@@ -46,7 +46,7 @@ select * from
 		,(Cast (cast(J001.Visit_Date as date) as Datetime) + Cast (Cast (J001.Visit_Time as Time) as Datetime)) 'Actual_Visit_Time'
 		,J001.Visit_Duration 'Actual_Duration'
 		,IIF (J011.Description is NULL,'No Contract',J011.Description) 'contract_type'
-		,J004.[Description] 'task_Description'
+		,J004.Description 'task_Description'
 		,J001.Client_Not_Home
 		,IIF (J002.Client_ID IS NULL, 0, 1) 'Has_Charge_Item'
 		,convert (int ,'0') 'In_WiA_Only'
@@ -55,7 +55,7 @@ select * from
 
 		,J009.Organisation_Name 'Funding_type'
 
-	from [dbo].Actual_Service J001
+	from dbo.Actual_Service J001
 
 	Left outer Join
 	(
@@ -67,8 +67,9 @@ select * from
 			,ACSI.Service_Prov_Position_ID
 			,ACSI.Amount
 			,ACSI.Line_Description
+	--		,ACSI.
 
-		from [dbo].[Actual_Service_Charge_Item] ACSI
+		from dbo.Actual_Service_Charge_Item ACSI
 
 	)J002 ON 
 			J002.Client_ID = J001.Client_ID 
@@ -90,8 +91,8 @@ left outer join
 		,iif(Wi_A.ReSchedule is not null and Wi_A.Activity_Start_time is not null, 'True', 'Flase') 'WiA_Schedule_TimeKILL'
 		,AWT.Allocated_Task_ID 'Allocated_Task_ID'
 		,Wi_A.Round_Allocation_ID 'Round_Allocation_ID'
-	from [dbo].wi_activity Wi_A
-	left outer join [dbo].activity_work_table AWT on AWT.Allocated_Task_ID = Wi_A.Round_Allocation_ID and AWT.activity_date = Wi_A.activity_date
+	from (select * from dbo.WI_Activity Wi_A1 where convert(date, Wi_A1.Activity_Date) between dateadd(Day,-7,@StartDate) and dateadd(day,+7,@EndDate)) Wi_A
+	left outer join dbo.activity_work_table AWT on AWT.Allocated_Task_ID = Wi_A.Round_Allocation_ID and AWT.activity_date = Wi_A.activity_date
 )J033 ON 
 		J033.Client_ID = J001.Client_ID 
 		and J033.Activity_Date = J001.Visit_Date 
@@ -99,60 +100,60 @@ left outer join
 		and (J001.Allocated_Task_ID = J033.Allocated_Task_ID or J001.Allocated_Task_ID = J033.Round_Allocation_ID)
 			
 
-	left outer join [dbo].[Task_Type] J004 on J004.Task_Type_Code = J001.Task_Type_Code
-	left outer join [dbo].[Service_Delivery] J005 ON J001.[Client_ID] = J005.[Client_ID]
+	left outer join dbo.Task_Type J004 on J004.Task_Type_Code = J001.Task_Type_Code
+	left outer join dbo.Service_Delivery J005 ON J001.Client_ID = J005.Client_ID
 
 	left outer join 
 	(
 		Select 
-			SD.[Client_ID]
-			,O.[Organisation_Name]
-			,SD.[Service_Type_Code]
+			SD.Client_ID
+			,O.Organisation_Name
+			,SD.Service_Type_Code
 			,ROW_NUMBER ()
 				over 
 				(
-					Partition by SD.[Client_ID] Order by
+					Partition by SD.Client_ID Order by
 						CASE
---						WHEN O.[Organisation_Name] in (select * from @Organisation) THEN '1'
-						WHEN O.[Organisation_Name] in (@Organisation) THEN '1'
-						ELSE O.[Organisation_Name] END ASC
+						WHEN O.Organisation_Name in (select * from @Organisation) THEN '1'
+--						WHEN O.Organisation_Name in (@Organisation) THEN '1'
+						ELSE O.Organisation_Name END ASC
 				)'RN'
-		from [dbo].[Service_Delivery] SD
-			join [dbo].[Period_of_Residency] PR on PR.Person_ID = SD.Client_ID
-			join [dbo].[Address] A on A.Address_ID = PR.Address_ID
-			Join [dbo].[Service_Provision] SP on A.Suburb_ID = SP.Suburb_ID and SP.Service_Type_Code = SD.Service_Type_Code
-			Join [dbo].[Organisation] O on Sp.Centre_ID = O.Organisation_ID
+		from dbo.Service_Delivery SD
+			join dbo.Period_of_Residency PR on PR.Person_ID = SD.Client_ID
+			join dbo.Address A on A.Address_ID = PR.Address_ID
+			Join dbo.Service_Provision SP on A.Suburb_ID = SP.Suburb_ID and SP.Service_Type_Code = SD.Service_Type_Code
+			Join dbo.Organisation O on Sp.Centre_ID = O.Organisation_ID
 		Where PR.To_Date is null and PR.Display_Indicator  = 1
-	) J006 ON J006.[Client_ID] = J001.[Client_ID] AND J006.[Service_Type_Code] = J005.[Service_Type_Code]
+	) J006 ON J006.Client_ID = J001.Client_ID AND J006.Service_Type_Code = J005.Service_Type_Code
 
 	left outer Join
 	(
 		select
-			CCB.[Client_ID] 'Client_ID'
-			,Org.[Organisation_Name] 'Organisation_Name'
-			,CBG.[Description] 'ContractBillingGroup'
+			CCB.Client_ID 'Client_ID'
+			,Org.Organisation_Name 'Organisation_Name'
+			,CBG.Description 'ContractBillingGroup'
 			,CCB.Contract_Billing_ID 'Contract_Billing_ID'
 			,ROW_NUMBER ()
 				over 
 				(
-					Partition by CCB.[Client_ID] Order by Org.[Organisation_Name] ASC
+					Partition by CCB.Client_ID Order by Org.Organisation_Name ASC
 				) 'RN'
-		from [dbo].[FB_Client_Contract_Billing] CCB
-			left outer join [dbo].[FB_Contract_Billing_Group] CBG on CBG.[Contract_Billing_Group_ID] = CCB.[Contract_Billing_Group_ID]
-			left outer Join [dbo].[FB_Client_Contract_Billed_To] CCBT on CCBT.[Client_CB_ID] = CCB.[Client_CB_ID]
-			left outer Join [dbo].[FB_Client_CB_Split] CCBS on CCBS.[Client_Contract_Billed_To_ID] = CCBT.[Client_Contract_Billed_To_ID]
-			left outer Join [dbo].[Organisation] Org on CCBS.[Organisation_ID] = Org.[Organisation_ID]
+		from dbo.FB_Client_Contract_Billing CCB
+			left outer join dbo.FB_Contract_Billing_Group CBG on CBG.Contract_Billing_Group_ID = CCB.Contract_Billing_Group_ID
+			left outer Join dbo.FB_Client_Contract_Billed_To CCBT on CCBT.Client_CB_ID = CCB.Client_CB_ID
+			left outer Join dbo.FB_Client_CB_Split CCBS on CCBS.Client_Contract_Billed_To_ID = CCBT.Client_Contract_Billed_To_ID
+			left outer Join dbo.Organisation Org on CCBS.Organisation_ID = Org.Organisation_ID
 
-	)J009 on J009.[Client_ID] = J001.[Client_ID]
+	)J009 on J009.Client_ID = J001.Client_ID
 
-	left outer join [dbo].[FC_Contract_Area_Product] J010 ON J010.[CAP_ID] = J001.[CAP_ID]
-	left outer join [dbo].[FC_Funder_Contract] J011 ON J011.[Funder_Contract_ID] = J010.[Funder_Contract_ID]
+	left outer join dbo.FC_Contract_Area_Product J010 ON J010.CAP_ID = J001.CAP_ID
+	left outer join dbo.FC_Funder_Contract J011 ON J011.Funder_Contract_ID = J010.Funder_Contract_ID
 
 	Where 
 		1=1
 --		and J001.Client_ID = @Client_ID_
-		and J006.[Organisation_Name] in (select * from @Organisation)
---		and J006.[Organisation_Name] in (@Organisation)
+		and J006.Organisation_Name in (select * from @Organisation)
+--		and J006.Organisation_Name in (@Organisation)
 		and (J006.RN < 2 or J006.RN is NULL)
 		and (J009.RN < 2 or J009.rn is null)
 		and convert (datetime, J001.Visit_Date) between @StartDate and (DATEADD(s, 84599, @EndDate))
@@ -187,7 +188,7 @@ select * from
 		,(Cast (J001.AcS_Activity_Start_Time as Datetime)) 'Actual_Visit_Time'
 		,J001.AcS_Visit_Duration as 'Actual_Duration'
 		,IIF (J011.Description is NULL,'No Contract',J011.Description) 'contract_type'
-		,J004.[Description] 'task_Description'
+		,J004.Description 'task_Description'
 		,J001.Client_Not_Home
 		,IIF (J002.Client_ID IS NULL, 0, 1) 'Has_Charge_Item'
 		,IIF (J001.Client_Not_Home IS NULL, 1, 0) 'In_WiA_Only'
@@ -201,7 +202,7 @@ select * from
 			IIF(Ac_S.Activity_Start_Time IS NULL, 'FALSE', 'TRUE') 'In_Actual_Service'
 			,Wi_A.SPPID 'WiA_SPPID'
 			,Ac_S.Service_Prov_Position_ID 'AcS_SPPID'
-			,Wi_A.[Activity_Date] 'WiA_Activity_Date'
+			,Wi_A.Activity_Date 'WiA_Activity_Date'
 			,Wi_A.Activity_Start_Time 'WiA_Activity_Start_Time'
 			,Wi_A.Activity_End_Time 'WiA_Activity_End_Time'
 			,Wi_A.Client_ID 'Client_ID'
@@ -224,19 +225,19 @@ select * from
 			,Ac_S.Visit_Date 'AcS_Visit_Date'
 			,Ac_S.Visit_No 'Visit_No'
 			,IIF(Ac_S.Task_Type_Code is null,Wi_A.Schedule_Task_Type, Ac_S.Task_Type_Code) 'Task_Type_Code'
-			,Wi_A.[CAP_ID] 'CAP_ID'
-			,Wi_A.[Absence_Code]
+			,Wi_A.CAP_ID 'CAP_ID'
+			,Wi_A.Absence_Code
 			,ROW_NUMBER () -- sort by importance of 'covered' 'absent' and 'Un-Alocated'.
 			over 
 			(
-				Partition by Wi_A.Client_ID, Wi_A.[Activity_Date], Wi_A.[SPPID] Order by 
+				Partition by Wi_A.Client_ID, Wi_A.Activity_Date, Wi_A.SPPID Order by 
 					Case
-						when ((Wi_A.[Provider_ID] > 0) and (Wi_A.[Absence_Code] is NULL)) then '1'
-						when (Wi_A.[Provider_ID] > 0) and (Wi_A.[Absence_Code] is not NULL) then '2'
+						when ((Wi_A.Provider_ID > 0) and (Wi_A.Absence_Code is NULL)) then '1'
+						when (Wi_A.Provider_ID > 0) and (Wi_A.Absence_Code is not NULL) then '2'
 					else 'z'
 				end
 			) AS 'RN'
-		from dbo.WI_Activity Wi_A
+		from (select * from dbo.WI_Activity Wi_A1 where convert(date, Wi_A1.Activity_Date) between dateadd(Day,-7,@StartDate) and dateadd(day,+7,@EndDate)) Wi_A
 		Left Outer Join dbo.Actual_Service Ac_S 
 		ON 
 			1=1
@@ -269,63 +270,63 @@ select * from
 			,ACSI.Amount
 			,ACSI.Line_Description
 
-		from [dbo].[Actual_Service_Charge_Item] ACSI
+		from dbo.Actual_Service_Charge_Item ACSI
 
 	)J002 ON J002.Client_ID = J001.Client_ID and J002.Visit_Date = J001.AcS_Visit_Date and J002.Visit_No = J001.Visit_No and J002.Service_Prov_Position_ID = J001.AcS_SPPID
 
-	Left outer Join [dbo].[Task_Type] J004 on J004.Task_Type_Code = J001.Task_Type_Code
-	Left Outer Join [dbo].[Service_Delivery] J005 ON J001.[Client_ID] = J005.[Client_ID]
+	Left outer Join dbo.Task_Type J004 on J004.Task_Type_Code = J001.Task_Type_Code
+	Left Outer Join dbo.Service_Delivery J005 ON J001.Client_ID = J005.Client_ID
 
 	Left outer JOIN 
 	(
 		Select 
-			SD.[Client_ID]
-			,O.[Organisation_Name]
-			,SD.[Service_Type_Code]
+			SD.Client_ID
+			,O.Organisation_Name
+			,SD.Service_Type_Code
 			,ROW_NUMBER ()
 				over 
 				(
-					Partition by SD.[Client_ID] Order by
+					Partition by SD.Client_ID Order by
 						CASE
---						WHEN O.[Organisation_Name] in (select * from @Organisation) THEN '1'
-						WHEN O.[Organisation_Name] in (@Organisation) THEN '1'
-						ELSE O.[Organisation_Name] END ASC
-				) AS 'RN'
-		from [dbo].[Service_Delivery] SD
-			join [dbo].[Period_of_Residency] PR on PR.Person_ID = SD.Client_ID
-			join [dbo].[Address] A on A.Address_ID = PR.Address_ID
-			Join [dbo].[Service_Provision] SP on A.Suburb_ID = SP.Suburb_ID and SP.Service_Type_Code = SD.Service_Type_Code
-			Join [dbo].[Organisation] O on Sp.Centre_ID = O.Organisation_ID
+						WHEN O.Organisation_Name in (select * from @Organisation) THEN '1'
+--						WHEN O.Organisation_Name in (@Organisation) THEN '1'
+						ELSE O.Organisation_Name END ASC
+				)'RN'
+		from dbo.Service_Delivery SD
+			join dbo.Period_of_Residency PR on PR.Person_ID = SD.Client_ID
+			join dbo.Address A on A.Address_ID = PR.Address_ID
+			Join dbo.Service_Provision SP on A.Suburb_ID = SP.Suburb_ID and SP.Service_Type_Code = SD.Service_Type_Code
+			Join dbo.Organisation O on Sp.Centre_ID = O.Organisation_ID
 		Where PR.To_Date is null and PR.Display_Indicator  = 1
-	) J006 ON J006.[Client_ID] = J001.[Client_ID] AND J006.[Service_Type_Code] = J005.[Service_Type_Code]
+	) J006 ON J006.Client_ID = J001.Client_ID AND J006.Service_Type_Code = J005.Service_Type_Code
 
 	Left outer Join
 	(
 		select
-			CCB.[Client_ID] 'Client_ID'
-			,Org.[Organisation_Name] 'Organisation_Name'
-			,CBG.[Description] 'ContractBillingGroup'
+			CCB.Client_ID 'Client_ID'
+			,Org.Organisation_Name 'Organisation_Name'
+			,CBG.Description 'ContractBillingGroup'
 			,ROW_NUMBER ()
 				over 
 				(
-					Partition by CCB.[Client_ID] Order by Org.[Organisation_Name] ASC
+					Partition by CCB.Client_ID Order by Org.Organisation_Name ASC
 				) 'RN'
-		from [dbo].[FB_Client_Contract_Billing] CCB
-			left outer join [dbo].[FB_Contract_Billing_Group] CBG on CBG.[Contract_Billing_Group_ID] = CCB.[Contract_Billing_Group_ID]
-			left outer Join [dbo].[FB_Client_Contract_Billed_To] CCBT on CCBT.[Client_CB_ID] = CCB.[Client_CB_ID]
-			left outer Join [dbo].[FB_Client_CB_Split] CCBS on CCBS.[Client_Contract_Billed_To_ID] = CCBT.[Client_Contract_Billed_To_ID]
-			left outer Join [dbo].[Organisation] Org on CCBS.[Organisation_ID] = Org.[Organisation_ID]
+		from dbo.FB_Client_Contract_Billing CCB
+			left outer join dbo.FB_Contract_Billing_Group CBG on CBG.Contract_Billing_Group_ID = CCB.Contract_Billing_Group_ID
+			left outer Join dbo.FB_Client_Contract_Billed_To CCBT on CCBT.Client_CB_ID = CCB.Client_CB_ID
+			left outer Join dbo.FB_Client_CB_Split CCBS on CCBS.Client_Contract_Billed_To_ID = CCBT.Client_Contract_Billed_To_ID
+			left outer Join dbo.Organisation Org on CCBS.Organisation_ID = Org.Organisation_ID
 
-	)J009 on J009.[Client_ID] = J001.[Client_ID]
+	)J009 on J009.Client_ID = J001.Client_ID
 
-	Left Outer Join [dbo].[FC_Contract_Area_Product] J010 ON J010.[CAP_ID] = J001.[CAP_ID]
-	LEFT OUTER JOIN [dbo].[FC_Funder_Contract] J011 ON J011.[Funder_Contract_ID] = J010.[Funder_Contract_ID]
+	Left Outer Join dbo.FC_Contract_Area_Product J010 ON J010.CAP_ID = J001.CAP_ID
+	LEFT OUTER JOIN dbo.FC_Funder_Contract J011 ON J011.Funder_Contract_ID = J010.Funder_Contract_ID
 
 	Where 
 		1=1
 --		and J001.Client_ID = @Client_ID_
-		and J006.[Organisation_Name] in (select * from @Organisation)
---		and J006.[Organisation_Name] in (@Organisation)
+		and J006.Organisation_Name in (select * from @Organisation)
+--		and J006.Organisation_Name in (@Organisation)
 		and 1 = iif(J001.RN > 1 and J001.WiA_Provider_ID = 0, 0, 1)
 		and (J006.RN < 2 or J006.RN is null)
 		and (J009.RN < 2 or J009.RN is null)
@@ -346,7 +347,7 @@ select * from
 		,(Cast (J001.AcS_Activity_Start_Time as Datetime))
 		,J001.AcS_Visit_Duration
 		,IIF (J011.Description is NULL,'No Contract',J011.Description)
-		,J004.[Description]
+		,J004.Description
 		,J001.Client_Not_Home
 		,IIF (J002.Client_ID IS NULL, 0, 1)
 		,IIF (J001.Client_Not_Home IS NULL, 1, 0)

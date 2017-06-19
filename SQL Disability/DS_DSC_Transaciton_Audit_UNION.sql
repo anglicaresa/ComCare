@@ -1,11 +1,11 @@
 --use ComCareProd
 --use ComCareUAT
 use ComCareProd
-Declare @Client_ID_ as INT = 10075769
+Declare @Client_ID_ as INT = 10072283
 DECLARE @StartDate AS DATETIME = '20170104 00:00:00.000'
-DECLARE @EndDate AS DATETIME = '20170304 00:00:00.000'
+DECLARE @EndDate AS DATETIME = '20170504 00:00:00.000'
 declare @Organisation VarChar(64) = 'Disabilities Children'
-declare @DuplicateChargeItem as int = 1
+declare @DuplicateChargeItem as int = 0
 
 Declare @ContractType Table (ContractType varchar(64))
 Insert INTO @ContractType 
@@ -136,6 +136,7 @@ left outer join
 					Partition by CCB.[Client_ID] Order by
 						CASE
 						WHEN Org.[Organisation_Name] = 'NDIA National Disability Insurance Agency' THEN '1'
+						when Org.[Organisation_Name] is null then '2'
 						ELSE Org.[Organisation_Name] END ASC
 				) 'RN'
 		from [dbo].[FB_Client_Contract_Billing] CCB
@@ -152,7 +153,7 @@ left outer join
 	Where 
 		1=1
 		and @DuplicateChargeItem = 0
---		and J001.Client_ID = @Client_ID_
+		and J001.Client_ID = @Client_ID_
 		and J006.[Organisation_Name] = @Organisation
 		and (J006.RN < 2 or J006.RN is NULL)
 		and (J009.RN < 2 or J009.rn is null)
@@ -171,6 +172,7 @@ left outer join
 ---------------------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------------------
 --*/
+--/*---------All below this
 Union
 
 ---------------------------------------------------------------------------------------------------------------------------------
@@ -306,6 +308,7 @@ select * from
 					Partition by CCB.[Client_ID] Order by
 						CASE
 						WHEN Org.[Organisation_Name] = 'NDIA National Disability Insurance Agency' THEN '1'
+						when Org.[Organisation_Name] is null then '2'
 						ELSE Org.[Organisation_Name] END ASC
 				) 'RN'
 		from [dbo].[FB_Client_Contract_Billing] CCB
@@ -322,7 +325,7 @@ select * from
 	Where 
 		1=1
 		and @DuplicateChargeItem = 0
---		and J001.Client_ID = @Client_ID_
+		and J001.Client_ID = @Client_ID_
 		and J006.[Organisation_Name] = @Organisation
 		and 1 = iif(J001.RN > 1 and J001.WiA_Provider_ID = 0, 0, 1)
 		and (J006.RN < 2 or J006.RN is null)
@@ -425,6 +428,7 @@ select * from
 					Partition by CCB.[Client_ID] Order by
 						CASE
 						WHEN Org.[Organisation_Name] = 'NDIA National Disability Insurance Agency' THEN '1'
+						when Org.[Organisation_Name] is null then '2'
 						ELSE Org.[Organisation_Name] END ASC
 				) 'RN'
 		from [dbo].[FB_Client_Contract_Billing] CCB
@@ -437,6 +441,7 @@ select * from
 
 	where
 	J002.RN > 1
+	and J002.Client_ID = @Client_ID_
 	and (J009.RN < 2 or J009.RN is null)
 	and convert(date, J002.Visit_Date) between @StartDate and @EndDate
 	and J006.[Organisation_Name] = @Organisation
@@ -447,3 +452,5 @@ select * from
 order by
 1,3,5,8,2,12
 --1,2,12
+
+--*/

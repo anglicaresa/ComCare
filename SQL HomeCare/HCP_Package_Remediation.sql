@@ -4,16 +4,19 @@ where Travel_KM > 0 and Travel_KM is not null
 
 select * from [dbo].wi_activity
 where Round_Allocation_ID <> 0 and sppid = 191 and provider_ID = 10012649
+
+select * from dbo.FC_Transaction-- where Client_ID = 10019493
+10019493
 */
 
 use ComCareProd
 
-Declare @Client_ID_ as INT = 10023300
-DECLARE @StartDate AS DATETIME = '20170102 00:00:00.000'
-DECLARE @EndDate AS DATETIME = '20170115 00:00:00.000'
+Declare @Client_ID_ as INT = 10019493
+DECLARE @StartDate AS DATETIME = '20160102 00:00:00.000'
+DECLARE @EndDate AS DATETIME = '20180115 00:00:00.000'
 
 --Declare @Organisation Varchar(128) = 'Home Care West'
-Declare @Organisation Varchar(128) = 'Home Care Barossa Yorke Peninsula'
+Declare @Organisation Varchar(128) = 'Southern Care at Home'
 
 Declare @ContractType Table (ContractType varchar(64))
 Insert INTO @ContractType
@@ -93,7 +96,7 @@ select * from
 									FC_T.Actual_Amount
 									end desc
 								)'RN'
-			from [dbo].FC_Transaction FC_T
+			from dbo.FC_Transaction FC_T
 			where 
 				1=1
 				and FC_T.FC_Transaction_Type_ID = 3
@@ -123,7 +126,7 @@ select * from
 			,iif(Wi_A.ReSchedule is not null and Wi_A.Activity_Start_time is not null, 'True', 'Flase') 'WiA_Schedule_TimeKILL'
 			,AWT.Allocated_Task_ID 'Allocated_Task_ID'
 			,Wi_A.Round_Allocation_ID 'Round_Allocation_ID'
-		from [dbo].wi_activity Wi_A
+		from dbo.wi_activity Wi_A
 		left outer join [dbo].activity_work_table AWT on AWT.Allocated_Task_ID = Wi_A.Round_Allocation_ID and AWT.activity_date = Wi_A.activity_date
 	)J033 ON 
 		J033.Client_ID = J001.Client_ID 
@@ -137,33 +140,33 @@ select * from
 			FC_CC.Client_ID 'Client_ID'
 			,FC_FC.Description 'funderContract'
 			,FC_FCM.Description 'CareModel'
-		from [dbo].FC_Client_Contract FC_CC
-		Left outer Join [dbo].FC_Funder_Contract FC_FC	on FC_FC.funder_Contract_ID = FC_CC.funder_Contract_ID
-		Left outer Join [dbo].FC_Funding_Care_Model FC_FCM on FC_FCM.Funding_Care_Model_ID = FC_FC.Funding_Care_Model_ID
+		from dbo.FC_Client_Contract FC_CC
+		Left outer Join dbo.FC_Funder_Contract FC_FC	on FC_FC.funder_Contract_ID = FC_CC.funder_Contract_ID
+		Left outer Join dbo.FC_Funding_Care_Model FC_FCM on FC_FCM.Funding_Care_Model_ID = FC_FC.Funding_Care_Model_ID
 
 	)J088 on J088.Client_ID = J001.Client_ID	
 
-	left outer join [dbo].[Task_Type] J004 on J004.Task_Type_Code = J001.Task_Type_Code
-	left outer join [dbo].[Service_Delivery] J005 ON J001.[Client_ID] = J005.[Client_ID]
+	left outer join dbo.Task_Type J004 on J004.Task_Type_Code = J001.Task_Type_Code
+	left outer join dbo.Service_Delivery J005 ON J001.Client_ID = J005.Client_ID
 
 	left outer join 
 	(
 		Select 
-			SD.[Client_ID]
-			,O.[Organisation_Name]
-			,SD.[Service_Type_Code]
+			SD.Client_ID
+			,O.Organisation_Name
+			,SD.Service_Type_Code
 			,ROW_NUMBER ()
 				over 
 				(
 					Partition by SD.[Client_ID] Order by
 						CASE
-						WHEN O.[Organisation_Name] = @Organisation THEN '1'
-						ELSE O.[Organisation_Name] END ASC
+						WHEN O.Organisation_Name = @Organisation THEN '1'
+						ELSE O.Organisation_Name END ASC
 				)'RN'
 		from [dbo].[Service_Delivery] SD
-			join [dbo].[Period_of_Residency] PR on PR.Person_ID = SD.Client_ID
+			join [dbo].Period_of_Residency PR on PR.Person_ID = SD.Client_ID
 			join [dbo].[Address] A on A.Address_ID = PR.Address_ID
-			Join [dbo].[Service_Provision] SP on A.Suburb_ID = SP.Suburb_ID and SP.Service_Type_Code = SD.Service_Type_Code
+			Join [dbo].Service_Provision SP on A.Suburb_ID = SP.Suburb_ID and SP.Service_Type_Code = SD.Service_Type_Code
 			Join [dbo].[Organisation] O on Sp.Centre_ID = O.Organisation_ID
 		Where PR.To_Date is null and PR.Display_Indicator  = 1
 	) J006 ON J006.[Client_ID] = J001.[Client_ID] AND J006.[Service_Type_Code] = J005.[Service_Type_Code]
