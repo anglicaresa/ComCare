@@ -1,19 +1,19 @@
 
-
-
 use ComCareProd
 
 declare @stringDate varchar(32) = '2017-05-17'
 declare @stringDate2 varchar(32) = '2017-05-17'--'2017-01-20'
 declare @Start_Date date = convert(date, @stringDate)
 declare @End_Date date = convert(date, @stringDate2)
-declare @Centre varchar(32) = 'Dutton Court'
+--declare @Centre varchar(32) = 'Dutton Court'
+declare @Centre varchar(32) = 'Ian George Court'
 
 declare @ShowVacantOnly int = 1
 declare @NoBuddyShifts int = 1
 declare @hideUnAss int = 0
 
 -----------------------------------------------------------------------------------------------
+--populate @ClassCodeFilter for dev purposes
 declare @ClassCodeFilter Table (Provider_Class_Code VarChar(128),Description VarChar(128))
 insert into @ClassCodeFilter
 select 
@@ -61,8 +61,11 @@ order by 1
 --declare @TeamFilt VarChar(128) = 'Banksia Central'
 --declare @TeamFilt VarChar(128) = 'Buddy Team'
 declare @SortBy VarChar(32) = 'StartTime'
+-----------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------
 --------------------------------------------------DeBug
-declare @forceProv_ID int = 0
+declare @forceProv_ID int = 1
 
 --declare @Prov_ID int = 10048668 --Hill, Nerissa has split shift CLEAN
 --declare @Prov_ID int = 10048524 --Norrie, Carol has split shift CLEAN
@@ -70,7 +73,7 @@ declare @forceProv_ID int = 0
 --declare @Prov_ID int = 10075347 --Kneebone, Helen Has split shift **second shift not not recorded.* has dule StartEnd.
 --declare @Prov_ID int = 10048181 --Kneebone, Helen Has split shift CLEAN
 --declare @Prov_ID int = 10046817 --Nelson, Margaret Has split shift **Only 1 sign off
-declare @Prov_ID int = 10048536 --Broderick, Josie **Record Duplicate
+declare @Prov_ID int = 10052422 --Broderick, Josie **Record Duplicate
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -143,19 +146,6 @@ insert into @Provs
 		(
 			1 = IIF
 			(
-				1 <> @forceProv_ID
-				and X001.[Provider_ID] <> 0
-				and X005.Organisation_Name = @Centre
-				and X003.Provider_Class_Code in (select Provider_Class_Code from @ClassCodeFilter)
-				and X004.Description in (select * from @TeamFilt)
---				and X003.Provider_Class_Code in (@ClassCodeFilter)
---				and X004.Description in (@TeamFilt)
-				,1
-				,0
-			)
-			or
-			1 = IIF
-			(
 				1 = @forceProv_ID
 				and X001.[Provider_ID] = @Prov_ID
 				,1
@@ -173,7 +163,10 @@ insert into @Provs
 	
 
 
-
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+--Process Providers in @Provs gathering all relevent data
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
@@ -182,7 +175,8 @@ declare @RawResult Table
 	Provider_ID int
 	,ProviderName varChar(128)
 	,Device_Timestamp DateTime
-	,Edit_Action varChar(128)
+	,Edit_Action varChar(512)
+--	,Edit_Action_2 varChar(255)
 	,Activity_Date DateTime
 	,Start_Time DateTime
 	,End_Time DateTime
@@ -200,7 +194,19 @@ insert into @RawResult
 		SJ001.Provider_ID
 		,SJ001.ProviderName
 		,SJ001.Device_Timestamp
-		,SJ001.Edit_Action
+--		,SJ001.Edit_Action
+--		/*
+		,Edit_Action = 
+		(	case SJ001.Edit_Action
+				when ' F' then 'Finalise'
+				when ' A' then 'Add_Activity'
+				when ' StartEnd' then 'Edit_StartEnd'
+				when ' OS' then 'SignOn'
+				when ' OU' then 'Edit_Actuals'
+--				else 'unknownEdit'
+				end
+		) 
+--			*/
 		,SJ001.Activity_Date
 		,SJ001.Start_Time
 		,SJ001.End_Time
@@ -243,109 +249,15 @@ insert into @RawResult
 	Order by
 	1,2,3
 
---select * from @RawResult
+select * from @RawResult
 --/*
 
-Declare @i_RowNum int = 1
-Declare @i_MaxRow int = (select top 1 RR.Row_Count from @RawResult RR)
-Declare @i_PID int = null
-Declare @t_ActivityDate DateTime = null
-declare @J_Edit_Action VarChar(255) = null
-declare @i_BaseCount int = 1
-Declare @i_TriggerFirstTaskEntry int	= 1
-Declare @JoinedEdit_Actions table (Provider_ID int, Activity_Date datetime,Joined_Edit_Action VarChar(255))
-declare @i_Temp int = 0
+--------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------
+--Process results to generate a joined Edit actions value for Activity Date.
+--------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------
 
 
-while @i_RowNum <= @i_MaxRow
-begin
-	
-	set @i_PID = (select RR.Provider_ID from @RawResult RR where RR.RowNumber = @i_RowNum)--baseValue setup
-	Set @t_ActivityDate = (select RR.Activity_Date from @RawResult RR where RR.RowNumber = @i_RowNum)
-		
-	if @i_BaseCount = 1
-	begin
-		set @J_Edit_Action = (select RR.Edit_Action from @RawResult RR where RR.RowNumber = @i_RowNum)
-	end
-		
-	if @i_BaseCount <> 1
-	begin
-		set @J_Edit_Action = @J_Edit_Action + ', ' + (select RR.Edit_Action from @RawResult RR where RR.RowNumber = @i_RowNum)
-	end
-	set @i_Temp = @i_BaseCount
-	set  @i_BaseCount = @i_Temp + 1
-	set @i_Temp = @i_RowNum
-	set @i_RowNum = @i_Temp + 1 --Cycle mechanic
---	print @i_RowNum
-	if 
-	(@i_PID <> (select RR.Provider_ID from @RawResult RR where RR.RowNumber = @i_RowNum)) 
-	or (@t_ActivityDate <> (select RR.Activity_Date from @RawResult RR where RR.RowNumber = @i_RowNum)) 
-	or  @i_RowNum = @i_MaxRow
-	begin
-		set @i_TriggerFirstTaskEntry = 0
-	end
-	
-
-	if @i_TriggerFirstTaskEntry = 0
-	begin
-		insert into @JoinedEdit_Actions Values ( @i_PID,@t_ActivityDate,@J_Edit_Action)
-		set @i_TriggerFirstTaskEntry = 1
-		set @i_BaseCount = 1
-	end
-
-end
-
---select * from @JoinedEdit_Actions
---select * from @RawResult
-
---/*
-Select
-	J001.Provider_ID
-	,J001.ProviderName
-	,J001.Activity_Date
-	,J001.FirstTimeStamp 'StartTime_Raw'
-	,J001.Start_Time 'StartTime_Alt'
-	,J001.LastTimeStamp 'EndTime_Raw'
-	,J001.End_Time 'EndTime_Alt'
---	,J001.Prev_StartTime
-	,J001.LogDuration_Raw
-	,J001.LogDuration_Alt
-	,(J001.LogDuration_Raw - J001.LogDuration_Alt)'Diff'
---	,IIF(JS001.Start_Time
---	,J001.EndTime_Alt
-	,J002.Joined_Edit_Action 'editActions'
-	,J001.Wi_Record
-
-From 
-(
-	select
-		RR.*
---		,Lag(RR.Start_Time)over(Partition by RR.Provider_ID, RR.Activity_Date order by RR.Device_Timestamp)'Prev_StartTime'
-		,DateDiff(MINUTE,RR.FirstTimeStamp,RR.LastTimeStamp)'LogDuration_Raw'
-		,DateDiff(MINUTE,RR.Start_Time,RR.End_Time)'LogDuration_Alt'
-	--	,Max(RR.Device_Timestamp)over(partition by DateAdd(Minute,-10,RR.Device_Timestamp))'SessionLastStamp'
-	from @RawResult RR
-)J001
-
-left outer join @JoinedEdit_Actions J002 on J002.Provider_ID = J001.Provider_ID and J002.Activity_Date = J001.Activity_Date
-
-where
-	1=1
-	and J001.Start_Time IS not null
-	and J001.End_Time is not null
---/*
-Group by
-	J001.Provider_ID
-	,J001.ProviderName
-	,J001.Activity_Date
-	,J001.FirstTimeStamp
-	,J001.Start_Time
-	,J001.LastTimeStamp
-	,J001.End_Time
---	,J001.Prev_StartTime
-	,J001.LogDuration_Raw
-	,J001.LogDuration_Alt
-	,(J001.LogDuration_Raw - J001.LogDuration_Alt)
-	,J002.Joined_Edit_Action
-	,J001.Wi_Record
---*/

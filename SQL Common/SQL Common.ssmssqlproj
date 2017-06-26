@@ -85,11 +85,17 @@
           <AssociatedConnUserName />
           <FullPath>SCCM_report.sql</FullPath>
         </FileNode>
-        <FileNode Name="TimeSheet_StartEnd_adjustCompare.sql">
+        <FileNode Name="TimeSheet_StartEnd_adjustCompare_Group.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
           <AssociatedConnUserName />
-          <FullPath>TimeSheet_StartEnd_adjustCompare.sql</FullPath>
+          <FullPath>TimeSheet_StartEnd_adjustCompare_Group.sql</FullPath>
+        </FileNode>
+        <FileNode Name="TimeSheet_StartEnd_adjustCompare_Individual.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>TimeSheet_StartEnd_adjustCompare_Individual.sql</FullPath>
         </FileNode>
         <FileNode Name="Vacant_Shift_Report.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
