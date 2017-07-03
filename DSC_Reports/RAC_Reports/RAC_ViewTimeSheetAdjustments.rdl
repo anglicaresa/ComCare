@@ -3,561 +3,1055 @@
   <df:DefaultFontFamily>Segoe UI</df:DefaultFontFamily>
   <AutoRefresh>0</AutoRefresh>
   <DataSources>
-    <DataSource Name="REF_ASADWH">
+    <DataSource Name="DataSource1">
       <DataSourceReference>ComCareProd Reports</DataSourceReference>
       <rd:SecurityType>None</rd:SecurityType>
-      <rd:DataSourceID>49f9dfe8-6b26-41bf-b1e3-017be446d96e</rd:DataSourceID>
+      <rd:DataSourceID>0784ff8a-5132-47ad-a9ac-d15af92da5eb</rd:DataSourceID>
     </DataSource>
   </DataSources>
   <DataSets>
     <DataSet Name="DataSet1">
       <Query>
-        <DataSourceName>REF_ASADWH</DataSourceName>
+        <DataSourceName>DataSource1</DataSourceName>
         <QueryParameters>
-          <QueryParameter Name="@Organisation">
-            <Value>=Parameters!Organisation.Value</Value>
+          <QueryParameter Name="@Start_Date">
+            <Value>=Parameters!Start_Date.Value</Value>
           </QueryParameter>
-          <QueryParameter Name="@StartDate">
-            <Value>=Parameters!StartDate.Value</Value>
+          <QueryParameter Name="@End_Date">
+            <Value>=Parameters!End_Date.Value</Value>
           </QueryParameter>
-          <QueryParameter Name="@EndDate">
-            <Value>=Parameters!EndDate.Value</Value>
+          <QueryParameter Name="@forceProv_ID">
+            <Value>=Parameters!forceProv_ID.Value</Value>
           </QueryParameter>
-          <QueryParameter Name="@DuplicateChargeItem">
-            <Value>=Parameters!DuplicateChargeItem.Value</Value>
+          <QueryParameter Name="@Centre">
+            <Value>=Parameters!Centre.Value</Value>
           </QueryParameter>
-          <QueryParameter Name="@ContractType">
-            <Value>=Parameters!ContractType.Value</Value>
+          <QueryParameter Name="@ClassCodeFilter">
+            <Value>=Parameters!ClassCodeFilter.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@TeamFilt">
+            <Value>=Parameters!TeamFilt.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Prov_ID">
+            <Value>=Parameters!Prov_ID.Value</Value>
           </QueryParameter>
         </QueryParameters>
-        <CommandText>select * from
+        <CommandText>declare @EventBracket1 int = -1
+declare @EventBracket2 int = 13
+--------------------------------------------------------------
+--------------------------------------------------------------
+
+--Setup Vars and Defults.
+declare @date_Start date = @Start_Date
+declare @date_End date = @End_Date
+
+---------------------------------------------------------------
+--Pre assemble Provider list for performance reasons
+---------------------------------------------------------------
+declare @Provs Table
 (
-	select
-		J001.Client_ID
---		,1 'table id'
-		,J001.Provider_ID
---		,(Cast (J033.Schedule_Time as datetime)) 'Schedule_Visit_Time'
-		,IIF(J033.WiA_Schedule_TimeKILL = 'true', null, Cast (J033.Schedule_Time as Datetime)) 'Schedule_Visit_Time'	
-		,J033.Scheduled_Duration
-		,(Cast (cast(J001.Visit_Date as date) as Datetime) + Cast (Cast (J001.Visit_Time as Time) as Datetime)) 'Actual_Visit_Time'
-		,J001.Visit_Duration 'Actual_Duration'
-		,IIF (J011.Description is NULL,'No Contract',J011.Description) 'contract_type'
-		,J004.[Description] 'task_Description'
-		,J001.Client_Not_Home
-		,IIF (J002.Client_ID IS NULL, 0, 1) 'Has_Charge_Item'
-		,convert (int ,'0') 'In_WiA_Only'
-		,J002.Line_Description 'Charge_Item_Line_Description'
-		,J002.Amount
-		,IIF
-		(
-			J009.Organisation_Name = 'NDIA National Disability Insurance Agency'
-			, 'NDIS funded'
-			,IIF(J009.Client_ID IS NULL,'No Contract Billing','Self Managed')
-		) 'Funding_type'
---		,J002.RN 'ChrgDup'
---/*
-	from 
-	(select * from[dbo].Actual_Service A_S where convert(date, A_S.Visit_Date) between @StartDate and @EndDate)J001
---*/
---	from [dbo].Actual_Service J001
-
-	Left outer Join
-	(
-		select 
-			ACSI.Client_ID	
-			,ACSI.Visit_Date
-			,ACSI.Visit_No
-			,ACSI.Provider_ID
-			,ACSI.Service_Prov_Position_ID
-			,ACSI.Amount
-			,ACSI.Line_Description
---			,row_number()over(partition by ACSI.Client_ID,ACSI.Provider_ID,ACSI.Visit_Date,ACSI.Visit_No,ACSI.Line_Description order by ACSI.Visit_Date,ACSI.Visit_No)'RN'
-		from [dbo].[Actual_Service_Charge_Item] ACSI
-
-	)J002 ON 
-			J002.Client_ID = J001.Client_ID 
-			and J002.Visit_Date = J001.Visit_Date 
-			and J002.Visit_No = J001.Visit_No 
-			and J002.Service_Prov_Position_ID = J001.Service_Prov_Position_ID
-
-left outer join
-(
-	select
-		Wi_A.Client_ID
-		,Wi_A.Wi_Record_ID 'Wi_Record_ID'
-		,Wi_A.Activity_Date
-		,Wi_A.SPPID
-		,Wi_A.Schedule_Time 'Schedule_Time'
-		,Wi_A.Schedule_Duration 'Scheduled_Duration'
-		,Wi_A.ReSchedule 'ReSchedule'
-		,Wi_A.Activity_Start_time 'Activity_Start_time'
-		,iif(Wi_A.ReSchedule is not null and Wi_A.Activity_Start_time is not null, 'True', 'Flase') 'WiA_Schedule_TimeKILL'
-		,AWT.Allocated_Task_ID 'Allocated_Task_ID'
-		,Wi_A.Round_Allocation_ID 'Round_Allocation_ID'
-	from [dbo].wi_activity Wi_A
-	left outer join [dbo].activity_work_table AWT on AWT.Allocated_Task_ID = Wi_A.Round_Allocation_ID and AWT.activity_date = Wi_A.activity_date
---/*
-	Where
-	 convert (date, Wi_A.Activity_Date) between dateadd(Day,-7,@StartDate) and dateadd(day,+7,@EndDate)
---*/
-)J033 ON 
-		J033.Client_ID = J001.Client_ID 
-		and J033.Activity_Date = J001.Visit_Date 
-		and J033.SPPID = J001.Service_Prov_Position_ID 
-		and (J001.Allocated_Task_ID = J033.Allocated_Task_ID or J001.Allocated_Task_ID = J033.Round_Allocation_ID)
-			
-
-	left outer join [dbo].[Task_Type] J004 on J004.Task_Type_Code = J001.Task_Type_Code
-	left outer join [dbo].[Service_Delivery] J005 ON J001.[Client_ID] = J005.[Client_ID]
-
-	left outer join 
-	(
-		Select 
-			SD.[Client_ID]
-			,O.[Organisation_Name]
-			,SD.[Service_Type_Code]
-			,ROW_NUMBER ()
-				over 
-				(
-					Partition by SD.[Client_ID] Order by
-						CASE
-						WHEN O.[Organisation_Name] = @Organisation THEN '1'
-						ELSE O.[Organisation_Name] END ASC
-				)'RN'
-		from [dbo].[Service_Delivery] SD
-			join [dbo].[Period_of_Residency] PR on PR.Person_ID = SD.Client_ID
-			join [dbo].[Address] A on A.Address_ID = PR.Address_ID
-			Join [dbo].[Service_Provision] SP on A.Suburb_ID = SP.Suburb_ID and SP.Service_Type_Code = SD.Service_Type_Code
-			Join [dbo].[Organisation] O on Sp.Centre_ID = O.Organisation_ID
-		Where PR.To_Date is null and PR.Display_Indicator  = 1
-	) J006 ON J006.[Client_ID] = J001.[Client_ID] AND J006.[Service_Type_Code] = J005.[Service_Type_Code]
-
-	left outer Join
-	(
-		select
-			CCB.[Client_ID] 'Client_ID'
-			,Org.[Organisation_Name] 'Organisation_Name'
-			,CBG.[Description] 'ContractBillingGroup'
-			,CCB.Contract_Billing_ID 'Contract_Billing_ID'
-			,ROW_NUMBER ()
-				over 
-				(
-					Partition by CCB.[Client_ID] Order by
-						CASE
-						WHEN Org.[Organisation_Name] = 'NDIA National Disability Insurance Agency' THEN '1'
-						when Org.[Organisation_Name] is null then '2'
-						ELSE Org.[Organisation_Name] END ASC
-				) 'RN'
-		from [dbo].[FB_Client_Contract_Billing] CCB
-			left outer join [dbo].[FB_Contract_Billing_Group] CBG on CBG.[Contract_Billing_Group_ID] = CCB.[Contract_Billing_Group_ID]
-			left outer Join [dbo].[FB_Client_Contract_Billed_To] CCBT on CCBT.[Client_CB_ID] = CCB.[Client_CB_ID]
-			left outer Join [dbo].[FB_Client_CB_Split] CCBS on CCBS.[Client_Contract_Billed_To_ID] = CCBT.[Client_Contract_Billed_To_ID]
-			left outer Join [dbo].[Organisation] Org on CCBS.[Organisation_ID] = Org.[Organisation_ID]
-
-	)J009 on J009.[Client_ID] = J001.[Client_ID]
-
-	left outer join [dbo].[FC_Contract_Area_Product] J010 ON J010.[CAP_ID] = J001.[CAP_ID]
-	left outer join [dbo].[FC_Funder_Contract] J011 ON J011.[Funder_Contract_ID] = J010.[Funder_Contract_ID]
-
-	Where 
-		1=1
-		and @DuplicateChargeItem = 0
---		and J001.Client_ID = @Client_ID_
-		and J006.[Organisation_Name] = @Organisation
-		and (J006.RN &lt; 2 or J006.RN is NULL)
-		and (J009.RN &lt; 2 or J009.rn is null)
-		and convert (datetime, J001.Visit_Date) between @StartDate and (DATEADD(s, 84599, @EndDate))
-		and (J009.ContractBillingGroup &lt;&gt; 'DCSI' or J009.ContractBillingGroup is null)
---		AND (IIF (J011.Description is NULL,'No Contract',J011.Description) in (select * from @ContractType))
-		and (IIF (J011.Description is NULL,'No Contract',J011.Description) in (@ContractType))
-		
---		and J002.RN = 2
-
-) t1
-
----------------------------------------------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------------------------------------------
---*/
-Union
-
----------------------------------------------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------------------------------------------
---/*
-select * from
-(
-	select
-		J001.Client_ID
---		,2 'table id'
-		,J001.WiA_Provider_ID 'Provider_ID'
-		,IIF(J001.WiA_Schedule_TimeKILL = 'true', null, Cast (J001.WiA_Schedule_Time as Datetime)) 'Schedule_Visit_Time'	
-		,J001.WiA_Scheduled_Duration 'Scheduled_Duration'
-		,(Cast (J001.AcS_Activity_Start_Time as Datetime)) 'Actual_Visit_Time'
-		,J001.AcS_Visit_Duration as 'Actual_Duration'
-		,IIF (J011.Description is NULL,'No Contract',J011.Description) 'contract_type'
-		,J004.[Description] 'task_Description'
-		,J001.Client_Not_Home
-		,IIF (J002.Client_ID IS NULL, 0, 1) 'Has_Charge_Item'
-		,IIF (J001.Client_Not_Home IS NULL, 1, 0) 'In_WiA_Only'
-		,J002.Line_Description 'Charge_Item_Line_Description'
-		,J002.Amount
-		,IIF(J009.Organisation_Name = 'NDIA National Disability Insurance Agency', 'NDIS funded',IIF(J009.Client_ID IS NULL,'No Contract Billing','Self Managed')) 'Funding_Type'
---		,J002.RN 'ChrgDup'
-	FROM 
+	Provider_ID int
+	,ProviderName varChar(128)
+)
+insert into @Provs
+	Select
+		X001.Provider_ID
+		,(X002.Last_Name + ', ' + X002.Preferred_Name) 'ProviderName'
+	From 
 	(
 		Select
-			IIF(Ac_S.Activity_Start_Time IS NULL, 'FALSE', 'TRUE') 'In_Actual_Service'
-			,Wi_A.SPPID 'WiA_SPPID'
-			,Ac_S.Service_Prov_Position_ID 'AcS_SPPID'
-			,Wi_A.[Activity_Date] 'WiA_Activity_Date'
-			,Wi_A.Activity_Start_Time 'WiA_Activity_Start_Time'
-			,Wi_A.Activity_End_Time 'WiA_Activity_End_Time'
-			,Wi_A.Client_ID 'Client_ID'
-			,Wi_A.Provider_ID 'WiA_Provider_ID'
-			,Wi_A.Schedule_Sequence_No 'WiA_Schedule_Sequence_No'
-			,Wi_A.Schedule_Task_Type 'WiA_Schedule_Task_Type'
-			,iif(Wi_A.ReSchedule is not null and Wi_A.Activity_Start_time is not null, 'True', 'Flase') 'WiA_Schedule_TimeKILL'
-			,Convert (DateTime, Wi_A.Schedule_Time) 'WiA_Schedule_Time'
-			,IIF
-				( 
-					Ac_S.Activity_Start_Time is not null
-					, Ac_S.Activity_Start_Time
-					,cast (cast (Ac_S.Visit_Date as Date ) as DateTime ) 
-					+ cast(cast ( Ac_S.Visit_Time as Time ) as DateTime)
-				) 'AcS_Activity_Start_Time'
-			,Wi_A.Schedule_Duration 'WiA_Scheduled_Duration'
-			,Wi_A.Activity_ID 'WiA_Activity_ID'
-			,Ac_S.Visit_Duration 'AcS_Visit_Duration'
-			,Ac_S.Client_Not_Home 'Client_Not_Home'
-			,Ac_S.Visit_Date 'AcS_Visit_Date'
-			,Ac_S.Visit_No 'Visit_No'
-			,IIF(Ac_S.Task_Type_Code is null,Wi_A.Schedule_Task_Type, Ac_S.Task_Type_Code) 'Task_Type_Code'
-			,Wi_A.[CAP_ID] 'CAP_ID'
-			,Wi_A.[Absence_Code]
+			WiA.[SPPID] 'SPPID'
+			,cast (WiA.[Activity_Date] as date) 'Activity_Date'
+			,cast (WiA.Schedule_Time as datetime2) 'Schedule_StartTime'
+			,DateAdd(MINUTE, WiA.Schedule_Duration,cast(WiA.Schedule_Time as datetime2))'Schedule_EndTime'
+			,WiA.[Absence_Code] 'Absence_Code'
+			,WiA.[Provider_ID] 'Provider_ID'
+			,WiA.Schedule_Duration 'Schedule_Duration'
+			,WiA.Generated_Provider_Code 'Generated_Provider_Code'
 			,ROW_NUMBER () -- sort by importance of 'covered' 'absent' and 'Un-Alocated'.
-			over 
-			(
-				Partition by Wi_A.Client_ID, Wi_A.[Activity_Date], Wi_A.[SPPID] Order by 
-					Case
-						when ((Wi_A.[Provider_ID] &gt; 0) and (Wi_A.[Absence_Code] is NULL)) then '1'
-						when (Wi_A.[Provider_ID] &gt; 0) and (Wi_A.[Absence_Code] is not NULL) then '2'
-					else 'z'
-				end
-			) AS 'RN'
-		from (select * from dbo.WI_Activity Wi_A1 where convert(date, Wi_A1.Activity_Date) between dateadd(Day,-7,@StartDate) and dateadd(day,+7,@EndDate)) Wi_A
---		from dbo.WI_Activity Wi_A
-		Left Outer Join dbo.Actual_Service Ac_S 
-		ON 
-			1=1
-			and Wi_A.Client_ID = Ac_S.Client_ID 
-			and Wi_A.SPPID = Ac_S.Service_Prov_Position_ID
-			and Wi_A.Activity_Date = Ac_S.Visit_Date
-			and Wi_A.Round_Allocation_ID = Ac_S.Allocated_Task_ID
+				over 
+				(
+					Partition by cast(WiA.Schedule_Time as Datetime2), WiA.[SPPID] Order by 
+						Case
+							when ((WiA.[Provider_ID] &gt; 0) and (WiA.[Absence_Code] is NULL)) then concat('1_',WiA.[Provider_ID])
+							when (WiA.[Provider_ID] &gt; 0) and (WiA.[Absence_Code] is not NULL) then concat('2_',WiA.[Provider_ID])
+						else 'z'
+					end
+				) 'RN'
+		From [dbo].[Wi_Activity] WiA
+		where convert(date, Wia.Activity_Date) between dateadd(day,@EventBracket1,@Start_Date) and dateadd(day,@EventBracket2,@End_Date)
+	)X001
+
+	Inner Join dbo.Person X002 on X002.Person_ID = X001.Provider_ID
+	Inner Join dbo.Service_Provision_Position X003 on X003.Service_Prov_Position_ID = X001.SPPID
+	Inner join dbo.Service_Delivery_Work_Team X004 on X004.Team_No = X003.Team_No and X004.Centre_ID = X003.Centre_ID
+	Inner join dbo.Organisation X005 on X005.Organisation_ID = X004.Centre_ID
+	Left outer join dbo.Service_Provision_Allocation X006 on X006.Service_Prov_Position_ID = X003.Service_Prov_Position_ID
+	Left outer join dbo.Provider_Classification X007 on X007.Provider_Class_Code = X003.Provider_Class_Code
 		where
+		1=1
+		and X001.RN &lt; 2
+			and X001.Schedule_Duration is not null
+			and cast(X001.Activity_Date as date) between @date_Start and @date_End
+		and 
+		(
+			1 = IIF
+			(
+				1 &lt;&gt; @forceProv_ID
+				and X001.[Provider_ID] &lt;&gt; 0
+				and X005.Organisation_Name = @Centre
+--				and X003.Provider_Class_Code in (select Provider_Class_Code from @ClassCodeFilter)
+--				and X004.Description in (select * from @TeamFilt)
+				and X003.Provider_Class_Code in (@ClassCodeFilter)
+				and X004.Description in (@TeamFilt)
+				,1
+				,0
+			)
+			or
+			1 = IIF
+			(
+				1 = @forceProv_ID
+				and X001.[Provider_ID] = @Prov_ID
+				,1
+				,0 
+			)
+		)
+
+		
+	Group by
+		X001.Provider_ID
+		,(X002.Last_Name + ', ' + X002.Preferred_Name)
+	order by
+		1
+--select * from @Provs
+	
+
+
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+--Process Providers in @Provs gathering all relevent data
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+declare @RawResult Table
+(
+	Provider_ID int
+	,ProviderName varChar(128)
+	,Device_Timestamp DateTime
+	,Edit_Action varChar(512)
+--	,Edit_Action_2 varChar(255)
+	,Activity_Date DateTime
+	,Start_Time DateTime
+	,End_Time DateTime
+	,Edit_Type varChar(128)
+	,RN int
+	,Count_ int
+	,Wi_Record int
+	,FirstTimeStamp DateTime
+	,LastTimeStamp DateTime
+	,Row_Count int
+	,RowNumber int
+)
+insert into @RawResult
+	Select
+		SJ001.Provider_ID
+		,SJ001.ProviderName
+		,SJ001.Device_Timestamp
+--		,SJ001.Edit_Action
+--		/*
+		,Edit_Action = 
+		(	case SJ001.Edit_Action
+				when ' F' then 'Finalise'
+				when ' A' then 'Add_Activity'
+				when ' StartEnd' then 'Edit_StartEnd'
+				when ' OS' then 'SignOn'
+				when ' OU' then 'Edit_Actuals'
+--				else 'unknownEdit'
+				end
+		) 
+--			*/
+		,SJ001.Activity_Date
+		,SJ001.Start_Time
+		,SJ001.End_Time
+		,SJ001.Edit_Type
+		,Row_Number()over(Partition by SJ001.Provider_ID,SJ001.Edit_Action,SJ001.Activity_Date Order by SJ001.Activity_Date,SJ001.Device_Timestamp)'RN'
+		,Count(SJ001.Edit_Action) over (partition by SJ001.Provider_ID,SJ001.Edit_Action,SJ001.Activity_Date,SJ001.Wi_Record Order by SJ001.Activity_Date,SJ001.Device_Timestamp)'Count_'
+		,SJ001.Wi_Record
+		,MIN(SJ001.Device_Timestamp) over (partition by SJ001.Provider_ID,SJ001.Activity_Date )'FirstTimeStamp'
+		,Max(SJ001.Device_Timestamp) over (partition by SJ001.Provider_ID,SJ001.Activity_Date )'LastTimeStamp'
+		,Count(SJ001.Provider_ID)over (partition by null )'Row_Count'
+		,Row_Number() over(Partition by null order by SJ001.Provider_ID, SJ001.ProviderName, SJ001.Device_Timestamp)'RowNumber'
+	From
+	(
+		select
+			WI_EL_C.Provider_ID
+			,Provs.ProviderName
+		--	,WI_EL_C.Content
+		--	,WI_EL_C.Directive_Type_ID
+			,cast(WI_EL_C.Device_Timestamp as datetime2)'Device_Timestamp'
+			,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 1),'''','') as Varchar(128)) 'Edit_Type'
+			,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 2),'''','')as Varchar(128)) 'Edit_Action'
+			,cast((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 3) as int) 'Wi_Record'
+			,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 5),'''','')as Date) 'Activity_Date'
+			,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 14),'''','')as datetime2) 'Start_Time'
+			,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 15),'''','')as datetime2) 'End_Time'
+		from
+		(
+			select * from dbo.WI_Event_Log Z 
+			where 
 			1=1
-			and Wi_A.Cancellation_Date is NULL
-			and Wi_A.Client_ID IS NOT NULL	
+			and Z.Directive_Type_ID = 114 
+			and Z.Device_Timestamp between dateadd(day,@EventBracket1,cast(@Start_Date as datetime)) and dateadd(day,@EventBracket2,cast(@End_Date as datetime))
+			and Z.Provider_ID in (Select p.Provider_ID from @Provs p)
+		)WI_EL_C
+		Inner Join @Provs Provs on Provs.Provider_ID = WI_EL_C.Provider_ID
+	)SJ001
+	where
+		1=1
+		and SJ001.Activity_Date between @Start_Date and @End_Date
+	Order by
+	1,2,3
+
+--select * from @RawResult
+--/*
+
+--------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------
+--Process results to generate a joined Edit actions value for Activity Date.
+--------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------
+Declare @i_RowNum int = 1
+Declare @i_MaxRow int = (select top 1 RR.Row_Count from @RawResult RR)
+Declare @i_PID int = null
+Declare @t_ActivityDate DateTime = null
+declare @J_Edit_Action VarChar(255) = null
+declare @i_BaseCount int = 1
+Declare @i_TriggerFirstTaskEntry int	= 1
+Declare @JoinedEdit_Actions table (Provider_ID int, Activity_Date datetime,Joined_Edit_Action VarChar(255))
+declare @i_Temp int = 0
+declare @VC_PrevEdAct varchar(128)=''
+declare @VC_CurEdAct varchar(128)=''
+
+--Start Main processing
+while @i_RowNum &lt;= @i_MaxRow
+begin
+	-----------------------------------------------------------------------------------------------------------
+	--Define current provider for current entry
+	set @i_PID = (select RR.Provider_ID from @RawResult RR where RR.RowNumber = @i_RowNum)--baseValue setup
+	Set @t_ActivityDate = (select RR.Activity_Date from @RawResult RR where RR.RowNumber = @i_RowNum)
+	Set @VC_CurEdAct = (select RR.Edit_Action from @RawResult RR where RR.RowNumber = @i_RowNum)
+
+	if @i_BaseCount = 1
+	begin
+		set @J_Edit_Action = (select RR.Edit_Action from @RawResult RR where RR.RowNumber = @i_RowNum)--Define Edit action (OS,A,OU,StartEnd,F)
+		set @VC_PrevEdAct = ''
+	end
+		
+	if @i_BaseCount &lt;&gt; 1 and @VC_PrevEdAct &lt;&gt; @VC_CurEdAct
+	begin
+		set @J_Edit_Action = @J_Edit_Action + ', ' + (select RR.Edit_Action from @RawResult RR where RR.RowNumber = @i_RowNum)
+		set @VC_PrevEdAct = @VC_CurEdAct
+	end
+
+	set @i_Temp = @i_BaseCount
+	set  @i_BaseCount = @i_Temp + 1
+	set @i_Temp = @i_RowNum
+	 --Cycle mechanic
+--	print @i_RowNum
+
+	-----------------------------------------------------------------------------------------------------------
+	--end base setup
+	-----------------------------------------------------------------------------------------------------------
+	if --Check to see if the provider ID has changed or the task has changed
+	(@i_PID &lt;&gt; (select RR.Provider_ID from @RawResult RR where RR.RowNumber = @i_RowNum+1)) 
+	or (@t_ActivityDate &lt;&gt; (select RR.Activity_Date from @RawResult RR where RR.RowNumber = @i_RowNum+1)) 
+	or  @i_RowNum = @i_MaxRow
+	begin
+		set @i_TriggerFirstTaskEntry = 0
+	end
+	
+
+	if @i_TriggerFirstTaskEntry = 0
+	begin
+		insert into @JoinedEdit_Actions Values ( @i_PID,@t_ActivityDate,@J_Edit_Action)
+		set @i_TriggerFirstTaskEntry = 1
+		set @i_BaseCount = 1
+	end
+	set @i_RowNum = @i_Temp + 1
+end
+--*/
+--select * from @JoinedEdit_Actions
+--select * from @RawResult
+
+--/*
+
+--------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------
+--PrimaryProssessing
+Declare @Results table
+(
+	Provider_ID int
+	,ProviderName varchar(128)
+	,Activity_Date date
+	,StartTime_Raw DateTime
+	,StartTime_Alt DateTime
+	,EndTime_Raw DateTime
+	,EndTime_Alt DateTime
+	,LogDuration_Raw int
+	,LogDuration_Alt int
+	,Diff int
+	,editActions VarChar(255)
+	,Wi_Record int
+	,OldRN int
+--	,RemoveFlag int
+	,TotalCount int
+	,RowNum int
+)
+insert into @Results
+Select 
+	*
+	,Row_Number() over(partition by null order by TT.Provider_ID,TT.OldRN)'RowNum'
+from
+(
+	Select
+		J001.Provider_ID
+		,J001.ProviderName
+		,J001.Activity_Date
+		,J001.FirstTimeStamp 'StartTime_Raw'
+		,J001.Start_Time 'StartTime_Alt'
+		,J001.LastTimeStamp 'EndTime_Raw'
+		,J001.End_Time 'EndTime_Alt'
+		,J001.LogDuration_Raw
+		,J001.LogDuration_Alt
+		,(J001.LogDuration_Raw - J001.LogDuration_Alt)'Diff'
+		,J002.Joined_Edit_Action 'editActions'
+		,J001.Wi_Record
+		,J001.RowNumber 'OldRN'
+	--	,J001.RN 'RemoveFlag'
+		,Count(J001.Provider_ID) over (partition by null )'TotalCount'
+	
+	
+	From 
+	(
+		select
+			RR.Provider_ID
+			,RR.ProviderName
+			,RR.Activity_Date
+			,RR.FirstTimeStamp
+			,RR.Start_Time
+			,RR.LastTimeStamp
+			,RR.End_Time
+			,RR.Wi_Record
+			,RR.RowNumber
+			,DateDiff(MINUTE,RR.FirstTimeStamp,RR.LastTimeStamp)'LogDuration_Raw'
+			,DateDiff(MINUTE,RR.Start_Time,RR.End_Time)'LogDuration_Alt'
+			,ROW_NUMBER()over(Partition by RR.Provider_ID,RR.Activity_Date,RR.Wi_Record order by RR.device_TimeStamp Desc)'RN'
+		from @RawResult RR
+
 	)J001
 
-	Left outer Join
-	(
-		select 
-			ACSI.Client_ID	
-			,ACSI.Visit_Date
-			,ACSI.Visit_No
-			,ACSI.Provider_ID
-			,ACSI.Service_Prov_Position_ID
-			,ACSI.Amount
-			,ACSI.Line_Description
---			,row_number()over(partition by ACSI.Client_ID,ACSI.Provider_ID,ACSI.Visit_Date,ACSI.Visit_No,ACSI.Line_Description order by ACSI.Visit_Date,ACSI.Visit_No)'RN'
-		from [dbo].[Actual_Service_Charge_Item] ACSI
-
-	)J002 ON J002.Client_ID = J001.Client_ID and J002.Visit_Date = J001.AcS_Visit_Date and J002.Visit_No = J001.Visit_No and J002.Service_Prov_Position_ID = J001.AcS_SPPID
-
-	Left outer Join [dbo].[Task_Type] J004 on J004.Task_Type_Code = J001.Task_Type_Code
-	Left Outer Join [dbo].[Service_Delivery] J005 ON J001.[Client_ID] = J005.[Client_ID]
-
-	Left outer JOIN 
-	(
-		Select 
-			SD.[Client_ID]
-			,O.[Organisation_Name]
-			,SD.[Service_Type_Code]
-			,ROW_NUMBER ()
-				over 
-				(
-					Partition by SD.[Client_ID] Order by
-						CASE
-						WHEN O.[Organisation_Name] = @Organisation THEN '1'
-						ELSE O.[Organisation_Name] END ASC
-				) AS 'RN'
-		from [dbo].[Service_Delivery] SD
-			join [dbo].[Period_of_Residency] PR on PR.Person_ID = SD.Client_ID
-			join [dbo].[Address] A on A.Address_ID = PR.Address_ID
-			Join [dbo].[Service_Provision] SP on A.Suburb_ID = SP.Suburb_ID and SP.Service_Type_Code = SD.Service_Type_Code
-			Join [dbo].[Organisation] O on Sp.Centre_ID = O.Organisation_ID
-		Where PR.To_Date is null and PR.Display_Indicator  = 1
-	) J006 ON J006.[Client_ID] = J001.[Client_ID] AND J006.[Service_Type_Code] = J005.[Service_Type_Code]
-
-	Left outer Join
-	(
-		select
-			CCB.[Client_ID] 'Client_ID'
-			,Org.[Organisation_Name] 'Organisation_Name'
-			,CBG.[Description] 'ContractBillingGroup'
-			,ROW_NUMBER ()
-				over 
-				(
-					Partition by CCB.[Client_ID] Order by
-						CASE
-						WHEN Org.[Organisation_Name] = 'NDIA National Disability Insurance Agency' THEN '1'
-						when Org.[Organisation_Name] is null then '2'
-						ELSE Org.[Organisation_Name] END ASC
-				) 'RN'
-		from [dbo].[FB_Client_Contract_Billing] CCB
-			left outer join [dbo].[FB_Contract_Billing_Group] CBG on CBG.[Contract_Billing_Group_ID] = CCB.[Contract_Billing_Group_ID]
-			left outer Join [dbo].[FB_Client_Contract_Billed_To] CCBT on CCBT.[Client_CB_ID] = CCB.[Client_CB_ID]
-			left outer Join [dbo].[FB_Client_CB_Split] CCBS on CCBS.[Client_Contract_Billed_To_ID] = CCBT.[Client_Contract_Billed_To_ID]
-			left outer Join [dbo].[Organisation] Org on CCBS.[Organisation_ID] = Org.[Organisation_ID]
-
-	)J009 on J009.[Client_ID] = J001.[Client_ID]
-
-	Left Outer Join [dbo].[FC_Contract_Area_Product] J010 ON J010.[CAP_ID] = J001.[CAP_ID]
-	LEFT OUTER JOIN [dbo].[FC_Funder_Contract] J011 ON J011.[Funder_Contract_ID] = J010.[Funder_Contract_ID]
-
-	Where 
-		1=1
-		and @DuplicateChargeItem = 0
---		and J001.Client_ID = @Client_ID_
-		and J006.[Organisation_Name] = @Organisation
-		and 1 = iif(J001.RN &gt; 1 and J001.WiA_Provider_ID = 0, 0, 1)
-		and (J006.RN &lt; 2 or J006.RN is null)
-		and (J009.RN &lt; 2 or J009.RN is null)
-		and convert(datetime, J001.WiA_Schedule_Time) between @StartDate and (DATEADD(s, 84599, @EndDate))
-		and (J009.ContractBillingGroup &lt;&gt; 'DCSI' or J009.ContractBillingGroup is null)
-		and J001.Client_ID IS NOT NULL
-		
---		AND (IIF (J011.Description is NULL,'No Contract',J011.Description) in (select * from @ContractType))
-		and (IIF (J011.Description is NULL,'No Contract',J011.Description) in (@ContractType))
-
---		and J002.RN = 2
-
-
-	Group by
-		J001.Client_ID
-	--	,2
-		,J001.WiA_Provider_ID
-		,IIF(J001.WiA_Schedule_TimeKILL = 'true', null, Cast (J001.WiA_Schedule_Time as Datetime))
-		,J001.WiA_Scheduled_Duration
-		,(Cast (J001.AcS_Activity_Start_Time as Datetime))
-		,J001.AcS_Visit_Duration
-		,IIF (J011.Description is NULL,'No Contract',J011.Description)
-		,J004.[Description]
-		,J001.Client_Not_Home
-		,IIF (J002.Client_ID IS NULL, 0, 1)
-		,IIF (J001.Client_Not_Home IS NULL, 1, 0)
-		,J002.Line_Description
-		,J002.Amount
-		,IIF(J009.Organisation_Name = 'NDIA National Disability Insurance Agency', 'NDIS funded',IIF(J009.Client_ID IS NULL,'No Contract Billing','Self Managed'))
---		,J002.RN
-)t2
-
-Union
-
-select * from
-(
-	select
-		J002.Client_ID
-		,J002.Provider_ID
-		,cast(J002.Visit_Date as datetime) 'Schedule_Visit_Time'
-		,null 'Scheduled_Duration'
-		,null 'Actual_Visit_Time'
-		,null 'Actual_Duration'
-		,'Inconclusive' 'contract_type'
-		,'---' 'task_Description'
-		,null 'Client_Not_Home'
-		,2 'Has_Charge_Item'
-		,null 'In_WiA_Only'
-		,J002.Line_Description 'Charge_Item_Line_Description'
-		,J002.Amount
-		,IIF(J009.Organisation_Name = 'NDIA National Disability Insurance Agency', 'NDIS funded',IIF(J009.Client_ID IS NULL,'No Contract Billing','Self Managed')) 'Funding_Type'
---		,J002.RN 'ChrgDup'
-	from
-	(
-		select 
-			ACSI.Client_ID	
-			,ACSI.Visit_Date
-			,ACSI.Visit_No
-			,ACSI.Provider_ID
-			,ACSI.Service_Prov_Position_ID
-			,ACSI.Amount
-			,ACSI.Line_Description
-			,row_number()over(partition by ACSI.Client_ID,ACSI.Provider_ID,ACSI.Visit_Date,ACSI.Visit_No,ACSI.Line_Description order by ACSI.Visit_Date,ACSI.Visit_No)'RN'
-		from [dbo].[Actual_Service_Charge_Item] ACSI
-
-	)J002
-	Left Outer Join dbo.Service_Delivery J005 ON J002.[Client_ID] = J005.[Client_ID]
-	left outer join 
-	(
-		Select 
-			SD.[Client_ID]
-			,O.[Organisation_Name]
-			,SD.[Service_Type_Code]
-			,ROW_NUMBER ()
-				over 
-				(
-					Partition by SD.[Client_ID] Order by
-						CASE
-						WHEN O.[Organisation_Name] = @Organisation THEN '1'
-						ELSE O.[Organisation_Name] END ASC
-				)'RN'
-		from [dbo].[Service_Delivery] SD
-			join [dbo].[Period_of_Residency] PR on PR.Person_ID = SD.Client_ID
-			join [dbo].[Address] A on A.Address_ID = PR.Address_ID
-			Join [dbo].[Service_Provision] SP on A.Suburb_ID = SP.Suburb_ID and SP.Service_Type_Code = SD.Service_Type_Code
-			Join [dbo].[Organisation] O on Sp.Centre_ID = O.Organisation_ID
-		Where PR.To_Date is null and PR.Display_Indicator  = 1
-	) J006 ON J006.[Client_ID] = J002.[Client_ID] AND J006.[Service_Type_Code] = J005.[Service_Type_Code]
-
-	Left outer Join
-	(
-		select
-			CCB.[Client_ID] 'Client_ID'
-			,Org.[Organisation_Name] 'Organisation_Name'
-			,CBG.[Description] 'ContractBillingGroup'
-			,ROW_NUMBER ()
-				over 
-				(
-					Partition by CCB.[Client_ID] Order by
-						CASE
-						WHEN Org.[Organisation_Name] = 'NDIA National Disability Insurance Agency' THEN '1'
-						when Org.[Organisation_Name] is null then '2'
-						ELSE Org.[Organisation_Name] END ASC
-				) 'RN'
-		from [dbo].[FB_Client_Contract_Billing] CCB
-			left outer join [dbo].[FB_Contract_Billing_Group] CBG on CBG.[Contract_Billing_Group_ID] = CCB.[Contract_Billing_Group_ID]
-			left outer Join [dbo].[FB_Client_Contract_Billed_To] CCBT on CCBT.[Client_CB_ID] = CCB.[Client_CB_ID]
-			left outer Join [dbo].[FB_Client_CB_Split] CCBS on CCBS.[Client_Contract_Billed_To_ID] = CCBT.[Client_Contract_Billed_To_ID]
-			left outer Join [dbo].[Organisation] Org on CCBS.[Organisation_ID] = Org.[Organisation_ID]
-
-	)J009 on J009.[Client_ID] = J002.[Client_ID]
+	left outer join @JoinedEdit_Actions J002 on J002.Provider_ID = J001.Provider_ID and J002.Activity_Date = J001.Activity_Date
 
 	where
-	J002.RN &gt; 1
-	and (J009.RN &lt; 2 or J009.RN is null)
-	and convert(date, J002.Visit_Date) between @StartDate and @EndDate
-	and J006.[Organisation_Name] = @Organisation
-	and (J009.ContractBillingGroup &lt;&gt; 'DCSI' or J009.ContractBillingGroup is null)
-)t3
+		1=1
+		and J001.Start_Time IS not null
+		and J001.End_Time is not null
+		and 1= iif(J001.RN &lt; 2 or J001.RN Is null,1,0)
+--/*
+)TT
+--/*
 
---*/
+Group by
+	TT.Provider_ID
+	,TT.ProviderName
+	,TT.Activity_Date
+	,TT.StartTime_Raw
+	,TT.StartTime_Alt
+	,TT.EndTime_Raw
+	,TT.EndTime_Alt
+	,TT.LogDuration_Raw
+	,TT.LogDuration_Alt
+	,TT.Diff
+	,TT.editActions
+	,TT.Wi_Record
+	,TT.OldRN
+--	,TT.RemoveFlag
+	,TT.TotalCount
+
 order by
-1,3,5,8,2,12</CommandText>
+	TT.Provider_ID
+	,TT.OldRN
+--*/
+--select * from @Results
+--/*
+--------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------
+--POST PROCESSING
+--Process @RawResult
+--	Identify SplitShifts and process
+--	Identify Minor edits of same task and select Last edit.
+--	Flags for scenarios --split shift, ShortLogin at start/at end, Not Finalised.
+
+set @i_RowNum = 1
+set @i_MaxRow = (select top 1 R.TotalCount from @Results R)
+set @i_BaseCount = 1
+set @i_TriggerFirstTaskEntry = 0
+set @i_Temp = 0
+Declare @i_RemoveFlag int = 1
+Declare @i_NextRemoveFlag int = 0
+Declare @dt_ForceStart DateTime = null
+Declare @dt_ForceEnd DateTime = null
+--packValues
+set @i_PID = null
+Declare @vc_ProviderName varchar(128)
+Declare @dt_ActivityDate date = null
+Declare @dt_StartTime_Raw DateTime = null
+Declare @dt_StartTime_Alt DateTime = null
+Declare @dt_EndTime_Raw DateTime = null
+Declare @dt_EndTime_Alt DateTime = null
+declare @i_StartTime_Diff int = null
+Declare @i_LogDuration_Raw int = null
+Declare @i_LogDuration_Alt int = null
+Declare @i_Diff int = null
+declare @vc_Edit_Actions varchar(255)= null
+declare @Wi_Record int = null
+declare @vc_Comment varchar(128) = null
+
+Declare @PostProcessed table (
+	Provider_ID int--
+	,ProviderName varchar(128)--
+	,Activity_Date date
+	,StartTime_Raw DateTime
+	,StartTime_Alt DateTime
+	,EndTime_Raw DateTime
+	,EndTime_Alt DateTime
+	,StartTime_Diff int
+	,LogDuration_Raw int
+	,LogDuration_Alt int
+	,Diff int
+	,editActions VarChar(255)
+	,Wi_Record int
+--	,Comment VarChar(128)
+)
+--------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------
+while @i_RowNum &lt;= @i_MaxRow
+begin
+	------------------------
+	--Pack Current Row Values
+	set @i_PID = (select R.Provider_ID from @Results R where R.RowNum = @i_RowNum)--baseValue setup
+	set @vc_ProviderName = (select R.ProviderName from @Results R where R.RowNum = @i_RowNum)
+	Set @dt_ActivityDate = (select R.Activity_Date from @Results R where R.RowNum = @i_RowNum)
+	Set @dt_StartTime_Raw = (select R.StartTime_Raw from @Results R where R.RowNum = @i_RowNum)
+	Set @dt_StartTime_Alt = (select R.StartTime_Alt from @Results R where R.RowNum = @i_RowNum)
+	Set @dt_EndTime_Raw = (select R.EndTime_Raw from @Results R where R.RowNum = @i_RowNum)
+	Set @dt_EndTime_Alt = (select R.EndTime_Alt from @Results R where R.RowNum = @i_RowNum)
+	set @i_StartTime_Diff = DATEDIFF(MINUTE,@dt_StartTime_Raw,@dt_StartTime_Alt)
+	Set @i_LogDuration_Raw = (select R.LogDuration_Raw from @Results R where R.RowNum = @i_RowNum)
+	Set @i_LogDuration_Alt = (select R.LogDuration_Alt from @Results R where R.RowNum = @i_RowNum)
+	Set @i_Diff = (select R.Diff from @Results R where R.RowNum = @i_RowNum)
+	Set @vc_Edit_Actions = (select R.editActions from @Results R where R.RowNum = @i_RowNum)
+	Set @Wi_Record = (select R.Wi_Record from @Results R where R.RowNum = @i_RowNum)
+	-----------------------------------------------------------------------------------------------------------
+	
+	-----------------------------------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------------------------------
+	--Process Removeflag
+	if @i_NextRemoveFlag = 1 --skip next for split shift detected and processed
+	begin
+		--set @i_RemoveFlag = 2
+		set @i_NextRemoveFlag = 0
+	end
+	else
+	begin
+		set @i_RemoveFlag = 1
+	end
+	-----------------------------------------------------------------------------------------------------------
+	--Process 
+	-----------------------------------------------------------------------------------------------------------
+	if --prossess Split shift
+		@i_PID = (select R.Provider_ID from @Results R where R.RowNum = @i_RowNum+1)
+		and @Wi_Record &lt;&gt; (select R.Wi_Record from @Results R where R.RowNum = @i_RowNum+1)
+		and @dt_ActivityDate = (select R.Activity_Date from @Results R where R.RowNum = @i_RowNum+1)
+		begin
+			set @dt_EndTime_Alt = (select R.EndTime_Alt from @Results R where R.RowNum = @i_RowNum+1)
+			set @i_LogDuration_Alt = DateDiff(Minute,@dt_StartTime_Alt,@dt_EndTime_Alt)
+			set @i_Diff = (@i_LogDuration_Raw - @i_LogDuration_Alt)
+			set @i_NextRemoveFlag = 1
+			--set @vc_Comment = 'Split Shift'
+		end
+	-----------------------------------------------------------------------------------------------------------
+	--Process output
+	-----------------------------------------------------------------------------------------------------------
+	if --Check Flags and conditions for Pack results
+		--(@i_PID &lt;&gt; (select R.Provider_ID from @Results R where R.RowNum = @i_RowNum+1)) 
+		(@dt_ActivityDate &lt;&gt; (select R.Activity_Date from @Results R where R.RowNum = @i_RowNum+1)) 
+		or  @i_RowNum = @i_MaxRow
+		or @i_RemoveFlag &lt; 2
+	begin
+		set @i_TriggerFirstTaskEntry = 1
+	end
+
+	--------------------------------------------------------------------------------------------------------------------------
+	--Pack results
+	if @i_TriggerFirstTaskEntry = 1 
+	begin
+		insert into @PostProcessed Values 
+		( 
+			@i_PID
+			,@vc_ProviderName
+			,@dt_ActivityDate
+			,@dt_StartTime_Raw
+			,@dt_StartTime_Alt
+			,@dt_EndTime_Raw
+			,@dt_EndTime_Alt
+			,@i_StartTime_Diff
+			,@i_LogDuration_Raw
+			,@i_LogDuration_Alt
+			,@i_Diff
+			,@vc_Edit_Actions
+			,@Wi_Record
+--			,@vc_Comment
+		)
+		set @i_TriggerFirstTaskEntry = 0
+		set @vc_Comment = null
+	end --End Pack results
+
+	--------------------------------------------------------------------------------------------------------------------------
+	--------------------------------------------------------------------------------------------------------------------------
+	if @i_NextRemoveFlag = 1 --skip next for split shift detected and processed
+	begin
+		set @i_RemoveFlag = 2
+		--set @i_NextRemoveFlag = 0
+	end
+	--------------------------------------------------------------------------------------------------------------------------
+	--Trip next row processing
+	set @i_Temp = @i_RowNum
+	set @i_RowNum = @i_Temp + 1
+	--------------------------------------------------------------------------------------------------------------------------
+	--------------------------------------------------------------------------------------------------------------------------
+end--end process
+---------------------------------------------------------------------
+
+select * from @PostProcessed</CommandText>
       </Query>
       <Fields>
-        <Field Name="Client_ID">
-          <DataField>Client_ID</DataField>
-          <rd:TypeName>System.Int32</rd:TypeName>
-        </Field>
         <Field Name="Provider_ID">
           <DataField>Provider_ID</DataField>
           <rd:TypeName>System.Int32</rd:TypeName>
         </Field>
-        <Field Name="Schedule_Visit_Time">
-          <DataField>Schedule_Visit_Time</DataField>
+        <Field Name="ProviderName">
+          <DataField>ProviderName</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Activity_Date">
+          <DataField>Activity_Date</DataField>
           <rd:TypeName>System.DateTime</rd:TypeName>
         </Field>
-        <Field Name="Scheduled_Duration">
-          <DataField>Scheduled_Duration</DataField>
-          <rd:TypeName>System.Int16</rd:TypeName>
-        </Field>
-        <Field Name="Actual_Visit_Time">
-          <DataField>Actual_Visit_Time</DataField>
+        <Field Name="StartTime_Raw">
+          <DataField>StartTime_Raw</DataField>
           <rd:TypeName>System.DateTime</rd:TypeName>
         </Field>
-        <Field Name="Actual_Duration">
-          <DataField>Actual_Duration</DataField>
-          <rd:TypeName>System.Int16</rd:TypeName>
+        <Field Name="StartTime_Alt">
+          <DataField>StartTime_Alt</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
         </Field>
-        <Field Name="contract_type">
-          <DataField>contract_type</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
+        <Field Name="EndTime_Raw">
+          <DataField>EndTime_Raw</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
         </Field>
-        <Field Name="task_Description">
-          <DataField>task_Description</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
+        <Field Name="EndTime_Alt">
+          <DataField>EndTime_Alt</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
         </Field>
-        <Field Name="Client_Not_Home">
-          <DataField>Client_Not_Home</DataField>
-          <rd:TypeName>System.Boolean</rd:TypeName>
-        </Field>
-        <Field Name="Has_Charge_Item">
-          <DataField>Has_Charge_Item</DataField>
+        <Field Name="StartTime_Diff">
+          <DataField>StartTime_Diff</DataField>
           <rd:TypeName>System.Int32</rd:TypeName>
         </Field>
-        <Field Name="In_WiA_Only">
-          <DataField>In_WiA_Only</DataField>
+        <Field Name="LogDuration_Raw">
+          <DataField>LogDuration_Raw</DataField>
           <rd:TypeName>System.Int32</rd:TypeName>
         </Field>
-        <Field Name="Charge_Item_Line_Description">
-          <DataField>Charge_Item_Line_Description</DataField>
+        <Field Name="LogDuration_Alt">
+          <DataField>LogDuration_Alt</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="Diff">
+          <DataField>Diff</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="editActions">
+          <DataField>editActions</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
-        <Field Name="Amount">
-          <DataField>Amount</DataField>
-          <rd:TypeName>System.Decimal</rd:TypeName>
-        </Field>
-        <Field Name="Funding_type">
-          <DataField>Funding_type</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
+        <Field Name="Wi_Record">
+          <DataField>Wi_Record</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
         </Field>
       </Fields>
     </DataSet>
     <DataSet Name="DataSet2">
       <Query>
-        <DataSourceName>REF_ASADWH</DataSourceName>
-        <QueryParameters>
-          <QueryParameter Name="@Organisation">
-            <Value>=Parameters!Organisation.Value</Value>
-          </QueryParameter>
-        </QueryParameters>
-        <CommandText>select 'No Contract' Description where 1=1
-
-union
+        <DataSourceName>DataSource1</DataSourceName>
+        <CommandText>Declare @OrgList table ( org_ID int )
+insert into @OrgList values (7),(10),(49),(50),(51),(52),(53),(54) -- organisation ID from (below)
+--select * from [dbo].organisation
 
 select 
-	Description 
-from [dbo].[FC_Funder_Contract]
-
+	Organisation_Name 'OrgNm'
+	
+	from [dbo].organisation
 where 
-	1=1
-	AND (
-			(Description like 'DC %' and @Organisation = 'Disabilities Children')
-			OR (Description like 'DA %' and @Organisation = 'Disabilities Adult')
-		)</CommandText>
+	Organisation_ID in (select * from @OrgList)
+--	and Organisation_Name like 'Disabilities%'
+	and Organisation_Name Not like 'Disabilities%'
+order by 1</CommandText>
       </Query>
       <Fields>
-        <Field Name="Description">
-          <DataField>Description</DataField>
+        <Field Name="OrgNm">
+          <DataField>OrgNm</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
       </Fields>
     </DataSet>
     <DataSet Name="DataSet3">
       <Query>
-        <DataSourceName>REF_ASADWH</DataSourceName>
-        <CommandText>Declare @BillContFilt table (filt varchar(64))
-insert into @BillContFilt values ('NDIS funded'),('Self Managed'),('No Contract Billing')
-select * from @BillContFilt</CommandText>
+        <DataSourceName>DataSource1</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@Centre">
+            <Value>=Parameters!Centre.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@ClassCodeFilter">
+            <Value>=Parameters!ClassCodeFilter.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>select 
+	J002.Description 'Team'
+
+from [dbo].[Organisation] J001
+
+inner join [dbo].[Service_Delivery_Work_Team] J002 on J002.[Centre_ID] = J001.[Organisation_ID]
+left outer join [dbo].[Service_Provision_Position] J003 on J003.[Centre_ID] = J002.[Centre_ID] and J003.Team_No = J002.Team_No
+--inner join [dbo].[Provider_Classification] J004 on J004.Provider_Class_Code = J003.Provider_Class_Code
+
+where
+	1=1
+	and J001.Organisation_Name = @Centre
+	and J002.Effective_Date_To is null
+	and J003.Provider_Class_Code in (@ClassCodeFilter)
+
+group by J002.Description
+order by 1</CommandText>
       </Query>
       <Fields>
-        <Field Name="filt">
-          <DataField>filt</DataField>
+        <Field Name="Team">
+          <DataField>Team</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="DataSet4">
+      <Query>
+        <DataSourceName>DataSource1</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@Centre">
+            <Value>=Parameters!Centre.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>select 
+	J003.Provider_Class_Code
+	,J004.Description
+
+from [dbo].[Organisation] J001
+
+inner join [dbo].[Service_Delivery_Work_Team] J002 on J002.[Centre_ID] = J001.[Organisation_ID]
+left outer join [dbo].[Service_Provision_Position] J003 on J003.[Centre_ID] = J002.[Centre_ID] and J003.Team_No = J002.Team_No
+inner join [dbo].[Provider_Classification] J004 on J004.Provider_Class_Code = J003.Provider_Class_Code
+
+where
+	1=1
+	and J001.Organisation_Name = @Centre
+
+Group by
+	J003.Provider_Class_Code
+	,J004.Description
+
+Order by
+	J004.Description</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="Provider_Class_Code">
+          <DataField>Provider_Class_Code</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Description">
+          <DataField>Description</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="DataSet_Individual">
+      <Query>
+        <DataSourceName>DataSource1</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@Start_Date">
+            <Value>=Parameters!Start_Date.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@End_Date">
+            <Value>=Parameters!End_Date.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@forceProv_ID">
+            <Value>=Parameters!forceProv_ID.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Prov_ID">
+            <Value>=Parameters!Prov_ID.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>
+
+
+
+declare @EventBracket1 int = -1
+declare @EventBracket2 int = 13
+--------------------------------------------------------------
+--------------------------------------------------------------
+
+--Setup Vars and Defults.
+declare @date_Start date = @Start_Date
+declare @date_End date = @End_Date
+
+---------------------------------------------------------------
+--Pre assemble Provider list for performance reasons
+---------------------------------------------------------------
+declare @Provs Table
+(
+	Provider_ID int
+	,ProviderName varChar(128)
+)
+insert into @Provs
+	Select
+		X001.Provider_ID
+		,(X002.Last_Name + ', ' + X002.Preferred_Name) 'ProviderName'
+	From 
+	(
+		Select
+			WiA.[SPPID] 'SPPID'
+			,cast (WiA.[Activity_Date] as date) 'Activity_Date'
+			,cast (WiA.Schedule_Time as datetime2) 'Schedule_StartTime'
+			,DateAdd(MINUTE, WiA.Schedule_Duration,cast(WiA.Schedule_Time as datetime2))'Schedule_EndTime'
+			,WiA.[Absence_Code] 'Absence_Code'
+			,WiA.[Provider_ID] 'Provider_ID'
+			,WiA.Schedule_Duration 'Schedule_Duration'
+			,WiA.Generated_Provider_Code 'Generated_Provider_Code'
+			,ROW_NUMBER () -- sort by importance of 'covered' 'absent' and 'Un-Alocated'.
+				over 
+				(
+					Partition by cast(WiA.Schedule_Time as Datetime2), WiA.[SPPID] Order by 
+						Case
+							when ((WiA.[Provider_ID] &gt; 0) and (WiA.[Absence_Code] is NULL)) then concat('1_',WiA.[Provider_ID])
+							when (WiA.[Provider_ID] &gt; 0) and (WiA.[Absence_Code] is not NULL) then concat('2_',WiA.[Provider_ID])
+						else 'z'
+					end
+				) 'RN'
+		From [dbo].[Wi_Activity] WiA
+		where convert(date, Wia.Activity_Date) between dateadd(day,@EventBracket1,@Start_Date) and dateadd(day,@EventBracket2,@End_Date)
+	)X001
+
+	Inner Join dbo.Person X002 on X002.Person_ID = X001.Provider_ID
+	Inner Join dbo.Service_Provision_Position X003 on X003.Service_Prov_Position_ID = X001.SPPID
+	Inner join dbo.Service_Delivery_Work_Team X004 on X004.Team_No = X003.Team_No and X004.Centre_ID = X003.Centre_ID
+	Inner join dbo.Organisation X005 on X005.Organisation_ID = X004.Centre_ID
+	Left outer join dbo.Service_Provision_Allocation X006 on X006.Service_Prov_Position_ID = X003.Service_Prov_Position_ID
+	Left outer join dbo.Provider_Classification X007 on X007.Provider_Class_Code = X003.Provider_Class_Code
+		where
+		1=1
+		and X001.RN &lt; 2
+			and X001.Schedule_Duration is not null
+			and cast(X001.Activity_Date as date) between @date_Start and @date_End
+		and 
+		(
+			1 = IIF
+			(
+				1 = @forceProv_ID
+				and X001.[Provider_ID] = @Prov_ID
+				,1
+				,0 
+			)
+		)
+
+		
+	Group by
+		X001.Provider_ID
+		,(X002.Last_Name + ', ' + X002.Preferred_Name)
+	order by
+		1
+--select * from @Provs
+	
+
+
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+--Process Providers in @Provs gathering all relevent data
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+declare @RawResult Table
+(
+	Provider_ID int
+	,ProviderName varChar(128)
+	,Device_Timestamp DateTime
+	,Edit_Action varChar(512)
+--	,Edit_Action_2 varChar(255)
+	,Activity_Date DateTime
+	,Start_Time DateTime
+	,End_Time DateTime
+	,Edit_Type varChar(128)
+	,RN int
+	,Count_ int
+	,Wi_Record int
+	,FirstTimeStamp DateTime
+	,LastTimeStamp DateTime
+	,Row_Count int
+	,RowNumber int
+)
+insert into @RawResult
+	Select
+		SJ001.Provider_ID
+		,SJ001.ProviderName
+		,SJ001.Device_Timestamp
+--		,SJ001.Edit_Action
+--		/*
+		,Edit_Action = 
+		(	case SJ001.Edit_Action
+				when ' F' then 'Finalise'
+				when ' A' then 'Add_Activity'
+				when ' StartEnd' then 'Edit_StartEnd'
+				when ' OS' then 'SignOn'
+				when ' OU' then 'Edit_Actuals'
+--				else 'unknownEdit'
+				end
+		) 
+--			*/
+		,SJ001.Activity_Date
+		,SJ001.Start_Time
+		,SJ001.End_Time
+		,SJ001.Edit_Type
+		,Row_Number()over(Partition by SJ001.Provider_ID,SJ001.Edit_Action,SJ001.Activity_Date Order by SJ001.Activity_Date,SJ001.Device_Timestamp)'RN'
+		,Count(SJ001.Edit_Action) over (partition by SJ001.Provider_ID,SJ001.Edit_Action,SJ001.Activity_Date,SJ001.Wi_Record Order by SJ001.Activity_Date,SJ001.Device_Timestamp)'Count_'
+		,SJ001.Wi_Record
+		,MIN(SJ001.Device_Timestamp) over (partition by SJ001.Provider_ID,SJ001.Activity_Date )'FirstTimeStamp'
+		,Max(SJ001.Device_Timestamp) over (partition by SJ001.Provider_ID,SJ001.Activity_Date )'LastTimeStamp'
+		,Count(SJ001.Provider_ID)over (partition by null )'Row_Count'
+		,Row_Number() over(Partition by null order by SJ001.Provider_ID, SJ001.ProviderName, SJ001.Device_Timestamp)'RowNumber'
+	From
+	(
+		select
+			WI_EL_C.Provider_ID
+			,Provs.ProviderName
+		--	,WI_EL_C.Content
+		--	,WI_EL_C.Directive_Type_ID
+			,cast(WI_EL_C.Device_Timestamp as datetime2)'Device_Timestamp'
+			,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 1),'''','') as Varchar(128)) 'Edit_Type'
+			,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 2),'''','')as Varchar(128)) 'Edit_Action'
+			,cast((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 3) as int) 'Wi_Record'
+			,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 5),'''','')as Date) 'Activity_Date'
+			,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 14),'''','')as datetime2) 'Start_Time'
+			,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 15),'''','')as datetime2) 'End_Time'
+		from
+		(
+			select * from dbo.WI_Event_Log Z 
+			where 
+			1=1
+			and Z.Directive_Type_ID = 114 
+			and Z.Device_Timestamp between dateadd(day,@EventBracket1,cast(@Start_Date as datetime)) and dateadd(day,@EventBracket2,cast(@End_Date as datetime))
+			and Z.Provider_ID in (Select p.Provider_ID from @Provs p)
+		)WI_EL_C
+		Inner Join @Provs Provs on Provs.Provider_ID = WI_EL_C.Provider_ID
+	)SJ001
+	where
+		1=1
+		and SJ001.Activity_Date between @Start_Date and @End_Date
+	Order by
+	1,2,3
+
+select * from @RawResult
+--/*
+
+--------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------
+--Process results to generate a joined Edit actions value for Activity Date.
+--------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="Provider_ID">
+          <DataField>Provider_ID</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="ProviderName">
+          <DataField>ProviderName</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Device_Timestamp">
+          <DataField>Device_Timestamp</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="Edit_Action">
+          <DataField>Edit_Action</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Activity_Date">
+          <DataField>Activity_Date</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="Start_Time">
+          <DataField>Start_Time</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="End_Time">
+          <DataField>End_Time</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="Edit_Type">
+          <DataField>Edit_Type</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="RN">
+          <DataField>RN</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="Count_">
+          <DataField>Count_</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="Wi_Record">
+          <DataField>Wi_Record</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="FirstTimeStamp">
+          <DataField>FirstTimeStamp</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="LastTimeStamp">
+          <DataField>LastTimeStamp</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="Row_Count">
+          <DataField>Row_Count</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="RowNumber">
+          <DataField>RowNumber</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="DataSet5">
+      <Query>
+        <DataSourceName>DataSource1</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@Start_Date">
+            <Value>=Parameters!Start_Date.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@End_Date">
+            <Value>=Parameters!End_Date.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Centre">
+            <Value>=Parameters!Centre.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@ClassCodeFilter">
+            <Value>=Parameters!ClassCodeFilter.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@TeamFilt">
+            <Value>=Parameters!TeamFilt.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>declare @EventBracket1 int = -1
+declare @EventBracket2 int = 13
+--------------------------------------------------------------
+--------------------------------------------------------------
+
+--Setup Vars and Defults.
+declare @date_Start date = @Start_Date
+declare @date_End date = @End_Date
+
+select 
+	0 'Provider_ID' 
+	,'' as Label
+where 
+	1=1
+
+union
+
+Select
+		X001.Provider_ID
+		,( cast( X001.Provider_ID as VarChar(128)) +' ' +X002.Last_Name + ', ' + X002.Preferred_Name) 'label'
+	From 
+	(
+		Select
+			WiA.[SPPID] 'SPPID'
+			,cast (WiA.[Activity_Date] as date) 'Activity_Date'
+			,cast (WiA.Schedule_Time as datetime2) 'Schedule_StartTime'
+			,DateAdd(MINUTE, WiA.Schedule_Duration,cast(WiA.Schedule_Time as datetime2))'Schedule_EndTime'
+			,WiA.[Absence_Code] 'Absence_Code'
+			,WiA.[Provider_ID] 'Provider_ID'
+			,WiA.Schedule_Duration 'Schedule_Duration'
+			,WiA.Generated_Provider_Code 'Generated_Provider_Code'
+			,ROW_NUMBER () -- sort by importance of 'covered' 'absent' and 'Un-Alocated'.
+				over 
+				(
+					Partition by cast(WiA.Schedule_Time as Datetime2), WiA.[SPPID] Order by 
+						Case
+							when ((WiA.[Provider_ID] &gt; 0) and (WiA.[Absence_Code] is NULL)) then concat('1_',WiA.[Provider_ID])
+							when (WiA.[Provider_ID] &gt; 0) and (WiA.[Absence_Code] is not NULL) then concat('2_',WiA.[Provider_ID])
+						else 'z'
+					end
+				) 'RN'
+		From [dbo].[Wi_Activity] WiA
+		where convert(date, Wia.Activity_Date) between dateadd(day,@EventBracket1,@Start_Date) and dateadd(day,@EventBracket2,@End_Date)
+	)X001
+
+	Inner Join dbo.Person X002 on X002.Person_ID = X001.Provider_ID
+	Inner Join dbo.Service_Provision_Position X003 on X003.Service_Prov_Position_ID = X001.SPPID
+	Inner join dbo.Service_Delivery_Work_Team X004 on X004.Team_No = X003.Team_No and X004.Centre_ID = X003.Centre_ID
+	Inner join dbo.Organisation X005 on X005.Organisation_ID = X004.Centre_ID
+	Left outer join dbo.Service_Provision_Allocation X006 on X006.Service_Prov_Position_ID = X003.Service_Prov_Position_ID
+	Left outer join dbo.Provider_Classification X007 on X007.Provider_Class_Code = X003.Provider_Class_Code
+		where
+		1=1
+		and X001.RN &lt; 2
+			and X001.Schedule_Duration is not null
+			and cast(X001.Activity_Date as date) between @date_Start and @date_End
+			and X001.[Provider_ID] &lt;&gt; 0
+			and X005.Organisation_Name = @Centre
+--			and X003.Provider_Class_Code in (select Provider_Class_Code from @ClassCodeFilter)
+--			and X004.Description in (select * from @TeamFilt)
+			and X003.Provider_Class_Code in (@ClassCodeFilter)
+			and X004.Description in (@TeamFilt)
+		
+
+		
+	Group by
+		X001.Provider_ID
+		,( cast( X001.Provider_ID as VarChar(128)) +' ' +X002.Last_Name + ', ' + X002.Preferred_Name)
+	order by
+	1</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="Provider_ID">
+          <DataField>Provider_ID</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="Label">
+          <DataField>Label</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
       </Fields>
@@ -571,465 +1065,45 @@ select * from @BillContFilt</CommandText>
             <TablixBody>
               <TablixColumns>
                 <TablixColumn>
-                  <Width>2.02375cm</Width>
+                  <Width>2.5cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>3.63771cm</Width>
+                  <Width>4.29917cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>3.77cm</Width>
+                  <Width>11.5223cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>1.865cm</Width>
+                  <Width>2.73813cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>1.91792cm</Width>
+                  <Width>2.52646cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>1.5475cm</Width>
+                  <Width>2.36771cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>1.33583cm</Width>
+                  <Width>4.32563cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>1.97083cm</Width>
+                  <Width>4.11396cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>13.54729cm</Width>
+                  <Width>2.5cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>1.50812cm</Width>
+                  <Width>1.91791cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>5.66209cm</Width>
+                  <Width>1.81209cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>5.22522cm</Width>
+                  <Width>2.5cm</Width>
                 </TablixColumn>
               </TablixColumns>
               <TablixRows>
                 <TablixRow>
                   <Height>0.6cm</Height>
-                  <TablixCells>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox27">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value />
-                                  <Style>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox27</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BottomBorder>
-                              <Style>None</Style>
-                            </BottomBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox28">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value />
-                                  <Style>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox28</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BottomBorder>
-                              <Style>None</Style>
-                            </BottomBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox29">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value />
-                                  <Style>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style>
-                                <TextAlign>Right</TextAlign>
-                              </Style>
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox29</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BottomBorder>
-                              <Style>None</Style>
-                            </BottomBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox30">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value />
-                                  <Style>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style>
-                                <TextAlign>Center</TextAlign>
-                              </Style>
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox30</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BottomBorder>
-                              <Style>None</Style>
-                            </BottomBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox31">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value />
-                                  <Style>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox31</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BottomBorder>
-                              <Style>None</Style>
-                            </BottomBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox32">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>Duration</Value>
-                                  <Style>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style>
-                                <TextAlign>Center</TextAlign>
-                              </Style>
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox32</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BottomBorder>
-                              <Style>None</Style>
-                            </BottomBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                        <ColSpan>2</ColSpan>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell />
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox34">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value />
-                                  <Style>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style>
-                                <TextAlign>Center</TextAlign>
-                              </Style>
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox34</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BottomBorder>
-                              <Style>None</Style>
-                            </BottomBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox35">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value />
-                                  <Style>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox35</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BottomBorder>
-                              <Style>None</Style>
-                            </BottomBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox36">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value />
-                                  <Style>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox36</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <TopBorder>
-                              <Style>Solid</Style>
-                            </TopBorder>
-                            <BottomBorder>
-                              <Style>None</Style>
-                            </BottomBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox2">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value />
-                                  <Style>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox2</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <TopBorder>
-                              <Style>Solid</Style>
-                            </TopBorder>
-                            <BottomBorder>
-                              <Style>None</Style>
-                            </BottomBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox37">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value />
-                                  <Style>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox37</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <TopBorder>
-                              <Style>Solid</Style>
-                            </TopBorder>
-                            <BottomBorder>
-                              <Style>None</Style>
-                            </BottomBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                  </TablixCells>
-                </TablixRow>
-                <TablixRow>
-                  <Height>1.18208cm</Height>
                   <TablixCells>
                     <TablixCell>
                       <CellContents>
@@ -1040,8 +1114,9 @@ select * from @BillContFilt</CommandText>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Client ID</Value>
+                                  <Value>Provider ID</Value>
                                   <Style>
+                                    <FontWeight>Bold</FontWeight>
                                     <Color>White</Color>
                                   </Style>
                                 </TextRun>
@@ -1055,9 +1130,6 @@ select * from @BillContFilt</CommandText>
                               <Color>LightGrey</Color>
                               <Style>Solid</Style>
                             </Border>
-                            <TopBorder>
-                              <Style>None</Style>
-                            </TopBorder>
                             <BackgroundColor>#004b8e</BackgroundColor>
                             <PaddingLeft>2pt</PaddingLeft>
                             <PaddingRight>2pt</PaddingRight>
@@ -1076,8 +1148,9 @@ select * from @BillContFilt</CommandText>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Schedule Visit Time</Value>
+                                  <Value>Provider Name</Value>
                                   <Style>
+                                    <FontWeight>Bold</FontWeight>
                                     <Color>White</Color>
                                   </Style>
                                 </TextRun>
@@ -1091,47 +1164,6 @@ select * from @BillContFilt</CommandText>
                               <Color>LightGrey</Color>
                               <Style>Solid</Style>
                             </Border>
-                            <TopBorder>
-                              <Style>None</Style>
-                            </TopBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox5">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>Actual Visit Time</Value>
-                                  <Style>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style>
-                                <TextAlign>Left</TextAlign>
-                              </Style>
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox5</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <TopBorder>
-                              <Style>None</Style>
-                            </TopBorder>
                             <BackgroundColor>#004b8e</BackgroundColor>
                             <PaddingLeft>2pt</PaddingLeft>
                             <PaddingRight>2pt</PaddingRight>
@@ -1150,15 +1182,14 @@ select * from @BillContFilt</CommandText>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Client Not Home</Value>
+                                  <Value>Entry Actions for Activity</Value>
                                   <Style>
+                                    <FontWeight>Bold</FontWeight>
                                     <Color>White</Color>
                                   </Style>
                                 </TextRun>
                               </TextRuns>
-                              <Style>
-                                <TextAlign>Center</TextAlign>
-                              </Style>
+                              <Style />
                             </Paragraph>
                           </Paragraphs>
                           <rd:DefaultName>Textbox7</rd:DefaultName>
@@ -1167,9 +1198,6 @@ select * from @BillContFilt</CommandText>
                               <Color>LightGrey</Color>
                               <Style>Solid</Style>
                             </Border>
-                            <TopBorder>
-                              <Style>None</Style>
-                            </TopBorder>
                             <BackgroundColor>#004b8e</BackgroundColor>
                             <PaddingLeft>2pt</PaddingLeft>
                             <PaddingRight>2pt</PaddingRight>
@@ -1188,8 +1216,9 @@ select * from @BillContFilt</CommandText>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Provider ID</Value>
+                                  <Value>Activity Date</Value>
                                   <Style>
+                                    <FontWeight>Bold</FontWeight>
                                     <Color>White</Color>
                                   </Style>
                                 </TextRun>
@@ -1203,9 +1232,6 @@ select * from @BillContFilt</CommandText>
                               <Color>LightGrey</Color>
                               <Style>Solid</Style>
                             </Border>
-                            <TopBorder>
-                              <Style>None</Style>
-                            </TopBorder>
                             <BackgroundColor>#004b8e</BackgroundColor>
                             <PaddingLeft>2pt</PaddingLeft>
                             <PaddingRight>2pt</PaddingRight>
@@ -1224,8 +1250,9 @@ select * from @BillContFilt</CommandText>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Sched</Value>
+                                  <Value>Claimed Start Time</Value>
                                   <Style>
+                                    <FontWeight>Bold</FontWeight>
                                     <Color>White</Color>
                                   </Style>
                                 </TextRun>
@@ -1239,9 +1266,6 @@ select * from @BillContFilt</CommandText>
                               <Color>LightGrey</Color>
                               <Style>Solid</Style>
                             </Border>
-                            <TopBorder>
-                              <Style>None</Style>
-                            </TopBorder>
                             <BackgroundColor>#004b8e</BackgroundColor>
                             <PaddingLeft>2pt</PaddingLeft>
                             <PaddingRight>2pt</PaddingRight>
@@ -1260,8 +1284,9 @@ select * from @BillContFilt</CommandText>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Act</Value>
+                                  <Value>Claimed End Time</Value>
                                   <Style>
+                                    <FontWeight>Bold</FontWeight>
                                     <Color>White</Color>
                                   </Style>
                                 </TextRun>
@@ -1275,47 +1300,6 @@ select * from @BillContFilt</CommandText>
                               <Color>LightGrey</Color>
                               <Style>Solid</Style>
                             </Border>
-                            <TopBorder>
-                              <Style>None</Style>
-                            </TopBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox25">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>Has Charge Item</Value>
-                                  <Style>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style>
-                                <TextAlign>Left</TextAlign>
-                              </Style>
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox25</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <TopBorder>
-                              <Style>None</Style>
-                            </TopBorder>
                             <BackgroundColor>#004b8e</BackgroundColor>
                             <PaddingLeft>2pt</PaddingLeft>
                             <PaddingRight>2pt</PaddingRight>
@@ -1334,8 +1318,9 @@ select * from @BillContFilt</CommandText>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Charge Item Line Description</Value>
+                                  <Value>First Entry Time Stamp</Value>
                                   <Style>
+                                    <FontWeight>Bold</FontWeight>
                                     <Color>White</Color>
                                   </Style>
                                 </TextRun>
@@ -1349,9 +1334,6 @@ select * from @BillContFilt</CommandText>
                               <Color>LightGrey</Color>
                               <Style>Solid</Style>
                             </Border>
-                            <TopBorder>
-                              <Style>None</Style>
-                            </TopBorder>
                             <BackgroundColor>#004b8e</BackgroundColor>
                             <PaddingLeft>2pt</PaddingLeft>
                             <PaddingRight>2pt</PaddingRight>
@@ -1370,8 +1352,9 @@ select * from @BillContFilt</CommandText>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Amount</Value>
+                                  <Value>Last Entry Time Stamp</Value>
                                   <Style>
+                                    <FontWeight>Bold</FontWeight>
                                     <Color>White</Color>
                                   </Style>
                                 </TextRun>
@@ -1385,9 +1368,6 @@ select * from @BillContFilt</CommandText>
                               <Color>LightGrey</Color>
                               <Style>Solid</Style>
                             </Border>
-                            <TopBorder>
-                              <Style>None</Style>
-                            </TopBorder>
                             <BackgroundColor>#004b8e</BackgroundColor>
                             <PaddingLeft>2pt</PaddingLeft>
                             <PaddingRight>2pt</PaddingRight>
@@ -1399,15 +1379,16 @@ select * from @BillContFilt</CommandText>
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Textbox4">
+                        <Textbox Name="Textbox29">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>contract type</Value>
+                                  <Value>Start Time Diff</Value>
                                   <Style>
+                                    <FontWeight>Bold</FontWeight>
                                     <Color>White</Color>
                                   </Style>
                                 </TextRun>
@@ -1415,15 +1396,12 @@ select * from @BillContFilt</CommandText>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Textbox4</rd:DefaultName>
+                          <rd:DefaultName>Textbox29</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
                               <Style>Solid</Style>
                             </Border>
-                            <TopBorder>
-                              <Style>None</Style>
-                            </TopBorder>
                             <BackgroundColor>#004b8e</BackgroundColor>
                             <PaddingLeft>2pt</PaddingLeft>
                             <PaddingRight>2pt</PaddingRight>
@@ -1435,15 +1413,16 @@ select * from @BillContFilt</CommandText>
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Textbox23">
+                        <Textbox Name="Textbox2">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Funding type</Value>
+                                  <Value>Entry Duration (H)</Value>
                                   <Style>
+                                    <FontWeight>Bold</FontWeight>
                                     <Color>White</Color>
                                   </Style>
                                 </TextRun>
@@ -1451,15 +1430,80 @@ select * from @BillContFilt</CommandText>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Textbox23</rd:DefaultName>
+                          <rd:DefaultName>Textbox2</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
                               <Style>Solid</Style>
                             </Border>
-                            <TopBorder>
-                              <Style>None</Style>
-                            </TopBorder>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox5">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Claimed Duration (H)</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox5</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox8">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Time Difference (H)</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox8</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
                             <BackgroundColor>#004b8e</BackgroundColor>
                             <PaddingLeft>2pt</PaddingLeft>
                             <PaddingRight>2pt</PaddingRight>
@@ -1476,229 +1520,6 @@ select * from @BillContFilt</CommandText>
                   <TablixCells>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Client_ID">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=Fields!Client_ID.Value</Value>
-                                  <Style>
-                                    <Color>=
-IIF
-(
-	Fields!Has_Charge_Item.Value &gt; 1
-	,"Blue"
-	,IIF
-	(
-		Fields!Has_Charge_Item.Value = 1
-		,"Black"
-		,"Red"
-	)
-	
-)</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style>
-                                <TextAlign>Right</TextAlign>
-                              </Style>
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Client_ID</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Schedule_Visit_Time">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=
-IIF
-(
-	Fields!Has_Charge_Item.Value = 2
-	,"--/--/---- --:-- --"
-	,IIF
-	(
-		isnothing(Fields!Schedule_Visit_Time.Value)
-		,"-not on record-"
-		,Fields!Schedule_Visit_Time.Value
-	)
-)</Value>
-                                  <Style>
-                                    <Format>d/MM/yyyy h:mm tt</Format>
-                                    <Color>=
-IIF
-(
-	Fields!Has_Charge_Item.Value &gt; 1
-	,"Blue"
-	,IIF
-	(
-		Fields!Has_Charge_Item.Value = 1
-		,"Black"
-		,"Red"
-	)
-	
-)</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style>
-                                <TextAlign>Right</TextAlign>
-                              </Style>
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Schedule_Visit_Time</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Actual_Visit_Time">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=
-IIF
-(
-	Fields!Has_Charge_Item.Value = 2
-	,"--/--/---- --:-- --"
-	,IIF
-	(
-		isnothing(Fields!Actual_Visit_Time.Value)
-		,"-not on record-"
-		,Fields!Actual_Visit_Time.Value
-	)
-)</Value>
-                                  <Style>
-                                    <Format>d/MM/yyyy h:mm tt</Format>
-                                    <Color>=
-IIF
-(
-	Fields!Has_Charge_Item.Value &gt; 1
-	,"Blue"
-	,IIF
-	(
-		Fields!Has_Charge_Item.Value = 1
-		,"Black"
-		,"Red"
-	)
-	
-)</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style>
-                                <TextAlign>Right</TextAlign>
-                              </Style>
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Actual_Visit_Time</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Client_Not_Home">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=
-IIF
-(
-	Fields!Has_Charge_Item.Value = 2
-	,"---"
-	,IIF
-	(
-		Fields!Client_Not_Home.Value = 1
-		,"True"
-		,"False"
-	)
-)</Value>
-                                  <Style>
-                                    <Color>=
-IIF
-(
-	Fields!Has_Charge_Item.Value &gt; 1
-	,"Blue"
-	,IIF
-	(
-		Fields!Has_Charge_Item.Value = 1
-		,"Black"
-		,"Red"
-	)
-	
-)</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style>
-                                <TextAlign>Center</TextAlign>
-                              </Style>
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Client_Not_Home</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
                         <Textbox Name="Provider_ID">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
@@ -1707,21 +1528,7 @@ IIF
                               <TextRuns>
                                 <TextRun>
                                   <Value>=Fields!Provider_ID.Value</Value>
-                                  <Style>
-                                    <Color>=
-IIF
-(
-	Fields!Has_Charge_Item.Value &gt; 1
-	,"Blue"
-	,IIF
-	(
-		Fields!Has_Charge_Item.Value = 1
-		,"Black"
-		,"Red"
-	)
-	
-)</Color>
-                                  </Style>
+                                  <Style />
                                 </TextRun>
                               </TextRuns>
                               <Style />
@@ -1733,7 +1540,7 @@ IIF
                               <Color>LightGrey</Color>
                               <Style>Solid</Style>
                             </Border>
-                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
+                            <BackgroundColor>= Iif ( RunningValue ( Fields!Provider_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
                             <PaddingLeft>2pt</PaddingLeft>
                             <PaddingRight>2pt</PaddingRight>
                             <PaddingTop>2pt</PaddingTop>
@@ -1744,42 +1551,277 @@ IIF
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Scheduled_Duration">
+                        <Textbox Name="ProviderName">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>=Fields!Scheduled_Duration.Value/60</Value>
+                                  <Value>=Fields!ProviderName.Value</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>ProviderName</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>= Iif ( RunningValue ( Fields!Provider_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Edit_Action">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!editActions.Value</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Edit_Action</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>= Iif ( RunningValue ( Fields!Provider_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Activity_Date">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Format(Fields!Activity_Date.Value,"d/MM/yyyy" )</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Activity_Date</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>= Iif ( RunningValue ( Fields!Provider_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Start_Time">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Format(Fields!StartTime_Alt.Value, "h:mm tt" )</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Start_Time</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>= Iif ( RunningValue ( Fields!Provider_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="End_Time">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Format(Fields!EndTime_Alt.Value,"h:mm tt" )</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>End_Time</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>= Iif ( RunningValue ( Fields!Provider_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="FirstTimeStamp">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Format(Fields!StartTime_Raw.Value,"d/MM/yyyy h:mm tt" )</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>FirstTimeStamp</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>= Iif ( RunningValue ( Fields!Provider_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="LastTimeStamp">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Format(Fields!EndTime_Raw.Value,"d/MM/yyyy h:mm tt" )</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>LastTimeStamp</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>= Iif ( RunningValue ( Fields!Provider_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="StartTime_Diff">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=CDec(Format(Fields!StartTime_Diff.Value/60,"0.#0"))</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>StartTime_Diff</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>= Iif ( RunningValue ( Fields!Provider_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="LogDuration_Raw">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=CDec(Format(Fields!LogDuration_Raw.Value / 60, "0.#0"))</Value>
                                   <Style>
-                                    <Format>0.00;(0.00)</Format>
-                                    <Color>=
-IIF
-(
-	Fields!Has_Charge_Item.Value &gt; 1
-	,"Blue"
-	,IIF
-	(
-		Fields!Has_Charge_Item.Value = 1
-		,"Black"
-		,"Red"
-	)
-	
-)</Color>
+                                    <Format>0.00</Format>
                                   </Style>
                                 </TextRun>
                               </TextRuns>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Scheduled_Duration</rd:DefaultName>
+                          <rd:DefaultName>LogDuration_Raw</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
                               <Style>Solid</Style>
                             </Border>
-                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
+                            <BackgroundColor>= Iif ( RunningValue ( Fields!Provider_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
                             <PaddingLeft>2pt</PaddingLeft>
                             <PaddingRight>2pt</PaddingRight>
                             <PaddingTop>2pt</PaddingTop>
@@ -1790,42 +1832,29 @@ IIF
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Actual_Duration">
+                        <Textbox Name="LogDuration_Alt">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>=Fields!Actual_Duration.Value/60</Value>
+                                  <Value>=CDec(Format(Fields!LogDuration_Alt.Value/60, "0.#0"))</Value>
                                   <Style>
-                                    <Format>0.00;(0.00)</Format>
-                                    <Color>=
-IIF
-(
-	Fields!Has_Charge_Item.Value &gt; 1
-	,"Blue"
-	,IIF
-	(
-		Fields!Has_Charge_Item.Value = 1
-		,"Black"
-		,"Red"
-	)
-	
-)</Color>
+                                    <Format>0.00</Format>
                                   </Style>
                                 </TextRun>
                               </TextRuns>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Actual_Duration</rd:DefaultName>
+                          <rd:DefaultName>LogDuration_Alt</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
                               <Style>Solid</Style>
                             </Border>
-                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
+                            <BackgroundColor>= Iif ( RunningValue ( Fields!Provider_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
                             <PaddingLeft>2pt</PaddingLeft>
                             <PaddingRight>2pt</PaddingRight>
                             <PaddingTop>2pt</PaddingTop>
@@ -1836,253 +1865,29 @@ IIF
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Has_Charge_Item">
+                        <Textbox Name="Diff">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>=
-IIF(
-	Fields!Has_Charge_Item.Value = 2
-	,"Dup"
-	,IIF
-	(
-		Fields!Has_Charge_Item.Value = 1
-		,"Yes"
-		,"No"
-	)
-)</Value>
+                                  <Value>=CDec(format(Fields!Diff.Value/60, "0.#0"))</Value>
                                   <Style>
-                                    <Color>=
-IIF
-(
-	Fields!Has_Charge_Item.Value &gt; 1
-	,"Blue"
-	,IIF
-	(
-		Fields!Has_Charge_Item.Value = 1
-		,"Black"
-		,"Red"
-	)
-	
-)</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style>
-                                <TextAlign>Center</TextAlign>
-                              </Style>
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Has_Charge_Item</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Charge_Item_Line_Description">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=
-IIF
-(
-	Fields!Has_Charge_Item.Value &gt; 0
-	,Fields!Charge_Item_Line_Description.Value
-	,"------ NO CHARGE ITEM ------  " &amp; Fields!task_Description.Value
-)</Value>
-                                  <Style>
-                                    <Color>=
-IIF
-(
-	Fields!Has_Charge_Item.Value &gt; 1
-	,"Blue"
-	,IIF
-	(
-		Fields!Has_Charge_Item.Value = 1
-		,"Black"
-		,"Red"
-	)
-	
-)</Color>
+                                    <Format>0.00</Format>
                                   </Style>
                                 </TextRun>
                               </TextRuns>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Charge_Item_Line_Description</rd:DefaultName>
+                          <rd:DefaultName>Diff</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
                               <Style>Solid</Style>
                             </Border>
-                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Amount">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=
-IIF
-(
-	isnothing (Fields!Amount.Value)
-	,"---"
-	,Fields!Amount.Value
-)</Value>
-                                  <Style>
-                                    <Format>'$'0.00;('$'0.00)</Format>
-                                    <Color>=
-IIF
-(
-	Fields!Has_Charge_Item.Value &gt; 1
-	,"Blue"
-	,IIF
-	(
-		Fields!Has_Charge_Item.Value = 1
-		,"Black"
-		,"Red"
-	)
-	
-)</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Amount</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                            <rd:FormatSymbolCulture>en-AU</rd:FormatSymbolCulture>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="contract_type">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=
-IIF
-(
-	Fields!contract_type.Value = "No Contract" and Fields!Has_Charge_Item.Value = 1
-	,"Incorrect Contract"
-	,Fields!contract_type.Value
-)</Value>
-                                  <Style>
-                                    <Color>=
-IIF
-(
-	Fields!Has_Charge_Item.Value &gt; 1
-	,"Blue"
-	,IIF
-	(
-		Fields!Has_Charge_Item.Value = 1
-		,"Black"
-		,"Red"
-	)
-	
-)</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>contract_type</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Funding_type">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=Fields!Funding_type.Value</Value>
-                                  <Style>
-                                    <Color>=
-IIF
-(
-	Fields!Has_Charge_Item.Value &gt; 1
-	,"Blue"
-	,IIF
-	(
-		Fields!Has_Charge_Item.Value = 1
-		,"Black"
-		,"Red"
-	)
-	
-)</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Funding_type</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
+                            <BackgroundColor>= Iif ( RunningValue ( Fields!Provider_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
                             <PaddingLeft>2pt</PaddingLeft>
                             <PaddingRight>2pt</PaddingRight>
                             <PaddingTop>2pt</PaddingTop>
@@ -2117,51 +1922,610 @@ IIF
                   <KeepWithGroup>After</KeepWithGroup>
                 </TablixMember>
                 <TablixMember>
-                  <KeepWithGroup>After</KeepWithGroup>
-                </TablixMember>
-                <TablixMember>
-                  <Group Name="Details">
-                    <Filters>
-                      <Filter>
-                        <FilterExpression>=False</FilterExpression>
-                        <Operator>Equal</Operator>
-                        <FilterValues>
-                          <FilterValue DataType="Boolean">=iif
-	(
-		inStr(Join(Parameters!BillingContractFilter.Value,","),Fields!Funding_type.Value)=0
-		,iif
-		(
-			Fields!Has_Charge_Item.Value = 2
-			,False
-			,True
-		)
-		,False
-	)</FilterValue>
-                        </FilterValues>
-                      </Filter>
-                    </Filters>
-                  </Group>
-                  <Visibility>
-                    <Hidden>=
-(
-	IIF
-	(
-		Parameters!HideGood.Value = "Yes" and Fields!Has_Charge_Item.Value = 1
-		,True
-		,False 
-	)
-)</Hidden>
-                  </Visibility>
+                  <Group Name="Details" />
                 </TablixMember>
               </TablixMembers>
             </TablixRowHierarchy>
-            <RepeatColumnHeaders>true</RepeatColumnHeaders>
-            <RepeatRowHeaders>true</RepeatRowHeaders>
-            <FixedColumnHeaders>true</FixedColumnHeaders>
-            <FixedRowHeaders>true</FixedRowHeaders>
             <DataSetName>DataSet1</DataSetName>
-            <Height>2.38208cm</Height>
-            <Width>44.01126cm</Width>
+            <Height>1.2cm</Height>
+            <Width>43.12335cm</Width>
+            <Style>
+              <Border>
+                <Style>None</Style>
+              </Border>
+            </Style>
+          </Tablix>
+          <Tablix Name="Tablix2">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn>
+                  <Width>2.5cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>4.29917cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>2.88459cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>4.86321cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>3.7745cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>2.73813cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>2.52646cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>2.36771cm</Width>
+                </TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.6cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox6">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Provider ID</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox6</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox12">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Provider Name</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox12</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox17">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Activity Date</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox17</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox15">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Device Timestamp</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox15</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox20">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Edit Action</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox20</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox23">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Start Time</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox23</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox25">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>End Time</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox25</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox27">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Wi Record</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox27</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.6cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Provider_ID1">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Provider_ID.Value</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Provider_ID1</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ProviderName1">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!ProviderName.Value</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>ProviderName1</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Activity_Date1">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Activity_Date.Value</Value>
+                                  <Style>
+                                    <Format>d/MM/yyyy</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Activity_Date1</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Device_Timestamp">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Device_Timestamp.Value</Value>
+                                  <Style>
+                                    <Format>d/MM/yyyy h:mm tt</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Device_Timestamp</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Edit_Action1">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Edit_Action.Value</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Edit_Action1</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Start_Time1">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Start_Time.Value</Value>
+                                  <Style>
+                                    <Format>t</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Start_Time1</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="End_Time1">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!End_Time.Value</Value>
+                                  <Style>
+                                    <Format>t</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>End_Time1</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Wi_Record">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Wi_Record.Value</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Wi_Record</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="Details1" />
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            <DataSetName>DataSet_Individual</DataSetName>
+            <Top>1.23175cm</Top>
+            <Height>1.2cm</Height>
+            <Width>25.95376cm</Width>
+            <ZIndex>1</ZIndex>
+            <Visibility>
+              <Hidden>=Parameters!forceProv_ID.Value = 0</Hidden>
+            </Visibility>
             <Style>
               <Border>
                 <Style>None</Style>
@@ -2169,13 +2533,13 @@ IIF
             </Style>
           </Tablix>
         </ReportItems>
-        <Height>0.93783in</Height>
+        <Height>0.95738in</Height>
         <Style />
       </Body>
-      <Width>17.32727in</Width>
+      <Width>16.9777in</Width>
       <Page>
         <PageHeader>
-          <Height>2.135cm</Height>
+          <Height>3.25438cm</Height>
           <PrintOnFirstPage>true</PrintOnFirstPage>
           <PrintOnLastPage>true</PrintOnLastPage>
           <ReportItems>
@@ -2183,9 +2547,9 @@ IIF
               <Source>Embedded</Source>
               <Value>Logo_AnglicareSA</Value>
               <Sizing>FitProportional</Sizing>
-              <Left>33.12395cm</Left>
-              <Height>1.95862cm</Height>
-              <Width>10.88731cm</Width>
+              <Left>25.95376cm</Left>
+              <Height>2.90703cm</Height>
+              <Width>8.43959cm</Width>
               <Style>
                 <Border>
                   <Style>None</Style>
@@ -2199,7 +2563,7 @@ IIF
                 <Paragraph>
                   <TextRuns>
                     <TextRun>
-                      <Value>Transaction Audit</Value>
+                      <Value>Time Sheet Inspection</Value>
                       <Style>
                         <FontSize>16pt</FontSize>
                         <FontWeight>Bold</FontWeight>
@@ -2212,9 +2576,9 @@ IIF
                 <Paragraph>
                   <TextRuns>
                     <TextRun>
-                      <Value>=Parameters!Organisation.Value</Value>
+                      <Value>=Parameters!Centre.Value</Value>
                       <Style>
-                        <FontWeight>Bold</FontWeight>
+                        <FontWeight>Normal</FontWeight>
                       </Style>
                     </TextRun>
                     <TextRun>
@@ -2224,7 +2588,7 @@ IIF
                       </Style>
                     </TextRun>
                     <TextRun>
-                      <Value>=Format(Parameters!StartDate.Value, "dd/MM/yyyy") &amp; " to " &amp; Format(Parameters!EndDate.Value, "dd/MM/yyyy")</Value>
+                      <Value>=Format(Parameters!Start_Date.Value, "dd/MM/yyyy") &amp; " to " &amp; Format(Parameters!End_Date.Value, "dd/MM/yyyy")</Value>
                       <Style>
                         <FontWeight>Bold</FontWeight>
                       </Style>
@@ -2241,13 +2605,41 @@ IIF
                 <Paragraph>
                   <TextRuns>
                     <TextRun>
-                      <Value>covering contract('s) </Value>
+                      <Value>Filters:</Value>
+                      <Style>
+                        <FontWeight>Normal</FontWeight>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style />
+                </Paragraph>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>Team </Value>
                       <Style>
                         <FontWeight>Normal</FontWeight>
                       </Style>
                     </TextRun>
                     <TextRun>
-                      <Value>=Join(Parameters!ContractType.Value ,", ")</Value>
+                      <Value>=Join(Parameters!TeamFilt.Value ,", ")</Value>
+                      <Style>
+                        <FontWeight>Bold</FontWeight>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style />
+                </Paragraph>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>Provider Class </Value>
+                      <Style>
+                        <FontWeight>Normal</FontWeight>
+                      </Style>
+                    </TextRun>
+                    <TextRun>
+                      <Value>=Join(Parameters!ClassCodeFilter.Label ,", ")</Value>
                       <Style>
                         <FontWeight>Bold</FontWeight>
                       </Style>
@@ -2257,8 +2649,8 @@ IIF
                 </Paragraph>
               </Paragraphs>
               <rd:DefaultName>Textbox38</rd:DefaultName>
-              <Height>1.95862cm</Height>
-              <Width>33.12395cm</Width>
+              <Height>2.90703cm</Height>
+              <Width>25.95376cm</Width>
               <ZIndex>1</ZIndex>
               <Style>
                 <Border>
@@ -2277,136 +2669,126 @@ IIF
             </Border>
           </Style>
         </PageHeader>
-        <PageHeight>21cm</PageHeight>
-        <PageWidth>29.7cm</PageWidth>
-        <InteractiveHeight>21cm</InteractiveHeight>
-        <InteractiveWidth>27.7cm</InteractiveWidth>
-        <LeftMargin>1cm</LeftMargin>
-        <RightMargin>1cm</RightMargin>
-        <TopMargin>1cm</TopMargin>
-        <BottomMargin>1cm</BottomMargin>
+        <PageHeight>29.7cm</PageHeight>
+        <PageWidth>21cm</PageWidth>
+        <LeftMargin>2cm</LeftMargin>
+        <RightMargin>2cm</RightMargin>
+        <TopMargin>2cm</TopMargin>
+        <BottomMargin>2cm</BottomMargin>
         <ColumnSpacing>0.13cm</ColumnSpacing>
         <Style />
       </Page>
     </ReportSection>
   </ReportSections>
   <ReportParameters>
-    <ReportParameter Name="StartDate">
+    <ReportParameter Name="Start_Date">
       <DataType>DateTime</DataType>
       <DefaultValue>
         <Values>
-          <Value>=DateAdd(DateInterval.Day, -13, Today())</Value>
+          <Value>=CDate("17/05/2017")</Value>
         </Values>
       </DefaultValue>
       <Prompt>Start Date</Prompt>
     </ReportParameter>
-    <ReportParameter Name="EndDate">
+    <ReportParameter Name="End_Date">
       <DataType>DateTime</DataType>
       <DefaultValue>
         <Values>
-          <Value>=today()</Value>
+          <Value>=CDate("17/05/2017")</Value>
         </Values>
       </DefaultValue>
       <Prompt>End Date</Prompt>
     </ReportParameter>
-    <ReportParameter Name="HideGood">
+    <ReportParameter Name="forceProv_ID">
       <DataType>String</DataType>
       <DefaultValue>
         <Values>
-          <Value>="No"</Value>
+          <Value>0</Value>
         </Values>
       </DefaultValue>
-      <Prompt>Hide Good Entries</Prompt>
+      <Prompt>Inspection type</Prompt>
       <ValidValues>
         <ParameterValues>
           <ParameterValue>
-            <Value>="Yes"</Value>
-            <Label>Yes</Label>
+            <Value>1</Value>
+            <Label>Provider ID</Label>
           </ParameterValue>
           <ParameterValue>
-            <Value>="No"</Value>
-            <Label>No</Label>
+            <Value>0</Value>
+            <Label>Centre,Class,Team</Label>
           </ParameterValue>
         </ParameterValues>
       </ValidValues>
     </ReportParameter>
-    <ReportParameter Name="Organisation">
+    <ReportParameter Name="Centre">
       <DataType>String</DataType>
+      <Nullable>true</Nullable>
       <DefaultValue>
         <Values>
-          <Value>"Disabilities Children"</Value>
+          <Value xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true" />
         </Values>
       </DefaultValue>
-      <Prompt>Organisation</Prompt>
+      <Prompt>Centre</Prompt>
       <ValidValues>
-        <ParameterValues>
-          <ParameterValue>
-            <Value>="Disabilities Children"</Value>
-            <Label>Disabilities Children</Label>
-          </ParameterValue>
-          <ParameterValue>
-            <Value>="Disabilities Adult"</Value>
-            <Label>Disabilities Adult</Label>
-          </ParameterValue>
-        </ParameterValues>
+        <DataSetReference>
+          <DataSetName>DataSet2</DataSetName>
+          <ValueField>OrgNm</ValueField>
+          <LabelField>OrgNm</LabelField>
+        </DataSetReference>
       </ValidValues>
     </ReportParameter>
-    <ReportParameter Name="ContractType">
+    <ReportParameter Name="ClassCodeFilter">
       <DataType>String</DataType>
       <DefaultValue>
         <DataSetReference>
-          <DataSetName>DataSet2</DataSetName>
-          <ValueField>Description</ValueField>
+          <DataSetName>DataSet4</DataSetName>
+          <ValueField>Provider_Class_Code</ValueField>
         </DataSetReference>
       </DefaultValue>
-      <Prompt>Contract Type</Prompt>
+      <AllowBlank>true</AllowBlank>
+      <Prompt>Class Code Filter</Prompt>
       <ValidValues>
         <DataSetReference>
-          <DataSetName>DataSet2</DataSetName>
-          <ValueField>Description</ValueField>
+          <DataSetName>DataSet4</DataSetName>
+          <ValueField>Provider_Class_Code</ValueField>
           <LabelField>Description</LabelField>
         </DataSetReference>
       </ValidValues>
       <MultiValue>true</MultiValue>
-      <UsedInQuery>True</UsedInQuery>
     </ReportParameter>
-    <ReportParameter Name="BillingContractFilter">
+    <ReportParameter Name="TeamFilt">
       <DataType>String</DataType>
       <DefaultValue>
         <DataSetReference>
           <DataSetName>DataSet3</DataSetName>
-          <ValueField>filt</ValueField>
+          <ValueField>Team</ValueField>
         </DataSetReference>
       </DefaultValue>
-      <Prompt>Billing Contract Filter</Prompt>
+      <AllowBlank>true</AllowBlank>
+      <Prompt>Team Filt</Prompt>
       <ValidValues>
         <DataSetReference>
           <DataSetName>DataSet3</DataSetName>
-          <ValueField>filt</ValueField>
-          <LabelField>filt</LabelField>
+          <ValueField>Team</ValueField>
+          <LabelField>Team</LabelField>
         </DataSetReference>
       </ValidValues>
       <MultiValue>true</MultiValue>
     </ReportParameter>
-    <ReportParameter Name="DuplicateChargeItem">
+    <ReportParameter Name="Prov_ID">
       <DataType>Integer</DataType>
       <DefaultValue>
         <Values>
-          <Value>=0</Value>
+          <Value>0</Value>
         </Values>
       </DefaultValue>
-      <Prompt>Show Duplicate Charge Item Only</Prompt>
+      <Prompt>Prov ID</Prompt>
       <ValidValues>
-        <ParameterValues>
-          <ParameterValue>
-            <Value>=1</Value>
-            <Label>Yes</Label>
-          </ParameterValue>
-          <ParameterValue>
-            <Value>=0</Value>
-            <Label>No</Label>
-          </ParameterValue>
-        </ParameterValues>
+        <DataSetReference>
+          <DataSetName>DataSet5</DataSetName>
+          <ValueField>Provider_ID</ValueField>
+          <LabelField>Label</LabelField>
+        </DataSetReference>
       </ValidValues>
     </ReportParameter>
   </ReportParameters>
@@ -2418,37 +2800,37 @@ IIF
         <CellDefinition>
           <ColumnIndex>0</ColumnIndex>
           <RowIndex>0</RowIndex>
-          <ParameterName>StartDate</ParameterName>
+          <ParameterName>Start_Date</ParameterName>
         </CellDefinition>
         <CellDefinition>
           <ColumnIndex>1</ColumnIndex>
           <RowIndex>0</RowIndex>
-          <ParameterName>EndDate</ParameterName>
+          <ParameterName>End_Date</ParameterName>
         </CellDefinition>
         <CellDefinition>
           <ColumnIndex>2</ColumnIndex>
           <RowIndex>0</RowIndex>
-          <ParameterName>HideGood</ParameterName>
+          <ParameterName>forceProv_ID</ParameterName>
         </CellDefinition>
         <CellDefinition>
           <ColumnIndex>3</ColumnIndex>
           <RowIndex>0</RowIndex>
-          <ParameterName>Organisation</ParameterName>
+          <ParameterName>Centre</ParameterName>
         </CellDefinition>
         <CellDefinition>
           <ColumnIndex>0</ColumnIndex>
           <RowIndex>1</RowIndex>
-          <ParameterName>ContractType</ParameterName>
+          <ParameterName>ClassCodeFilter</ParameterName>
         </CellDefinition>
         <CellDefinition>
           <ColumnIndex>1</ColumnIndex>
           <RowIndex>1</RowIndex>
-          <ParameterName>BillingContractFilter</ParameterName>
+          <ParameterName>TeamFilt</ParameterName>
         </CellDefinition>
         <CellDefinition>
           <ColumnIndex>2</ColumnIndex>
           <RowIndex>1</RowIndex>
-          <ParameterName>DuplicateChargeItem</ParameterName>
+          <ParameterName>Prov_ID</ParameterName>
         </CellDefinition>
       </CellDefinitions>
     </GridLayoutDefinition>
@@ -2966,5 +3348,5 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
     </EmbeddedImage>
   </EmbeddedImages>
   <rd:ReportUnitType>Cm</rd:ReportUnitType>
-  <rd:ReportID>f229c7bf-1593-4e1b-aa21-eb42667bd632</rd:ReportID>
+  <rd:ReportID>24c121fa-7e2b-4eba-b01e-06c5be1f8fb8</rd:ReportID>
 </Report>

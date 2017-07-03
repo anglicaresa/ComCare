@@ -26,6 +26,10 @@
   <DataSets />
   <Reports>
     <ProjectItem>
+      <Name>CHSP_TransactionAudit_01.rdl</Name>
+      <FullPath>CHSP_TransactionAudit_01.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
       <Name>HCP_Admin_Discharge.rdl</Name>
       <FullPath>HCP_Admin_Discharge.rdl</FullPath>
     </ProjectItem>
@@ -36,6 +40,10 @@
     <ProjectItem>
       <Name>HCP_DC_NoShowReport.rdl</Name>
       <FullPath>HCP_DC_NoShowReport.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
+      <Name>HCP_Level_Change.rdl</Name>
+      <FullPath>HCP_Level_Change.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
       <Name>HCP_PackageRemidiation.rdl</Name>
@@ -54,8 +62,8 @@
       <FullPath>HCP_VisitTime_V_PackageStartTime.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>CHSP_TransactionAudit_01.rdl</Name>
-      <FullPath>CHSP_TransactionAudit_01.rdl</FullPath>
+      <Name>HCP_BilledToReport.rdl</Name>
+      <FullPath>HCP_BilledToReport.rdl</FullPath>
     </ProjectItem>
   </Reports>
   <Configurations>

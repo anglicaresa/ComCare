@@ -33,6 +33,10 @@
       <Name>VisitTime_Vs_ContractDates.rdl</Name>
       <FullPath>VisitTime_Vs_ContractDates.rdl</FullPath>
     </ProjectItem>
+    <ProjectItem>
+      <Name>TimeSheet_PerProviderPerDay_Vs_T1.rdl</Name>
+      <FullPath>TimeSheet_PerProviderPerDay_Vs_T1.rdl</FullPath>
+    </ProjectItem>
   </Reports>
   <Configurations>
     <Configuration>

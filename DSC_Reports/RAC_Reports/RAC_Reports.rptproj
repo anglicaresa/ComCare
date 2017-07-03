@@ -53,6 +53,10 @@
       <Name>RAC_VacantShift.rdl</Name>
       <FullPath>RAC_VacantShift.rdl</FullPath>
     </ProjectItem>
+    <ProjectItem>
+      <Name>RAC_ViewTimeSheetAdjustments.rdl</Name>
+      <FullPath>RAC_ViewTimeSheetAdjustments.rdl</FullPath>
+    </ProjectItem>
   </Reports>
   <Configurations>
     <Configuration>
