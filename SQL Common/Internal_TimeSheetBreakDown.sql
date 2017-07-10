@@ -323,7 +323,7 @@ begin
 	end
 
 	if @VC_CurTtype is null begin set @VC_CurTtype = 'null' end
-
+	if @VC_Cur_iTtype is null begin set @VC_Cur_iTtype = 'null' end
 
 	if @i_BaseCount <> 1
 	begin

@@ -47,7 +47,8 @@ select
 	,J001.Effective_From_Date
 	,J001.Program_Level_ID
 	,J009.Description
-	,J007.Supplement_Rate
+	,iif(J005.Override_Rate is null, J007.Supplement_Rate,J005.Override_Rate)'Supplement_Rate' --J005.Override_Rate 
+--	,J007.Supplement_Rate
 	,J008.Period_Type_Code 'UOM'
 	,J012.Description 'funderContract'
 from dbo.FC_Client_Contract J001
