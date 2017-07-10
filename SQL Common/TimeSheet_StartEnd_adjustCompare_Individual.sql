@@ -1,12 +1,12 @@
 
 use ComCareProd
 
-declare @stringDate varchar(32) = '2017-05-17'
-declare @stringDate2 varchar(32) = '2017-05-17'--'2017-01-20'
+declare @stringDate varchar(32) = '2017-05-31'
+declare @stringDate2 varchar(32) = '2017-05-31'--'2017-01-20'
 declare @Start_Date date = convert(date, @stringDate)
 declare @End_Date date = convert(date, @stringDate2)
 --declare @Centre varchar(32) = 'Dutton Court'
-declare @Centre varchar(32) = 'Ian George Court'
+declare @Centre varchar(32) = 'All Hallows Court'
 
 declare @ShowVacantOnly int = 1
 declare @NoBuddyShifts int = 1
@@ -73,7 +73,8 @@ declare @forceProv_ID int = 1
 --declare @Prov_ID int = 10075347 --Kneebone, Helen Has split shift **second shift not not recorded.* has dule StartEnd.
 --declare @Prov_ID int = 10048181 --Kneebone, Helen Has split shift CLEAN
 --declare @Prov_ID int = 10046817 --Nelson, Margaret Has split shift **Only 1 sign off
-declare @Prov_ID int = 10052422 --Broderick, Josie **Record Duplicate
+--declare @Prov_ID int = 10052628 --odd case
+declare @Prov_ID int = 10091900 --odd case compare
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -92,7 +93,7 @@ declare @EventBracket2 int = 13
 
 --Setup Vars and Defults.
 declare @date_Start date = @Start_Date
-declare @date_End date = @End_Date
+declare @date_End date = iif(@End_Date < @Start_Date, @Start_Date, @End_Date)
 
 ---------------------------------------------------------------
 --Pre assemble Provider list for performance reasons
@@ -128,7 +129,7 @@ insert into @Provs
 					end
 				) 'RN'
 		From [dbo].[Wi_Activity] WiA
-		where convert(date, Wia.Activity_Date) between dateadd(day,@EventBracket1,@Start_Date) and dateadd(day,@EventBracket2,@End_Date)
+		where convert(date, Wia.Activity_Date) between dateadd(day,@EventBracket1,@date_Start) and dateadd(day,@EventBracket2,@date_End)
 	)X001
 
 	Inner Join dbo.Person X002 on X002.Person_ID = X001.Provider_ID
@@ -238,16 +239,18 @@ insert into @RawResult
 			where 
 			1=1
 			and Z.Directive_Type_ID = 114 
-			and Z.Device_Timestamp between dateadd(day,@EventBracket1,cast(@Start_Date as datetime)) and dateadd(day,@EventBracket2,cast(@End_Date as datetime))
+			and Z.Device_Timestamp between dateadd(day,@EventBracket1,cast(@date_Start as datetime)) and dateadd(day,@EventBracket2,cast(@date_End as datetime))
 			and Z.Provider_ID in (Select p.Provider_ID from @Provs p)
 		)WI_EL_C
 		Inner Join @Provs Provs on Provs.Provider_ID = WI_EL_C.Provider_ID
 	)SJ001
 	where
 		1=1
-		and SJ001.Activity_Date between @Start_Date and @End_Date
+		and SJ001.Activity_Date between @date_Start and @date_End
 	Order by
-	1,2,3
+		SJ001.Provider_ID
+		,SJ001.ProviderName
+		,SJ001.Device_Timestamp
 
 select * from @RawResult
 --/*

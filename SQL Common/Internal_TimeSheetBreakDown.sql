@@ -1,58 +1,7 @@
-/*
-use ComCareProd
 
-declare @stringDate varchar(32) = '2017-03-01'
-declare @stringDate2 varchar(32) = '2017-03-31'
-declare @Start_Date date = convert(date, @stringDate)
-declare @End_Date date = convert(date, @stringDate2)
-
-declare @Organisation VarChar(64) = 'Disabilities Children'
-
-select
-	J001.Provider_ID
-	,J002.Preferred_Name
-	,J002.Last_Name
-	,cast(J001.Activity_Start_Time as datetime) 'Activity_Start_Time'
-	,(J001.Activity_Duration / 60.0) 'Duration (H)'
-	,J003.Description 'Activity'
-	,J006.Organisation_Name 'Delivery Centre'
-	,J005.Description 'Team'
-from dbo.WI_Activity J001
-inner join dbo.Person J002 on J002.Person_ID = J001.Provider_ID
-
-inner join dbo.Indirect_Activity_Type J003 on J003.Indirect_Activity_Type_Code = J001.Internal_Task_Code
-Left outer join [dbo].[Service_Provision_Position] J004 on J004.Service_Prov_Position_ID = J001.SPPID
-Left outer join [dbo].[Service_Delivery_Work_Team] J005 on J005.Team_No = J004.Team_No and J005.Centre_ID = J004.Centre_ID
-Left outer join [dbo].Organisation J006 on J006.Organisation_ID = J004.Centre_ID
-
-where
-	1=1
-	and J001.Activity_Date between @Start_Date and @End_Date
-	and J001.Provider_ID <> 0
-	and J001.Provider_ID is not null
-	and J001.Internal_Task_Code <> 0
-	and J001.Internal_Task_Code is not null
-	and J006.Organisation_Name = @Organisation
---	and J001.Activity_Start_Time is not null
-
-
-
---*/
-/*
-select * from dbo.wi_activity
-where internal_task_Code = 51
-
-
-select * from dbo.[Service_Provision_Position]
-
-[dbo].[Organisation] J001
-inner join [dbo].[Service_Delivery_Work_Team] J002 on J002.[Centre_ID] = J001.[Organisation_ID]
-	left outer join [dbo].[Service_Provision_Position] J003 on J003.[Centre_ID] = J002.[Centre_ID] and J003.[Team_No] = J002.[Team_No]
-*/
-
-declare @Start_Date date = cast('2017-03-01' as date)
-declare @End_Date date = cast('2017-06-30' as date)
-DECLARE @OrgName AS Varchar(64) = 'Disabilities Children'
+declare @Start_Date date = cast('2017-05-15' as date)
+declare @End_Date date = cast('2017-05-15' as date)
+DECLARE @OrgName AS Varchar(64) = 'Home Care north'
 
 --select * from dbo.Actual_Service
 /*
@@ -193,7 +142,8 @@ Select
 			Partition by 
 				null 
 			order by 
-				J001.Organisation_Name,J006.Provider_ID
+				J001.Organisation_Name
+				,J006.Provider_ID
 				,cast(J007.Activity_Date as date)
 				,J007.Task_Type_Code
 				,J007.Indirect_Activity_Type_Code
@@ -336,9 +286,162 @@ Order by
 -----------------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------------
-select * from @RawData RD
-	where
-	1=1
-	and RD.IndirectActivity is not null
-	and RD.Team is null
+select * from @RawData
+
+Declare @i_RowNum int = 1
+Declare @i_MaxRow int = (select top 1 RR.Row_Count from @RawData RR)
+Declare @i_PID int = null
+Declare @t_ActivityDate DateTime = null
+declare @J_Task_Type VarChar(255) = null
+declare @J_IndTask_Type VarChar(255) = null
+declare @i_BaseCount int = 1
+Declare @i_TriggerFirstTaskEntry int	= 0
+Declare @Joined_Task table (Provider_ID int, Activity_Date datetime,Joined_Task_Types VarChar(255), Joined_Indirect_Task_Types VarChar(255))
+declare @i_Temp int = 0
+declare @VC_PrevTtype varchar(128)=''
+declare @VC_CurTtype varchar(128)=''
+declare @VC_Prev_iTtype varchar(128)=''
+declare @VC_Cur_iTtype varchar(128)=''
+
+--Start Main processing
+--print '------------------------------------------'
+while @i_RowNum <= @i_MaxRow
+begin
+	-----------------------------------------------------------------------------------------------------------
+	--Define current provider for current entry
+	set @i_PID = (select RR.Provider_ID from @RawData RR where RR.RowNumber = @i_RowNum)--baseValue setup
+	Set @t_ActivityDate = (select RR.Activity_Date from @RawData RR where RR.RowNumber = @i_RowNum)
+	Set @VC_CurTtype = (select RR.Task_Type_Code from @RawData RR where RR.RowNumber = @i_RowNum)
+	set @VC_Cur_iTtype = (select RR.Indirect_Activity_Type from @RawData RR where RR.RowNumber = @i_RowNum)
+
+	if @i_BaseCount = 1
+	begin
+		set @J_Task_Type = (select RR.Task_Type_Code from @RawData RR where RR.RowNumber = @i_RowNum)--Define Edit action (OS,A,OU,StartEnd,F)
+		set @VC_PrevTtype = 'null'
+		set @J_IndTask_Type = (select RR.Indirect_Activity_Type from @RawData RR where RR.RowNumber = @i_RowNum)
+		set @VC_Prev_iTtype = 'null'
+	end
+
+	if @VC_CurTtype is null begin set @VC_CurTtype = 'null' end
+
+
+	if @i_BaseCount <> 1
+	begin
+		set @VC_PrevTtype = (select RR.Task_Type_Code from @RawData RR where RR.RowNumber = @i_RowNum -1)
+		set @VC_Prev_iTtype = (select RR.Indirect_Activity_Type from @RawData RR where RR.RowNumber = @i_RowNum -1)
+	end
 	
+	if @VC_PrevTtype is null begin set @VC_PrevTtype = 'null' end
+	if @VC_Prev_iTtype is null begin set @VC_Prev_iTtype = 'null' end
+
+
+	----------------------------------------------------------------------------------------------------------------------
+
+	if @i_BaseCount <> 1 and @VC_PrevTtype <> @VC_CurTtype and @VC_CurTtype != 'null'
+	begin
+		if @VC_PrevTtype = 'null' begin set @J_Task_Type = @VC_CurTtype end
+		else begin set @J_Task_Type = @J_Task_Type + ', ' + @VC_CurTtype end
+	end
+
+	if @i_BaseCount <> 1 and @VC_Prev_iTtype <> @VC_Cur_iTtype and @VC_Cur_iTtype != 'null'
+	begin
+
+		if @VC_Prev_iTtype = 'null' begin set @J_IndTask_Type = @VC_Cur_iTtype end
+		else begin set @J_IndTask_Type = @J_IndTask_Type + ', ' + @VC_Cur_iTtype end
+	end
+
+	 --Cycle mechanic
+	set @i_Temp = @i_BaseCount
+	set  @i_BaseCount = @i_Temp + 1
+	set @i_Temp = @i_RowNum
+
+	-----------------------------------------------------------------------------------------------------------
+	--end base setup
+	-----------------------------------------------------------------------------------------------------------
+	if --Check to see if the provider ID has changed or the Date
+	(@i_PID <> (select RR.Provider_ID from @RawData RR where RR.RowNumber = @i_RowNum+1)) 
+	or (@t_ActivityDate <> (select RR.Activity_Date from @RawData RR where RR.RowNumber = @i_RowNum+1)) 
+	or  @i_RowNum = @i_MaxRow
+	begin
+		set @i_TriggerFirstTaskEntry = 1
+	end
+	
+	if @i_TriggerFirstTaskEntry = 1
+	begin
+		insert into @Joined_Task Values ( @i_PID,@t_ActivityDate,@J_Task_Type,@J_IndTask_Type)
+		set @i_TriggerFirstTaskEntry = 0
+		set @i_BaseCount = 1
+	end
+	set @i_RowNum = @i_Temp + 1
+
+end
+---------------------------------------------
+/*
+insert into @Join_Employee
+	select
+		P.Employee_No 
+	from @Joined_Task JT
+	inner join dbo.Provider P on P.Provider_ID = JT.Provider_ID
+
+--*/
+---------------------------------------------
+--select * from @Joined_Task
+
+select * from
+(
+	select
+		JS001.Organisation_Name
+--		,JS001.Team
+		,JS001.Provider_ID
+		,JS001.Provider_Name
+		,JS001.Activity_Date
+		,JS002.Joined_Task_Types 'Task_Types'
+		,JS002.Joined_Indirect_Task_Types 'Indirect_Task_Types'
+		,Count (JS001.Client_ID) over(partition by JS001.Provider_ID, JS001.Activity_Date) 'TS_ClientCount'
+		,sum (iif (JS001.Activity_Type = 'Task' and JS001.Group_Activity_ID is null, JS001.Activity_Duration/60.0,0.0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'TS_TaskLogged'
+		,sum (iif (JS001.Activity_Type != 'Task' and JS001.Group_Activity_ID is null and JS001.IndirectPayTypeFlag = 0, JS001.Activity_Duration/60.0,0.0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'TS_InternalTaskUnPaid'
+		,sum (iif (JS001.Activity_Type != 'Task' and JS001.Group_Activity_ID is null and JS001.IndirectPayTypeFlag = 1,(JS001.Activity_Duration - JS001.IndirectPayOffset)/60.0,0.0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'TS_InternalTaskPaid'
+		,sum (iif (JS001.Activity_Type = 'Task' and JS001.Group_Activity_ID is not null, JS001.Activity_Duration/60.0,0.0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'TS_GroupClientTotalTime'
+		,Count (JS001.AS_Client_ID) over(partition by JS001.Provider_ID, JS001.Activity_Date) 'AS_ClientCount'
+		,sum (iif (JS001.Group_Activity_ID is null, JS001.AS_Duration/60.0,0.0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'AS_TaskLogged'
+		,sum (iif (JS001.Group_Activity_ID is not null, JS001.AS_Duration/60.0,0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'AS_GroupClientTotalTime'
+		,Count (JS001.ASCI_Client_ID) over(partition by JS001.Provider_ID, JS001.Activity_Date) 'CI_ClientCount'
+		,sum (iif (JS001.ASCI_UOM = 'Hour', JS001.ASCI_Unit,0.0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'CI_Hours'
+		,sum (iif (JS001.ASCI_UOM = 'Visit', JS001.ASCI_Unit,0.0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'CI_Visit'
+		,sum (iif (JS001.ASCI_UOM = 'Unit', JS001.ASCI_Unit,0.0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'CI_Unit'
+		,sum (JS001.ASCI_Amount) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'CI_TotalCharge'
+		,JS003.Employee_No
+		,CONCAT(JS003.Employee_No,'_',JS001.Activity_Date)'Key_1'
+
+	from @RawData JS001
+	left outer join @Joined_Task JS002 on JS002.Provider_ID = JS001.Provider_ID and JS002.Activity_Date = JS001.Activity_Date
+	left outer join dbo.Provider JS003 on JS003.Provider_ID = JS001.Provider_ID
+
+)T1
+where
+	1=1
+--	and T1.Key_1 = '6630_2017-05-15'
+
+group by
+	T1.Organisation_Name
+--	,T1.Team
+	,T1.Provider_ID
+	,T1.Provider_Name
+	,T1.Activity_Date
+	,T1.Task_Types
+	,T1.Indirect_Task_Types
+	,T1.TS_ClientCount
+	,T1.TS_TaskLogged
+	,T1.TS_InternalTaskUnPaid
+	,T1.TS_InternalTaskPaid
+	,T1.TS_GroupClientTotalTime
+	,T1.AS_ClientCount
+	,T1.AS_TaskLogged
+	,T1.AS_GroupClientTotalTime
+	,T1.CI_ClientCount
+	,T1.CI_Hours
+	,T1.CI_Visit
+	,T1.CI_Unit
+	,T1.CI_TotalCharge
+	,T1.Employee_No
+	,T1.Key_1

@@ -1,6 +1,6 @@
 use ComCareProd
 --select * from FC_Client_Contract where	client_ID = 10001360
---select * from [dbo].FC_Transaction where Activity_date is null
+--select * from [dbo].FC_Transaction where client_ID = 10001360
 --select * from dbo.FC_Account where Client_Contract_ID = 1161
 --select * from dbo.FC_Account where FC_Account_ID =3640
 --select * from dbo.FC_Claim_History_Detail where Claim_History_Detail_ID = 18169
