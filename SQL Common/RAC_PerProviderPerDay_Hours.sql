@@ -285,6 +285,7 @@ select * from
 		,sum (iif (JS001.Activity_Type != 'Task' and JS001.Group_Activity_ID is null and JS001.IndirectPayTypeFlag = 0, JS001.Activity_Duration/60.0,0.0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'TS_InternalTaskUnPaid'
 		,sum (iif (JS001.Activity_Type != 'Task' and JS001.Group_Activity_ID is null and JS001.IndirectPayTypeFlag = 1,(JS001.Activity_Duration - JS001.IndirectPayOffset)/60.0,0.0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'TS_InternalTaskPaid'
 		,JS003.Employee_No
+		,sum (iif (JS001.Activity_Type != 'Task' and JS001.Group_Activity_ID is null and JS001.IndirectPayTypeFlag = 1,(JS001.Activity_Duration - JS001.IndirectPayOffset)/60.0,0.0)) over(Partition by JS001.Provider_ID) 'TS_InternalTaskPaid_TotalPeriod'
 	from @RawData JS001
 	left outer join @Joined_Task JS002 on JS002.Provider_ID = JS001.Provider_ID and JS002.Activity_Date = JS001.Activity_Date
 	left outer join dbo.Provider JS003 on JS003.Provider_ID = JS001.Provider_ID
@@ -301,5 +302,7 @@ group by
 	,T1.Indirect_Task_Types
 	,T1.TS_InternalTaskUnPaid
 	,T1.TS_InternalTaskPaid
+	,T1.TS_InternalTaskPaid_TotalPeriod
 	,T1.Employee_No
+	
 

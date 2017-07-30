@@ -32,7 +32,7 @@ insert into @Provs
 			WiA.SPPID 'SPPID'
 			,cast (WiA.Activity_Date as date) 'Activity_Date'
 			,WiA.Provider_ID 'Provider_ID'
-		From [dbo].[Wi_Activity] WiA
+		From dbo.Wi_Activity WiA
 		where convert(date, Wia.Activity_Date) between dateadd(day,-3,@StartDate) and dateadd(day,3,@EndDate)
 	)X001
 
@@ -43,7 +43,7 @@ insert into @Provs
 	where
 		1=1
 		and cast(X001.Activity_Date as date) between @StartDate and @EndDate
-		and X001.[Provider_ID] <> 0
+		and X001.Provider_ID <> 0
 		and X005.Organisation_Name = @Organisation
 		
 	Group by

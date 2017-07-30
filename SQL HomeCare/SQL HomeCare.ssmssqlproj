@@ -61,11 +61,29 @@
           <AssociatedConnUserName />
           <FullPath>HCP_Booking.sql</FullPath>
         </FileNode>
+        <FileNode Name="HCP_BushFireArea.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>HCP_BushFireArea.sql</FullPath>
+        </FileNode>
         <FileNode Name="HCP_Clients_BasicDailyFee.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
           <AssociatedConnUserName />
           <FullPath>HCP_Clients_BasicDailyFee.sql</FullPath>
+        </FileNode>
+        <FileNode Name="HCP_Clients_NoSrvAdv.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>HCP_Clients_NoSrvAdv.sql</FullPath>
+        </FileNode>
+        <FileNode Name="HCP_GoalOfCare.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>HCP_GoalOfCare.sql</FullPath>
         </FileNode>
         <FileNode Name="HCP_LevelChanges.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
@@ -79,11 +97,23 @@
           <AssociatedConnUserName />
           <FullPath>HCP_Package_Remediation.sql</FullPath>
         </FileNode>
+        <FileNode Name="HCP_ServiceAdvisorCaseLoad.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>HCP_ServiceAdvisorCaseLoad.sql</FullPath>
+        </FileNode>
         <FileNode Name="HCP_SpecialNeeds_firstRun_Test.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
           <AssociatedConnUserName />
           <FullPath>HCP_SpecialNeeds_firstRun_Test.sql</FullPath>
+        </FileNode>
+        <FileNode Name="HCP_SpecialNeeds_GroupNumbers.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>HCP_SpecialNeeds_GroupNumbers.sql</FullPath>
         </FileNode>
         <FileNode Name="HCP_StaffHours_Pt1.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
@@ -96,6 +126,12 @@
           <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
           <AssociatedConnUserName />
           <FullPath>HCP_StaffHours_Pt2.sql</FullPath>
+        </FileNode>
+        <FileNode Name="HCP_TaskReport.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>HCP_TaskReport.sql</FullPath>
         </FileNode>
         <FileNode Name="HCP_VisitTime_V_PackageStartTime.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
