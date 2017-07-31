@@ -89,6 +89,7 @@ declare @RawData table
 	,Group_Activity_ID int
 	,WI_Record_ID int
 	,Task_Type_Code varchar(32)
+	,HCP_flag int
 	,AS_Indicator int
 	,AS_Client_ID int
 	,AS_Duration Dec(10,2) --?
@@ -123,6 +124,7 @@ Select
 	,J007.Group_Activity_ID
 	,J007.WI_Record_ID
 	,J007.Task_Type_Code
+	,J007.HCP_flag
 	,J009.AS_Indicator
 	,J009.AS_Client_ID
 	,J009.AS_Duration
@@ -157,9 +159,21 @@ inner join dbo.Provider_Contract J006 on J006.Organisation_ID = J001.Organisatio
 Left outer join
 (
 	select
-		*
+		AWT.Service_Prov_Position_ID
+		,AWT.Provider_ID
+		,AWT.Indirect_Activity_Type_Code
+		,AWT.Group_Activity_ID
+		,AWT.WI_Record_ID
+		,AWT.Task_Type_Code
+		,AWT.Activity_Date
+		,AWT.Client_ID
+		,AWT.Actual_Service_Visit_No
+		,AWT.Activity_Start_Time
+		,AWT.Activity_Duration
 		,iif(AWT.Indirect_Activity_Type_Code is null,'Task','InternalTask')'Activity_type'
+		,iif(TT.Service_Type_Code = 'HCP ',1,0)'HCP_flag'
 	from dbo.Activity_Work_Table AWT
+	left outer join dbo.Task_Type TT on TT.Task_Type_Code = AWT.Task_Type_Code 
 	where
 		AWT.Authorisation_Date is not null
 		and cast(AWT.Activity_Date as date) between @Start_Date and @End_Date
@@ -238,6 +252,8 @@ inner join
 	from dbo.person P
 )J013 on J013.Person_ID = J006.Provider_ID
 
+
+
 where
 	J001.Organisation_Name = @OrgName
 	and (J010.RN < 2 or J010.RN is null)
@@ -263,6 +279,7 @@ Group by
 	,J007.Group_Activity_ID
 	,J007.WI_Record_ID
 	,J007.Task_Type_Code
+	,J007.HCP_flag
 	,J009.AS_Indicator
 	,J009.AS_Client_ID
 	,J009.AS_Duration 
@@ -286,7 +303,7 @@ Order by
 -----------------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------------
-select * from @RawData
+--select * from @RawData where Group_Activity_ID is not null
 
 Declare @i_RowNum int = 1
 Declare @i_MaxRow int = (select top 1 RR.Row_Count from @RawData RR)
@@ -398,18 +415,26 @@ select * from
 		,JS002.Joined_Task_Types 'Task_Types'
 		,JS002.Joined_Indirect_Task_Types 'Indirect_Task_Types'
 		,Count (JS001.Client_ID) over(partition by JS001.Provider_ID, JS001.Activity_Date) 'TS_ClientCount'
-		,sum (iif (JS001.Activity_Type = 'Task' and JS001.Group_Activity_ID is null, JS001.Activity_Duration/60.0,0.0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'TS_TaskLogged'
+		,sum (iif (JS001.Activity_Type = 'Task' and JS001.Group_Activity_ID is null and JS001.HCP_Flag = 0, JS001.Activity_Duration/60.0,0.0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'TS_TaskLogged'
+		,sum (iif (JS001.Activity_Type = 'Task' and JS001.Group_Activity_ID is null and JS001.HCP_Flag = 1, JS001.Activity_Duration/60.0,0.0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'TS_TaskLogged_HCP'
 		,sum (iif (JS001.Activity_Type != 'Task' and JS001.Group_Activity_ID is null and JS001.IndirectPayTypeFlag = 0, JS001.Activity_Duration/60.0,0.0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'TS_InternalTaskUnPaid'
 		,sum (iif (JS001.Activity_Type != 'Task' and JS001.Group_Activity_ID is null and JS001.IndirectPayTypeFlag = 1,(JS001.Activity_Duration - JS001.IndirectPayOffset)/60.0,0.0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'TS_InternalTaskPaid'
-		,sum (iif (JS001.Activity_Type = 'Task' and JS001.Group_Activity_ID is not null, JS001.Activity_Duration/60.0,0.0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'TS_GroupClientTotalTime'
+		,sum (iif (JS001.Activity_Type = 'Task' and JS001.Group_Activity_ID is not null and JS001.HCP_Flag = 0, JS001.Activity_Duration/60.0,0.0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'TS_GroupClientTotalTime'
+		,sum (iif (JS001.Activity_Type = 'Task' and JS001.Group_Activity_ID is not null and JS001.HCP_Flag = 1, JS001.Activity_Duration/60.0,0.0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'TS_GroupClientTotalTime_HCP'
 		,Count (JS001.AS_Client_ID) over(partition by JS001.Provider_ID, JS001.Activity_Date) 'AS_ClientCount'
-		,sum (iif (JS001.Group_Activity_ID is null, JS001.AS_Duration/60.0,0.0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'AS_TaskLogged'
-		,sum (iif (JS001.Group_Activity_ID is not null, JS001.AS_Duration/60.0,0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'AS_GroupClientTotalTime'
+		,sum (iif (JS001.Group_Activity_ID is null and JS001.HCP_Flag = 0, JS001.AS_Duration/60.0,0.0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'AS_TaskLogged'
+		,sum (iif (JS001.Group_Activity_ID is null and JS001.HCP_Flag = 1, JS001.AS_Duration/60.0,0.0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'AS_TaskLogged_HCP'
+		,sum (iif (JS001.Group_Activity_ID is not null and JS001.HCP_Flag = 0, JS001.AS_Duration/60.0,0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'AS_GroupClientTotalTime'
+		,sum (iif (JS001.Group_Activity_ID is not null and JS001.HCP_Flag = 1, JS001.AS_Duration/60.0,0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'AS_GroupClientTotalTime_HCP'
 		,Count (JS001.ASCI_Client_ID) over(partition by JS001.Provider_ID, JS001.Activity_Date) 'CI_ClientCount'
-		,sum (iif (JS001.ASCI_UOM = 'Hour', JS001.ASCI_Unit,0.0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'CI_Hours'
-		,sum (iif (JS001.ASCI_UOM = 'Visit', JS001.ASCI_Unit,0.0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'CI_Visit'
-		,sum (iif (JS001.ASCI_UOM = 'Unit', JS001.ASCI_Unit,0.0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'CI_Unit'
-		,sum (JS001.ASCI_Amount) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'CI_TotalCharge'
+		,sum (iif (JS001.ASCI_UOM = 'Hour' and JS001.HCP_Flag = 0, JS001.ASCI_Unit,0.0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'CI_Hours'
+		,sum (iif (JS001.ASCI_UOM = 'Hour' and JS001.HCP_Flag = 1, JS001.ASCI_Unit,0.0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'CI_Hours_HCP'
+		,sum (iif (JS001.ASCI_UOM = 'Visit' and JS001.HCP_Flag = 0, JS001.ASCI_Unit,0.0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'CI_Visit'
+		,sum (iif (JS001.ASCI_UOM = 'Visit' and JS001.HCP_Flag = 1, JS001.ASCI_Unit,0.0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'CI_Visit_HCP'
+		,sum (iif (JS001.ASCI_UOM = 'Unit' and JS001.HCP_Flag = 0, JS001.ASCI_Unit,0.0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'CI_Unit'
+		,sum (iif (JS001.ASCI_UOM = 'Unit' and JS001.HCP_Flag = 1, JS001.ASCI_Unit,0.0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'CI_Unit_HCP'
+		,sum (iif(JS001.HCP_Flag = 0, JS001.ASCI_Amount, 0.0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'CI_TotalCharge'
+		,sum (iif(JS001.HCP_Flag = 1, JS001.ASCI_Amount, 0.0)) over(Partition by JS001.Provider_ID, JS001.Activity_Date) 'CI_TotalCharge_HCP'
 		,JS003.Employee_No
 		,CONCAT(JS003.Employee_No,'_',JS001.Activity_Date)'Key_1'
 
@@ -432,16 +457,24 @@ group by
 	,T1.Indirect_Task_Types
 	,T1.TS_ClientCount
 	,T1.TS_TaskLogged
+	,T1.TS_TaskLogged_HCP
 	,T1.TS_InternalTaskUnPaid
 	,T1.TS_InternalTaskPaid
 	,T1.TS_GroupClientTotalTime
+	,T1.TS_GroupClientTotalTime_HCP
 	,T1.AS_ClientCount
 	,T1.AS_TaskLogged
+	,T1.AS_TaskLogged_HCP
 	,T1.AS_GroupClientTotalTime
+	,T1.AS_GroupClientTotalTime_HCP
 	,T1.CI_ClientCount
 	,T1.CI_Hours
+	,T1.CI_Hours_HCP
 	,T1.CI_Visit
+	,T1.CI_Visit_HCP
 	,T1.CI_Unit
+	,T1.CI_Unit_HCP
 	,T1.CI_TotalCharge
+	,T1.CI_TotalCharge_HCP
 	,T1.Employee_No
 	,T1.Key_1

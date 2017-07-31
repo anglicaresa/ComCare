@@ -1,8 +1,8 @@
 
 use ComCareProd
 
-declare @stringDate varchar(32) = '2017-05-31'
-declare @stringDate2 varchar(32) = '2017-05-31'--'2017-01-20'
+declare @stringDate varchar(32) = '2017-07-31'
+declare @stringDate2 varchar(32) = '2017-07-31'--'2017-01-20'
 declare @Start_Date date = convert(date, @stringDate)
 declare @End_Date date = convert(date, @stringDate2)
 --declare @Centre varchar(32) = 'Dutton Court'
@@ -74,7 +74,7 @@ declare @forceProv_ID int = 1
 --declare @Prov_ID int = 10048181 --Kneebone, Helen Has split shift CLEAN
 --declare @Prov_ID int = 10046817 --Nelson, Margaret Has split shift **Only 1 sign off
 --declare @Prov_ID int = 10052628 --odd case
-declare @Prov_ID int = 10091900 --odd case compare
+declare @Prov_ID int = 10012203 --odd case compare
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -239,7 +239,7 @@ insert into @RawResult
 			where 
 			1=1
 			and Z.Directive_Type_ID = 114 
-			and Z.Device_Timestamp between dateadd(day,@EventBracket1,cast(@date_Start as datetime)) and dateadd(day,@EventBracket2,cast(@date_End as datetime))
+			and cast(Z.Device_Timestamp as date) between dateadd(day,@EventBracket1,@date_Start) and dateadd(day,@EventBracket2,@date_End)
 			and Z.Provider_ID in (Select p.Provider_ID from @Provs p)
 		)WI_EL_C
 		Inner Join @Provs Provs on Provs.Provider_ID = WI_EL_C.Provider_ID
