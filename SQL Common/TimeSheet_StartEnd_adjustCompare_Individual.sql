@@ -1,8 +1,8 @@
 
 use ComCareProd
 
-declare @stringDate varchar(32) = '2017-07-31'
-declare @stringDate2 varchar(32) = '2017-07-31'--'2017-01-20'
+declare @stringDate varchar(32) = '2017-08-03'
+declare @stringDate2 varchar(32) = '2017-08-03'--'2017-01-20'
 declare @Start_Date date = convert(date, @stringDate)
 declare @End_Date date = convert(date, @stringDate2)
 --declare @Centre varchar(32) = 'Dutton Court'
@@ -74,7 +74,7 @@ declare @forceProv_ID int = 1
 --declare @Prov_ID int = 10048181 --Kneebone, Helen Has split shift CLEAN
 --declare @Prov_ID int = 10046817 --Nelson, Margaret Has split shift **Only 1 sign off
 --declare @Prov_ID int = 10052628 --odd case
-declare @Prov_ID int = 10012203 --odd case compare
+declare @Prov_ID int = 10052259 --odd case compare
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -204,7 +204,8 @@ insert into @RawResult
 				when ' StartEnd' then 'Edit_StartEnd'
 				when ' OS' then 'SignOn'
 				when ' OU' then 'Edit_Actuals'
---				else 'unknownEdit'
+				when ' Start' then 'Edit_Start'
+				else SJ001.Edit_Action
 				end
 		) 
 --			*/

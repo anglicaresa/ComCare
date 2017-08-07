@@ -67,6 +67,12 @@
           <AssociatedConnUserName />
           <FullPath>DC_IndirectActivity.sql</FullPath>
         </FileNode>
+        <FileNode Name="EndOfMonthAuthorisation_verification.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>EndOfMonthAuthorisation_verification.sql</FullPath>
+        </FileNode>
         <FileNode Name="Internal_TimeSheetBreakDown.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>

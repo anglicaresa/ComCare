@@ -1,4 +1,4 @@
---select * from [az-sqlbi01].dwhb.extract.hrtim_tsheet_entry T1Ext where T1Ext.EMPLOYEE_ID = 6630
+--select * from [az-sqlbi01].dwhb.extract.hrtim_tsheet_entry T1Ext where T1Ext.EMPLOYEE_ID = 6630 and TimeSheet_Date = cast('2017-05-15' as datetime)
 
 --/*
 declare @Start_Date date = cast('2017-05-15' as date)
@@ -15,7 +15,7 @@ Select
 	distinct
 	T1.EMPLOYEE_ID
 	,T1.TIMESHEET_DATE
-	,Sum(T1.UNITS)over(partition by T1.EMPLOYEE_ID, T1.TIMESHEET_DATE) Units
+	,Sum(T1.UNITS)over(partition by T1.EMPLOYEE_ID, T1.TIMESHEET_DATE) 'Units'
 	,CONCAT(T1.EMPLOYEE_ID,'_',T1.TIMESHEET_DATE)'Key_2'
 from
 (

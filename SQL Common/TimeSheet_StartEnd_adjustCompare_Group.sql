@@ -1,18 +1,22 @@
 
-
+--select * from dbo.Organisation where Organisation_Type_Code = 1
 
 use ComCareProd
 
-declare @stringDate varchar(32) = '2017-07-31'
-declare @stringDate2 varchar(32) = '2017-07-31'--'2017-01-20'
+declare @stringDate varchar(32) = '2017-07-19'
+declare @stringDate2 varchar(32) = '2017-07-19'--'2017-07-19' ,'2017-08-03' ,'2017-08-01'
 declare @Start_Date date = convert(date, @stringDate)
 declare @End_Date date = convert(date, @stringDate2)
 --declare @Centre varchar(32) = 'Dutton Court'
 --declare @Centre varchar(32) = 'Ian George Court'
-declare @Centre Varchar(32) = 'All Hallows Court'
+--declare @Centre Varchar(32) = 'All Hallows Court'
+--declare @Centre Varchar(32) = 'St Laurences Court'
+declare @Centre Varchar(32) = 'Canterbury Close'
 declare @ShowVacantOnly int = 1
 declare @NoBuddyShifts int = 1
 declare @hideUnAss int = 0
+
+
 
 -----------------------------------------------------------------------------------------------
 --populate @ClassCodeFilter for dev purposes
@@ -71,8 +75,8 @@ declare @forceProv_ID int = 0
 --declare @Prov_ID int = 10075347 --Kneebone, Helen Has split shift **second shift not not recorded.* has dule StartEnd.
 --declare @Prov_ID int = 10048181 --Kneebone, Helen Has split shift CLEAN
 --declare @Prov_ID int = 10046817 --Nelson, Margaret Has split shift **Only 1 sign off
-declare @Prov_ID int = 10052628 --Broderick, Josie **Record Duplicate
-
+--declare @Prov_ID int = 10052628 --
+declare @Prov_ID int = 10046817 --Nelson, Margaret ***splitShift blerk
 ------------------------------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------------------------------
 --Copy from here down
@@ -215,7 +219,8 @@ insert into @RawResult
 				when ' StartEnd' then 'Edit_StartEnd'
 				when ' OS' then 'SignOn'
 				when ' OU' then 'Edit_Actuals'
---				else 'unknownEdit'
+				when ' Start' then 'Edit_Start'
+				else SJ001.Edit_Action
 				end
 		) 
 --			*/
@@ -394,10 +399,11 @@ from
 			,RR.End_Time
 			,RR.Wi_Record
 			,RR.RowNumber
+			,RR.Edit_Action
 			,DateDiff(MINUTE,RR.FirstTimeStamp,RR.LastTimeStamp)'LogDuration_Raw'
 			,DateDiff(MINUTE,RR.Start_Time,RR.End_Time)'LogDuration_Alt'
 			,ROW_NUMBER()over(Partition by RR.Provider_ID,RR.Activity_Date,RR.Wi_Record order by RR.device_TimeStamp Desc)'RN'
-		from @RawResult RR
+		from @RawResult RR where RR.Start_Time is not null
 
 	)J001
 
@@ -405,13 +411,12 @@ from
 
 	where
 		1=1
-		and J001.Start_Time IS not null
---		and J001.End_Time is not null
+		--and 1 = iif(Count(J001.Provider_ID) over (partition by null ) > 2 and J001.End_Time is not null,1,0)
 		and 1= iif(J001.RN < 2 or J001.RN Is null,1,0)
 --/*
 )TT
 --/*
-
+--/*
 Group by
 	TT.Provider_ID
 	,TT.ProviderName
@@ -428,12 +433,71 @@ Group by
 	,TT.OldRN
 --	,TT.RemoveFlag
 	,TT.TotalCount
-
+--*/
 order by
 	TT.Provider_ID
 	,TT.OldRN
 --*/
-select * from @Results
+--select * from @Results
+
+--/*
+--this next section is to handle split shifts as they show up with a void end time that has to be removed and the count + rowNumber re calculated.
+Declare @Results_Filtered table
+(
+	Provider_ID int
+	,ProviderName varchar(128)
+	,Activity_Date date
+	,StartTime_Raw DateTime
+	,StartTime_Alt DateTime
+	,EndTime_Raw DateTime
+	,EndTime_Alt DateTime
+	,LogDuration_Raw int
+	,LogDuration_Alt int
+	,Diff int
+	,editActions VarChar(255)
+	,Wi_Record int
+	,OldRN int
+--	,RemoveFlag int
+	,TotalCount int
+	,RowNum int
+)
+insert into @Results_Filtered
+select
+	RF.Provider_ID
+	,RF.ProviderName
+	,RF.Activity_Date
+	,RF.StartTime_Raw
+	,RF.StartTime_Alt
+	,RF.EndTime_Raw
+	,RF.EndTime_Alt
+	,RF.LogDuration_Raw
+	,RF.LogDuration_Alt
+	,RF.Diff
+	,RF.editActions
+	,RF.Wi_Record
+	,RF.OldRN
+	--,OT.TotalCount
+	--,OT.RowNum
+	,count(RF.Provider_ID)over(partition by null)'TotalCount'
+	,ROW_NUMBER()Over(partition by null order by RF.RowNum)'RowNum'
+From
+(
+	select * from
+	(
+		select
+		*
+		,Count(R.Provider_ID)over(partition by R.Provider_ID, R.Activity_Date)'EntryCount'
+		From @Results R
+	)OT--OUT table for filtering
+	where
+	1=1
+	and 1 = iif (OT.EntryCount > 2 and OT.EndTime_Alt is null,0,1)
+)RF --Results Filtered
+
+--select * from @Results_Filtered
+--*/
+
+
 --/*
 --------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------
@@ -445,7 +509,7 @@ select * from @Results
 --	Flags for scenarios --split shift, ShortLogin at start/at end, Not Finalised.
 
 set @i_RowNum = 1
-set @i_MaxRow = (select top 1 R.TotalCount from @Results R)
+set @i_MaxRow = (select top 1 R.TotalCount from @Results_Filtered R)
 set @i_BaseCount = 1
 set @i_TriggerFirstTaskEntry = 0
 set @i_Temp = 0
@@ -491,19 +555,19 @@ while @i_RowNum <= @i_MaxRow
 begin
 	------------------------
 	--Pack Current Row Values
-	set @i_PID = (select R.Provider_ID from @Results R where R.RowNum = @i_RowNum)--baseValue setup
-	set @vc_ProviderName = (select R.ProviderName from @Results R where R.RowNum = @i_RowNum)
-	Set @dt_ActivityDate = (select R.Activity_Date from @Results R where R.RowNum = @i_RowNum)
-	Set @dt_StartTime_Raw = (select R.StartTime_Raw from @Results R where R.RowNum = @i_RowNum)
-	Set @dt_StartTime_Alt = (select R.StartTime_Alt from @Results R where R.RowNum = @i_RowNum)
-	Set @dt_EndTime_Raw = (select R.EndTime_Raw from @Results R where R.RowNum = @i_RowNum)
-	Set @dt_EndTime_Alt = (select R.EndTime_Alt from @Results R where R.RowNum = @i_RowNum)
+	set @i_PID = (select R.Provider_ID from @Results_Filtered R where R.RowNum = @i_RowNum)--baseValue setup
+	set @vc_ProviderName = (select R.ProviderName from @Results_Filtered R where R.RowNum = @i_RowNum)
+	Set @dt_ActivityDate = (select R.Activity_Date from @Results_Filtered R where R.RowNum = @i_RowNum)
+	Set @dt_StartTime_Raw = (select R.StartTime_Raw from @Results_Filtered R where R.RowNum = @i_RowNum)
+	Set @dt_StartTime_Alt = (select R.StartTime_Alt from @Results_Filtered R where R.RowNum = @i_RowNum)
+	Set @dt_EndTime_Raw = (select R.EndTime_Raw from @Results_Filtered R where R.RowNum = @i_RowNum)
+	Set @dt_EndTime_Alt = (select R.EndTime_Alt from @Results_Filtered R where R.RowNum = @i_RowNum)
 	set @i_StartTime_Diff = DATEDIFF(MINUTE,@dt_StartTime_Raw,@dt_StartTime_Alt)
-	Set @i_LogDuration_Raw = (select R.LogDuration_Raw from @Results R where R.RowNum = @i_RowNum)
-	Set @i_LogDuration_Alt = (select R.LogDuration_Alt from @Results R where R.RowNum = @i_RowNum)
-	Set @i_Diff = (select R.Diff from @Results R where R.RowNum = @i_RowNum)
-	Set @vc_Edit_Actions = (select R.editActions from @Results R where R.RowNum = @i_RowNum)
-	Set @Wi_Record = (select R.Wi_Record from @Results R where R.RowNum = @i_RowNum)
+	Set @i_LogDuration_Raw = (select R.LogDuration_Raw from @Results_Filtered R where R.RowNum = @i_RowNum)
+	Set @i_LogDuration_Alt = (select R.LogDuration_Alt from @Results_Filtered R where R.RowNum = @i_RowNum)
+	Set @i_Diff = (select R.Diff from @Results_Filtered R where R.RowNum = @i_RowNum)
+	Set @vc_Edit_Actions = (select R.editActions from @Results_Filtered R where R.RowNum = @i_RowNum)
+	Set @Wi_Record = (select R.Wi_Record from @Results_Filtered R where R.RowNum = @i_RowNum)
 	-----------------------------------------------------------------------------------------------------------
 	
 	if @Wi_Record is null
@@ -526,22 +590,22 @@ begin
 	--Process 
 	-----------------------------------------------------------------------------------------------------------
 	if --prossess Split shift
-		@i_PID = (select R.Provider_ID from @Results R where R.RowNum = @i_RowNum+1)
-		and @Wi_Record <> (select R.Wi_Record from @Results R where R.RowNum = @i_RowNum+1)
-		and @dt_ActivityDate = (select R.Activity_Date from @Results R where R.RowNum = @i_RowNum+1)
+		@i_PID = (select R.Provider_ID from @Results_Filtered R where R.RowNum = @i_RowNum+1)
+		and @Wi_Record <> (select R.Wi_Record from @Results_Filtered R where R.RowNum = @i_RowNum+1)
+		and @dt_ActivityDate = (select R.Activity_Date from @Results_Filtered R where R.RowNum = @i_RowNum+1)
 		begin
-			set @dt_EndTime_Alt = (select R.EndTime_Alt from @Results R where R.RowNum = @i_RowNum+1)
+			set @dt_EndTime_Alt = (select R.EndTime_Alt from @Results_Filtered R where R.RowNum = @i_RowNum+1)
 			set @i_LogDuration_Alt = DateDiff(Minute,@dt_StartTime_Alt,@dt_EndTime_Alt)
 			set @i_Diff = (@i_LogDuration_Raw - @i_LogDuration_Alt)
 			set @i_NextRemoveFlag = 1
-			set @Wi_Record = (select R.Wi_Record from @Results R where R.RowNum = @i_RowNum+1)
+			set @Wi_Record = (select R.Wi_Record from @Results_Filtered R where R.RowNum = @i_RowNum+1)
 		end
 	-----------------------------------------------------------------------------------------------------------
 	--Process output
 	-----------------------------------------------------------------------------------------------------------
 	if --Check Flags and conditions for Pack results
-		--(@i_PID <> (select R.Provider_ID from @Results R where R.RowNum = @i_RowNum+1)) 
-		(@dt_ActivityDate <> (select R.Activity_Date from @Results R where R.RowNum = @i_RowNum+1)) 
+		--(@i_PID <> (select R.Provider_ID from @@Results_Filtered R where R.RowNum = @i_RowNum+1)) 
+		(@dt_ActivityDate <> (select R.Activity_Date from @Results_Filtered R where R.RowNum = @i_RowNum+1)) 
 		or (@i_RowNum = @i_MaxRow and @i_RemoveFlag < 2)
 		or @i_RemoveFlag < 2
 	begin

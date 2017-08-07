@@ -9,7 +9,7 @@ use ComCareProd
 
 Declare @Client_ID_ as INT = 10075769
 DECLARE @StartDate AS DATETIME = '20170331 00:00:00.000'
-DECLARE @EndDate AS DATETIME = '20170501 00:00:00.000'
+DECLARE @EndDate AS DATETIME = '20170331 00:00:00.000'
 
 declare @Organisation Table (Org VarChar(64))
 Insert INTO @Organisation
@@ -55,7 +55,7 @@ select * from
 
 		,J009.Organisation_Name 'Funding_type'
 
-	from dbo.Actual_Service J001
+	from (select * from[dbo].Actual_Service A_S where convert(date, A_S.Visit_Date) between @StartDate and @EndDate) J001
 
 	Left outer Join
 	(
@@ -91,7 +91,7 @@ left outer join
 		,iif(Wi_A.ReSchedule is not null and Wi_A.Activity_Start_time is not null, 'True', 'Flase') 'WiA_Schedule_TimeKILL'
 		,AWT.Allocated_Task_ID 'Allocated_Task_ID'
 		,Wi_A.Round_Allocation_ID 'Round_Allocation_ID'
-	from (select * from dbo.WI_Activity Wi_A1 where convert(date, Wi_A1.Activity_Date) between dateadd(Day,-7,@StartDate) and dateadd(day,+7,@EndDate)) Wi_A
+	from (select * from dbo.WI_Activity Wi_A1 where convert(date, Wi_A1.Activity_Date) between dateadd(Day,-3,@StartDate) and dateadd(day,+3,@EndDate)) Wi_A
 	left outer join dbo.activity_work_table AWT on AWT.Allocated_Task_ID = Wi_A.Round_Allocation_ID and AWT.activity_date = Wi_A.activity_date
 )J033 ON 
 		J033.Client_ID = J001.Client_ID 
@@ -237,7 +237,7 @@ select * from
 					else 'z'
 				end
 			) AS 'RN'
-		from (select * from dbo.WI_Activity Wi_A1 where convert(date, Wi_A1.Activity_Date) between dateadd(Day,-7,@StartDate) and dateadd(day,+7,@EndDate)) Wi_A
+		from (select * from dbo.WI_Activity Wi_A1 where convert(date, Wi_A1.Activity_Date) between dateadd(Day,-3,@StartDate) and dateadd(day,+3,@EndDate)) Wi_A
 		Left Outer Join dbo.Actual_Service Ac_S 
 		ON 
 			1=1
@@ -356,5 +356,95 @@ select * from
 		,J009.Organisation_Name
 )t2
 --*/
+
+------------------------------------new section ported over from
+Union
+
+select * from
+(
+	select
+		J002.Client_ID
+		,J002.Provider_ID
+		,cast(J002.Visit_Date as datetime) 'Schedule_Visit_Time'
+		,null 'Scheduled_Duration'
+		,null 'Actual_Visit_Time'
+		,null 'Actual_Duration'
+		,'Inconclusive' 'contract_type'
+		,'---' 'task_Description'
+		,null 'Client_Not_Home'
+		,2 'Has_Charge_Item'
+		,null 'In_WiA_Only'
+		,J002.Line_Description 'Charge_Item_Line_Description'
+		,J002.Amount
+		,IIF(J009.Organisation_Name = 'NDIA National Disability Insurance Agency', 'NDIS funded',IIF(J009.Client_ID IS NULL,'No Contract Billing','Self Managed')) 'Funding_Type'
+--		,J002.RN 'ChrgDup'
+	from
+	(
+		select 
+			ACSI.Client_ID	
+			,ACSI.Visit_Date
+			,ACSI.Visit_No
+			,ACSI.Provider_ID
+			,ACSI.Service_Prov_Position_ID
+			,ACSI.Amount
+			,ACSI.Line_Description
+			,row_number()over(partition by ACSI.Client_ID,ACSI.Provider_ID,ACSI.Visit_Date,ACSI.Visit_No,ACSI.Line_Description order by ACSI.Visit_Date,ACSI.Visit_No)'RN'
+		from [dbo].[Actual_Service_Charge_Item] ACSI
+
+	)J002
+	Left Outer Join dbo.Service_Delivery J005 ON J002.[Client_ID] = J005.[Client_ID]
+	left outer join
+	(
+		Select 
+			SD.[Client_ID]
+			,O.[Organisation_Name]
+			,SD.[Service_Type_Code]
+			,ROW_NUMBER ()
+				over 
+				(
+					Partition by SD.Client_ID Order by
+						CASE
+						WHEN O.Organisation_Name in (select * from @Organisation) THEN '1'
+--						WHEN O.Organisation_Name in (@Organisation) THEN '1'
+						ELSE O.Organisation_Name END ASC
+				)'RN'
+		from [dbo].[Service_Delivery] SD
+			join [dbo].[Period_of_Residency] PR on PR.Person_ID = SD.Client_ID
+			join [dbo].[Address] A on A.Address_ID = PR.Address_ID
+			Join [dbo].[Service_Provision] SP on A.Suburb_ID = SP.Suburb_ID and SP.Service_Type_Code = SD.Service_Type_Code
+			Join [dbo].[Organisation] O on Sp.Centre_ID = O.Organisation_ID
+		Where PR.To_Date is null and PR.Display_Indicator  = 1
+	) J006 ON J006.[Client_ID] = J002.[Client_ID] AND J006.[Service_Type_Code] = J005.[Service_Type_Code]
+
+	Left outer Join
+	(
+		select
+			CCB.[Client_ID] 'Client_ID'
+			,Org.[Organisation_Name] 'Organisation_Name'
+			,CBG.[Description] 'ContractBillingGroup'
+			,ROW_NUMBER ()
+				over 
+				(
+					Partition by CCB.Client_ID Order by Org.Organisation_Name ASC
+				) 'RN'
+		from [dbo].[FB_Client_Contract_Billing] CCB
+			left outer join [dbo].[FB_Contract_Billing_Group] CBG on CBG.[Contract_Billing_Group_ID] = CCB.Contract_Billing_Group_ID
+			left outer Join [dbo].[FB_Client_Contract_Billed_To] CCBT on CCBT.[Client_CB_ID] = CCB.[Client_CB_ID]
+			left outer Join [dbo].[FB_Client_CB_Split] CCBS on CCBS.[Client_Contract_Billed_To_ID] = CCBT.[Client_Contract_Billed_To_ID]
+			left outer Join [dbo].[Organisation] Org on CCBS.[Organisation_ID] = Org.[Organisation_ID]
+			--select * from [FB_Client_Contract_Billing]Contract_Billing_Group_ID
+	)J009 on J009.[Client_ID] = J002.[Client_ID]
+
+	where
+	J002.RN > 1
+--	and J002.Client_ID = @Client_ID_
+	and (J009.RN < 2 or J009.RN is null)
+	and convert(date, J002.Visit_Date) between @StartDate and @EndDate
+	and J006.Organisation_Name in (select * from @Organisation)
+--	and J006.Organisation_Name in (@Organisation)
+	--and (J009.ContractBillingGroup <> 'DCSI' or J009.ContractBillingGroup is null)
+)t3
+
+--*/
 order by
-1,3,5
+1,3,5,8,2,12
