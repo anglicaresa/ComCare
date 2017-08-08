@@ -14,9 +14,6 @@
       <Query>
         <DataSourceName>REF_ASADWH</DataSourceName>
         <QueryParameters>
-          <QueryParameter Name="@Organisation">
-            <Value>=Parameters!Organisation.Value</Value>
-          </QueryParameter>
           <QueryParameter Name="@StartDate">
             <Value>=Parameters!StartDate.Value</Value>
           </QueryParameter>
@@ -25,6 +22,9 @@
           </QueryParameter>
           <QueryParameter Name="@DuplicateChargeItem">
             <Value>=Parameters!DuplicateChargeItem.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Organisation">
+            <Value>=Parameters!Organisation.Value</Value>
           </QueryParameter>
           <QueryParameter Name="@ContractType">
             <Value>=Parameters!ContractType.Value</Value>
@@ -473,7 +473,10 @@ select * from
 	and convert(date, J002.Visit_Date) between @StartDate and @EndDate
 --	and J006.Organisation_Name in (select * from @Organisation)
 	and J006.Organisation_Name in (@Organisation)
+--	AND (IIF (J012.Description is NULL,'No Contract',J012.Description) in (select * from @ContractType))
+	and (IIF (J012.Description is NULL,'No Contract',J012.Description) in (@ContractType))
 	and J013.Task_Type_Code not like '%HCP%'
+
 )t3
 
 --*/
@@ -543,14 +546,16 @@ order by
       <Query>
         <DataSourceName>REF_ASADWH</DataSourceName>
         <CommandText>select 'No Contract' Description where 1=1
+
 union
-select
-	Description
+
+select 
+	Description 
 from [dbo].[FC_Funder_Contract]
+
 where 
 	1=1
 	AND (Description like 'CHSP%' )
-	
 order by 1</CommandText>
       </Query>
       <Fields>
@@ -560,7 +565,7 @@ order by 1</CommandText>
         </Field>
       </Fields>
     </DataSet>
-    <DataSet Name="DataSet4">
+    <DataSet Name="DataSet3">
       <Query>
         <DataSourceName>REF_ASADWH</DataSourceName>
         <CommandText>select Organisation_Name from [dbo].[Organisation]
@@ -615,7 +620,7 @@ where
                   <Width>1.50812cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>9.39272cm</Width>
+                  <Width>10.63626cm</Width>
                 </TablixColumn>
               </TablixColumns>
               <TablixRows>
@@ -1424,9 +1429,15 @@ where
                                     <Color>=
 IIF
 (
-	Fields!Has_Charge_Item.Value = 1
-	,"Black"
-	,"Red"
+	Fields!Has_Charge_Item.Value &gt; 1
+	,"Blue"
+	,IIF
+	(
+		Fields!Has_Charge_Item.Value = 1
+		,"Black"
+		,"Red"
+	)
+	
 )</Color>
                                   </Style>
                                 </TextRun>
@@ -1463,18 +1474,29 @@ IIF
                                   <Value>=
 IIF
 (
-	isnothing(Fields!Schedule_Visit_Time.Value)
-	,"-not on record-"
-	,Fields!Schedule_Visit_Time.Value
+	Fields!Has_Charge_Item.Value = 2
+	,"--/--/---- --:-- --"
+	,IIF
+	(
+		isnothing(Fields!Schedule_Visit_Time.Value)
+		,"-not on record-"
+		,Fields!Schedule_Visit_Time.Value
+	)
 )</Value>
                                   <Style>
                                     <Format>d/MM/yyyy h:mm tt</Format>
                                     <Color>=
 IIF
 (
-	Fields!Has_Charge_Item.Value = 1
-	,"Black"
-	,"Red"
+	Fields!Has_Charge_Item.Value &gt; 1
+	,"Blue"
+	,IIF
+	(
+		Fields!Has_Charge_Item.Value = 1
+		,"Black"
+		,"Red"
+	)
+	
 )</Color>
                                   </Style>
                                 </TextRun>
@@ -1511,18 +1533,29 @@ IIF
                                   <Value>=
 IIF
 (
-	isnothing(Fields!Actual_Visit_Time.Value)
-	,"-not on record-"
-	,Fields!Actual_Visit_Time.Value
+	Fields!Has_Charge_Item.Value = 2
+	,"--/--/---- --:-- --"
+	,IIF
+	(
+		isnothing(Fields!Actual_Visit_Time.Value)
+		,"-not on record-"
+		,Fields!Actual_Visit_Time.Value
+	)
 )</Value>
                                   <Style>
                                     <Format>d/MM/yyyy h:mm tt</Format>
                                     <Color>=
 IIF
 (
-	Fields!Has_Charge_Item.Value = 1
-	,"Black"
-	,"Red"
+	Fields!Has_Charge_Item.Value &gt; 1
+	,"Blue"
+	,IIF
+	(
+		Fields!Has_Charge_Item.Value = 1
+		,"Black"
+		,"Red"
+	)
+	
 )</Color>
                                   </Style>
                                 </TextRun>
@@ -1559,17 +1592,28 @@ IIF
                                   <Value>=
 IIF
 (
-	Fields!Client_Not_Home.Value = 1
-	,"True"
-	,"False"
+	Fields!Has_Charge_Item.Value = 2
+	,"---"
+	,IIF
+	(
+		Fields!Client_Not_Home.Value = 1
+		,"True"
+		,"False"
+	)
 )</Value>
                                   <Style>
                                     <Color>=
 IIF
 (
-	Fields!Has_Charge_Item.Value = 1
-	,"Black"
-	,"Red"
+	Fields!Has_Charge_Item.Value &gt; 1
+	,"Blue"
+	,IIF
+	(
+		Fields!Has_Charge_Item.Value = 1
+		,"Black"
+		,"Red"
+	)
+	
 )</Color>
                                   </Style>
                                 </TextRun>
@@ -1608,9 +1652,15 @@ IIF
                                     <Color>=
 IIF
 (
-	Fields!Has_Charge_Item.Value = 1
-	,"Black"
-	,"Red"
+	Fields!Has_Charge_Item.Value &gt; 1
+	,"Blue"
+	,IIF
+	(
+		Fields!Has_Charge_Item.Value = 1
+		,"Black"
+		,"Red"
+	)
+	
 )</Color>
                                   </Style>
                                 </TextRun>
@@ -1648,9 +1698,15 @@ IIF
                                     <Color>=
 IIF
 (
-	Fields!Has_Charge_Item.Value = 1
-	,"Black"
-	,"Red"
+	Fields!Has_Charge_Item.Value &gt; 1
+	,"Blue"
+	,IIF
+	(
+		Fields!Has_Charge_Item.Value = 1
+		,"Black"
+		,"Red"
+	)
+	
 )</Color>
                                   </Style>
                                 </TextRun>
@@ -1688,9 +1744,15 @@ IIF
                                     <Color>=
 IIF
 (
-	Fields!Has_Charge_Item.Value = 1
-	,"Black"
-	,"Red"
+	Fields!Has_Charge_Item.Value &gt; 1
+	,"Blue"
+	,IIF
+	(
+		Fields!Has_Charge_Item.Value = 1
+		,"Black"
+		,"Red"
+	)
+	
 )</Color>
                                   </Style>
                                 </TextRun>
@@ -1723,19 +1785,29 @@ IIF
                               <TextRuns>
                                 <TextRun>
                                   <Value>=
-IIF
-(
-	Fields!Has_Charge_Item.Value = 1
-	,"True"
-	,"False"
+IIF(
+	Fields!Has_Charge_Item.Value = 2
+	,"Dup"
+	,IIF
+	(
+		Fields!Has_Charge_Item.Value = 1
+		,"Yes"
+		,"No"
+	)
 )</Value>
                                   <Style>
                                     <Color>=
 IIF
 (
-	Fields!Has_Charge_Item.Value = 1
-	,"Black"
-	,"Red"
+	Fields!Has_Charge_Item.Value &gt; 1
+	,"Blue"
+	,IIF
+	(
+		Fields!Has_Charge_Item.Value = 1
+		,"Black"
+		,"Red"
+	)
+	
 )</Color>
                                   </Style>
                                 </TextRun>
@@ -1772,7 +1844,7 @@ IIF
                                   <Value>=
 IIF
 (
-	Fields!Has_Charge_Item.Value = 1
+	Fields!Has_Charge_Item.Value &gt; 0
 	,Fields!Charge_Item_Line_Description.Value
 	,"------ NO CHARGE ITEM ------  " &amp; Fields!task_Description.Value
 )</Value>
@@ -1780,9 +1852,15 @@ IIF
                                     <Color>=
 IIF
 (
-	Fields!Has_Charge_Item.Value = 1
-	,"Black"
-	,"Red"
+	Fields!Has_Charge_Item.Value &gt; 1
+	,"Blue"
+	,IIF
+	(
+		Fields!Has_Charge_Item.Value = 1
+		,"Black"
+		,"Red"
+	)
+	
 )</Color>
                                   </Style>
                                 </TextRun>
@@ -1826,9 +1904,15 @@ IIF
                                     <Color>=
 IIF
 (
-	Fields!Has_Charge_Item.Value = 1
-	,"Black"
-	,"Red"
+	Fields!Has_Charge_Item.Value &gt; 1
+	,"Blue"
+	,IIF
+	(
+		Fields!Has_Charge_Item.Value = 1
+		,"Black"
+		,"Red"
+	)
+	
 )</Color>
                                   </Style>
                                 </TextRun>
@@ -1861,14 +1945,26 @@ IIF
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>=Fields!contract_type.Value</Value>
+                                  <Value>=
+IIF
+(
+	Fields!contract_type.Value = "No Contract" and Fields!Has_Charge_Item.Value = 1
+	,"Incorrect Contract"
+	,Fields!contract_type.Value
+)</Value>
                                   <Style>
                                     <Color>=
 IIF
 (
-	Fields!Has_Charge_Item.Value = 1
-	,"Black"
-	,"Red"
+	Fields!Has_Charge_Item.Value &gt; 1
+	,"Blue"
+	,IIF
+	(
+		Fields!Has_Charge_Item.Value = 1
+		,"Black"
+		,"Red"
+	)
+	
 )</Color>
                                   </Style>
                                 </TextRun>
@@ -1940,7 +2036,7 @@ IIF
             <FixedRowHeaders>true</FixedRowHeaders>
             <DataSetName>DataSet1</DataSetName>
             <Height>2.38208cm</Height>
-            <Width>42.51667cm</Width>
+            <Width>43.76021cm</Width>
             <Style>
               <Border>
                 <Style>None</Style>
@@ -1951,10 +2047,10 @@ IIF
         <Height>0.93783in</Height>
         <Style />
       </Body>
-      <Width>16.73885in</Width>
+      <Width>17.22843in</Width>
       <Page>
         <PageHeader>
-          <Height>2.13501cm</Height>
+          <Height>2.135cm</Height>
           <PrintOnFirstPage>true</PrintOnFirstPage>
           <PrintOnLastPage>true</PrintOnLastPage>
           <ReportItems>
@@ -1962,9 +2058,9 @@ IIF
               <Source>Embedded</Source>
               <Value>Logo_AnglicareSA</Value>
               <Sizing>FitProportional</Sizing>
-              <Left>33.12395cm</Left>
+              <Left>31.61583cm</Left>
               <Height>1.95862cm</Height>
-              <Width>9.39272cm</Width>
+              <Width>12.14438cm</Width>
               <Style>
                 <Border>
                   <Style>None</Style>
@@ -1978,7 +2074,7 @@ IIF
                 <Paragraph>
                   <TextRuns>
                     <TextRun>
-                      <Value>Transaction Audit CHSP</Value>
+                      <Value>Transaction Audit</Value>
                       <Style>
                         <FontSize>16pt</FontSize>
                         <FontWeight>Bold</FontWeight>
@@ -2036,9 +2132,8 @@ IIF
                 </Paragraph>
               </Paragraphs>
               <rd:DefaultName>Textbox38</rd:DefaultName>
-              <Top>0.00001cm</Top>
               <Height>1.95862cm</Height>
-              <Width>33.12395cm</Width>
+              <Width>31.61583cm</Width>
               <ZIndex>1</ZIndex>
               <Style>
                 <Border>
@@ -2120,7 +2215,7 @@ IIF
       <Prompt>Organisation</Prompt>
       <ValidValues>
         <DataSetReference>
-          <DataSetName>DataSet4</DataSetName>
+          <DataSetName>DataSet3</DataSetName>
           <ValueField>Organisation_Name</ValueField>
           <LabelField>Organisation_Name</LabelField>
         </DataSetReference>
@@ -2147,17 +2242,22 @@ IIF
       <UsedInQuery>True</UsedInQuery>
     </ReportParameter>
     <ReportParameter Name="DuplicateChargeItem">
-      <DataType>String</DataType>
+      <DataType>Integer</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>=0</Value>
+        </Values>
+      </DefaultValue>
       <Prompt>Show Duplicate Charge Item Only</Prompt>
       <ValidValues>
         <ParameterValues>
           <ParameterValue>
-            <Value>=0</Value>
-            <Label>No</Label>
-          </ParameterValue>
-          <ParameterValue>
             <Value>=1</Value>
             <Label>Yes</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>=0</Value>
+            <Label>No</Label>
           </ParameterValue>
         </ParameterValues>
       </ValidValues>

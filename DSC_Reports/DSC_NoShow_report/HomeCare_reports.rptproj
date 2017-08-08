@@ -34,16 +34,40 @@
       <FullPath>HCP_Admin_Discharge.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
+      <Name>HCP_BilledToReport.rdl</Name>
+      <FullPath>HCP_BilledToReport.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
       <Name>HCP_BirthdayReport.rdl</Name>
       <FullPath>HCP_BirthdayReport.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
+      <Name>HCP_BushFireArea.rdl</Name>
+      <FullPath>HCP_BushFireArea.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
+      <Name>HCP_Client_NoSrvAdv.rdl</Name>
+      <FullPath>HCP_Client_NoSrvAdv.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
+      <Name>HCP_ClientBasicDailyFee.rdl</Name>
+      <FullPath>HCP_ClientBasicDailyFee.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
       <Name>HCP_DC_NoShowReport.rdl</Name>
       <FullPath>HCP_DC_NoShowReport.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
+      <Name>HCP_GoalOfCare.rdl</Name>
+      <FullPath>HCP_GoalOfCare.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
       <Name>HCP_Level_Change.rdl</Name>
       <FullPath>HCP_Level_Change.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
+      <Name>HCP_OnCall.rdl</Name>
+      <FullPath>HCP_OnCall.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
       <Name>HCP_PackageRemidiation.rdl</Name>
@@ -54,16 +78,28 @@
       <FullPath>HCP_PackageRemidiation_01.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
+      <Name>HCP_ServiceAdvisorCaseLoad.rdl</Name>
+      <FullPath>HCP_ServiceAdvisorCaseLoad.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
+      <Name>HCP_SpecialNeeds_GroupNumbers.rdl</Name>
+      <FullPath>HCP_SpecialNeeds_GroupNumbers.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
       <Name>HCP_StaffHours.rdl</Name>
       <FullPath>HCP_StaffHours.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
+      <Name>HCP_TaskReport.rdl</Name>
+      <FullPath>HCP_TaskReport.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
       <Name>HCP_VisitTime_V_PackageStartTime.rdl</Name>
       <FullPath>HCP_VisitTime_V_PackageStartTime.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>HCP_BilledToReport.rdl</Name>
-      <FullPath>HCP_BilledToReport.rdl</FullPath>
+      <Name>CHSP_TransactionAudit_02.rdl</Name>
+      <FullPath>CHSP_TransactionAudit_02.rdl</FullPath>
     </ProjectItem>
   </Reports>
   <Configurations>

@@ -70,6 +70,10 @@
       <FullPath>DA_Statistics.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
+      <Name>DC_ClientBasicDailyFee.rdl</Name>
+      <FullPath>DC_ClientBasicDailyFee.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
       <Name>DC_MonthlyServiceStatement.rdl</Name>
       <FullPath>DC_MonthlyServiceStatement.rdl</FullPath>
     </ProjectItem>
@@ -84,6 +88,10 @@
     <ProjectItem>
       <Name>DC_TimeSheet_Vs_Schedule.rdl</Name>
       <FullPath>DC_TimeSheet_Vs_Schedule.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
+      <Name>DC_ClientSetupAudit.rdl</Name>
+      <FullPath>DC_ClientSetupAudit.rdl</FullPath>
     </ProjectItem>
   </Reports>
   <Configurations>

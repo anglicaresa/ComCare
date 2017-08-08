@@ -57,6 +57,10 @@
       <Name>RAC_ViewTimeSheetAdjustments.rdl</Name>
       <FullPath>RAC_ViewTimeSheetAdjustments.rdl</FullPath>
     </ProjectItem>
+    <ProjectItem>
+      <Name>RAC_PerProviderPerDay.rdl</Name>
+      <FullPath>RAC_PerProviderPerDay.rdl</FullPath>
+    </ProjectItem>
   </Reports>
   <Configurations>
     <Configuration>

@@ -1637,7 +1637,7 @@ where
                 <Paragraph>
                   <TextRuns>
                     <TextRun>
-                      <Value>Transaction Audit</Value>
+                      <Value>Level Change</Value>
                       <Style>
                         <FontSize>16pt</FontSize>
                         <FontWeight>Bold</FontWeight>
@@ -1765,12 +1765,6 @@ where
     </ReportParameter>
     <ReportParameter Name="FunderContract">
       <DataType>String</DataType>
-      <DefaultValue>
-        <DataSetReference>
-          <DataSetName>DataSet2</DataSetName>
-          <ValueField>Description</ValueField>
-        </DataSetReference>
-      </DefaultValue>
       <Prompt>Funder Contract</Prompt>
       <ValidValues>
         <DataSetReference>

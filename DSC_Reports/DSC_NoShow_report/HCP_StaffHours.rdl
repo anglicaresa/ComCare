@@ -738,7 +738,7 @@ Iif
           </Style>
         </PageHeader>
         <PageFooter>
-          <Height>0.88738cm</Height>
+          <Height>2.18384cm</Height>
           <PrintOnFirstPage>true</PrintOnFirstPage>
           <PrintOnLastPage>true</PrintOnLastPage>
           <ReportItems>
@@ -802,6 +802,20 @@ Iif
                 <PaddingBottom>2pt</PaddingBottom>
               </Style>
             </Textbox>
+            <Line Name="Line2">
+              <Top>0.12619cm</Top>
+              <Left>0.00001cm</Left>
+              <Height>0cm</Height>
+              <Width>19cm</Width>
+              <ZIndex>2</ZIndex>
+              <Style>
+                <Border>
+                  <Color>#004b8e</Color>
+                  <Style>Solid</Style>
+                  <Width>2pt</Width>
+                </Border>
+              </Style>
+            </Line>
           </ReportItems>
           <Style>
             <Border>
