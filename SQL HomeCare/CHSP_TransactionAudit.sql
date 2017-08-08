@@ -10,6 +10,7 @@ use ComCareProd
 Declare @Client_ID_ as INT = 10075769
 DECLARE @StartDate AS DATETIME = '20170331 00:00:00.000'
 DECLARE @EndDate AS DATETIME = '20170331 00:00:00.000'
+Declare @DuplicateChargeItem int = 0
 
 declare @Organisation Table (Org VarChar(64))
 Insert INTO @Organisation
@@ -55,7 +56,15 @@ select * from
 
 		,J009.Organisation_Name 'Funding_type'
 
-	from (select * from[dbo].Actual_Service A_S where convert(date, A_S.Visit_Date) between @StartDate and @EndDate) J001
+	from 
+	(
+		select 
+			* 
+		from dbo.Actual_Service A_S 
+		where 
+			convert(date, A_S.Visit_Date) between @StartDate and @EndDate
+			and @DuplicateChargeItem = 0
+	) J001
 
 	Left outer Join
 	(
@@ -114,8 +123,8 @@ left outer join
 				(
 					Partition by SD.Client_ID Order by
 						CASE
-						WHEN O.Organisation_Name in (select * from @Organisation) THEN '1'
---						WHEN O.Organisation_Name in (@Organisation) THEN '1'
+--						WHEN O.Organisation_Name in (select * from @Organisation) THEN '1'
+						WHEN O.Organisation_Name in (@Organisation) THEN '1'
 						ELSE O.Organisation_Name END ASC
 				)'RN'
 		from dbo.Service_Delivery SD
@@ -151,15 +160,15 @@ left outer join
 
 	Where 
 		1=1
+		and @DuplicateChargeItem = 0
 --		and J001.Client_ID = @Client_ID_
-		and J006.Organisation_Name in (select * from @Organisation)
---		and J006.Organisation_Name in (@Organisation)
+--		and J006.Organisation_Name in (select * from @Organisation)
+		and J006.Organisation_Name in (@Organisation)
 		and (J006.RN < 2 or J006.RN is NULL)
 		and (J009.RN < 2 or J009.rn is null)
-		and convert (datetime, J001.Visit_Date) between @StartDate and (DATEADD(s, 84599, @EndDate))
---		and (J009.ContractBillingGroup <> 'DCSI' or J009.ContractBillingGroup is null)
-		AND (IIF (J011.Description is NULL,'No Contract',J011.Description) in (select * from @ContractType))
---		and (IIF (J011.Description is NULL,'No Contract',J011.Description) in (@ContractType))
+		and convert (Date, J001.Visit_Date) between @StartDate and @EndDate
+--		AND (IIF (J011.Description is NULL,'No Contract',J011.Description) in (select * from @ContractType))
+		and (IIF (J011.Description is NULL,'No Contract',J011.Description) in (@ContractType))
 
 ) t1
 
@@ -237,7 +246,15 @@ select * from
 					else 'z'
 				end
 			) AS 'RN'
-		from (select * from dbo.WI_Activity Wi_A1 where convert(date, Wi_A1.Activity_Date) between dateadd(Day,-3,@StartDate) and dateadd(day,+3,@EndDate)) Wi_A
+		from 
+		(
+			select 
+				* 
+			from dbo.WI_Activity Wi_A1 
+			where 
+				convert(date, Wi_A1.Activity_Date) between dateadd(Day,-3,@StartDate) and dateadd(day,+3,@EndDate)
+				and @DuplicateChargeItem = 0
+		) Wi_A
 		Left Outer Join dbo.Actual_Service Ac_S 
 		ON 
 			1=1
@@ -288,8 +305,8 @@ select * from
 				(
 					Partition by SD.Client_ID Order by
 						CASE
-						WHEN O.Organisation_Name in (select * from @Organisation) THEN '1'
---						WHEN O.Organisation_Name in (@Organisation) THEN '1'
+--						WHEN O.Organisation_Name in (select * from @Organisation) THEN '1'
+						WHEN O.Organisation_Name in (@Organisation) THEN '1'
 						ELSE O.Organisation_Name END ASC
 				)'RN'
 		from dbo.Service_Delivery SD
@@ -324,9 +341,10 @@ select * from
 
 	Where 
 		1=1
+		and @DuplicateChargeItem = 0
 --		and J001.Client_ID = @Client_ID_
-		and J006.Organisation_Name in (select * from @Organisation)
---		and J006.Organisation_Name in (@Organisation)
+--		and J006.Organisation_Name in (select * from @Organisation)
+		and J006.Organisation_Name in (@Organisation)
 		and 1 = iif(J001.RN > 1 and J001.WiA_Provider_ID = 0, 0, 1)
 		and (J006.RN < 2 or J006.RN is null)
 		and (J009.RN < 2 or J009.RN is null)
@@ -334,8 +352,8 @@ select * from
 --		and (J009.ContractBillingGroup <> 'DCSI' or J009.ContractBillingGroup is null)
 		and J001.Client_ID IS NOT NULL
 
-		AND (IIF (J011.Description is NULL,'No Contract',J011.Description) in (select * from @ContractType))
---		and (IIF (J011.Description is NULL,'No Contract',J011.Description) in (@ContractType))
+--		AND (IIF (J011.Description is NULL,'No Contract',J011.Description) in (select * from @ContractType))
+		and (IIF (J011.Description is NULL,'No Contract',J011.Description) in (@ContractType))
 
 
 	Group by
@@ -369,7 +387,7 @@ select * from
 		,null 'Scheduled_Duration'
 		,null 'Actual_Visit_Time'
 		,null 'Actual_Duration'
-		,'Inconclusive' 'contract_type'
+		,J012.Description 'contract_type'
 		,'---' 'task_Description'
 		,null 'Client_Not_Home'
 		,2 'Has_Charge_Item'
@@ -388,61 +406,81 @@ select * from
 			,ACSI.Service_Prov_Position_ID
 			,ACSI.Amount
 			,ACSI.Line_Description
+			,ACSI.Contract_Billing_Item_ID
+			,ACSI.FC_Product_ID
 			,row_number()over(partition by ACSI.Client_ID,ACSI.Provider_ID,ACSI.Visit_Date,ACSI.Visit_No,ACSI.Line_Description order by ACSI.Visit_Date,ACSI.Visit_No)'RN'
-		from [dbo].[Actual_Service_Charge_Item] ACSI
+		from dbo.Actual_Service_Charge_Item ACSI
 
 	)J002
-	Left Outer Join dbo.Service_Delivery J005 ON J002.[Client_ID] = J005.[Client_ID]
+	Left Outer Join dbo.Service_Delivery J005 ON J002.Client_ID = J005.Client_ID
+
 	left outer join
 	(
 		Select 
-			SD.[Client_ID]
-			,O.[Organisation_Name]
-			,SD.[Service_Type_Code]
+			SD.Client_ID
+			,O.Organisation_Name
+			,SD.Service_Type_Code
 			,ROW_NUMBER ()
 				over 
 				(
 					Partition by SD.Client_ID Order by
 						CASE
-						WHEN O.Organisation_Name in (select * from @Organisation) THEN '1'
---						WHEN O.Organisation_Name in (@Organisation) THEN '1'
+--						WHEN O.Organisation_Name in (select * from @Organisation) THEN '1'
+						WHEN O.Organisation_Name in (@Organisation) THEN '1'
 						ELSE O.Organisation_Name END ASC
 				)'RN'
-		from [dbo].[Service_Delivery] SD
-			join [dbo].[Period_of_Residency] PR on PR.Person_ID = SD.Client_ID
-			join [dbo].[Address] A on A.Address_ID = PR.Address_ID
-			Join [dbo].[Service_Provision] SP on A.Suburb_ID = SP.Suburb_ID and SP.Service_Type_Code = SD.Service_Type_Code
-			Join [dbo].[Organisation] O on Sp.Centre_ID = O.Organisation_ID
+		from dbo.Service_Delivery SD
+			join dbo.Period_of_Residency PR on PR.Person_ID = SD.Client_ID
+			join dbo.Address A on A.Address_ID = PR.Address_ID
+			Join dbo.Service_Provision SP on A.Suburb_ID = SP.Suburb_ID and SP.Service_Type_Code = SD.Service_Type_Code
+			Join dbo.Organisation O on Sp.Centre_ID = O.Organisation_ID
 		Where PR.To_Date is null and PR.Display_Indicator  = 1
-	) J006 ON J006.[Client_ID] = J002.[Client_ID] AND J006.[Service_Type_Code] = J005.[Service_Type_Code]
+	) J006 ON J006.Client_ID = J002.Client_ID AND J006.Service_Type_Code = J005.Service_Type_Code
 
 	Left outer Join
 	(
 		select
-			CCB.[Client_ID] 'Client_ID'
-			,Org.[Organisation_Name] 'Organisation_Name'
-			,CBG.[Description] 'ContractBillingGroup'
+			CCB.Client_ID 'Client_ID'
+			,Org.Organisation_Name 'Organisation_Name'
+			,CBG.Description 'ContractBillingGroup'
 			,ROW_NUMBER ()
 				over 
 				(
 					Partition by CCB.Client_ID Order by Org.Organisation_Name ASC
 				) 'RN'
-		from [dbo].[FB_Client_Contract_Billing] CCB
-			left outer join [dbo].[FB_Contract_Billing_Group] CBG on CBG.[Contract_Billing_Group_ID] = CCB.Contract_Billing_Group_ID
-			left outer Join [dbo].[FB_Client_Contract_Billed_To] CCBT on CCBT.[Client_CB_ID] = CCB.[Client_CB_ID]
-			left outer Join [dbo].[FB_Client_CB_Split] CCBS on CCBS.[Client_Contract_Billed_To_ID] = CCBT.[Client_Contract_Billed_To_ID]
-			left outer Join [dbo].[Organisation] Org on CCBS.[Organisation_ID] = Org.[Organisation_ID]
-			--select * from [FB_Client_Contract_Billing]Contract_Billing_Group_ID
-	)J009 on J009.[Client_ID] = J002.[Client_ID]
+		from dbo.FB_Client_Contract_Billing CCB
+			left outer join dbo.FB_Contract_Billing_Group CBG on CBG.Contract_Billing_Group_ID = CCB.Contract_Billing_Group_ID
+			left outer Join dbo.FB_Client_Contract_Billed_To CCBT on CCBT.Client_CB_ID = CCB.Client_CB_ID
+			left outer Join dbo.FB_Client_CB_Split CCBS on CCBS.Client_Contract_Billed_To_ID = CCBT.Client_Contract_Billed_To_ID
+			left outer Join dbo.Organisation Org on CCBS.Organisation_ID = Org.Organisation_ID
+			--select * from FB_Client_Contract_BillingContract_Billing_Group_ID
+	)J009 on J009.Client_ID = J002.Client_ID
+
+	
+	Left outer join
+	(
+		select distinct
+		CCBI.Contract_Billing_Item_ID
+		,FC.Description
+		,CCB.Client_ID
+		from dbo.FB_Client_Contract_Bill_Item CCBI
+		left outer join dbo.FB_Client_Contract_Billing CCB on CCB.Client_CB_ID = CCBI.Client_CB_ID 
+		left outer join dbo.FC_Funder_Contract FC on FC.Funder_Contract_ID = CCB.Funder_Contract_ID
+	)J012 on J012.Contract_Billing_Item_ID = J002.Contract_Billing_Item_ID and J012.Client_ID = J002.Client_ID
+
+	left outer join dbo.FC_Product_Mapping J013 on J013.FC_Product_ID = J002.FC_Product_ID and J013.Effective_To_Date is null-- J013.task_Type_code like '%HCP%'
+
 
 	where
 	J002.RN > 1
 --	and J002.Client_ID = @Client_ID_
 	and (J009.RN < 2 or J009.RN is null)
 	and convert(date, J002.Visit_Date) between @StartDate and @EndDate
-	and J006.Organisation_Name in (select * from @Organisation)
---	and J006.Organisation_Name in (@Organisation)
-	--and (J009.ContractBillingGroup <> 'DCSI' or J009.ContractBillingGroup is null)
+--	and J006.Organisation_Name in (select * from @Organisation)
+	and J006.Organisation_Name in (@Organisation)
+--	AND (IIF (J012.Description is NULL,'No Contract',J012.Description) in (select * from @ContractType))
+	and (IIF (J012.Description is NULL,'No Contract',J012.Description) in (@ContractType))
+	and J013.Task_Type_Code not like '%HCP%'
 )t3
 
 --*/

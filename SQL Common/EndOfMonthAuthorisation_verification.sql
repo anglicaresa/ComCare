@@ -19,7 +19,7 @@ select
 from (select Organisation_ID,Organisation_Name from dbo.Organisation where Organisation_ID = 2 or Organisation_ID = 4)J001
 inner join dbo.Provider_Contract J002 on J002.Organisation_ID = J001.Organisation_ID and J002.Provider_Contract_Type_Code = 3
 
-inner join
+left outer join
 (
 	select
 		AWT.Service_Prov_Position_ID
@@ -45,3 +45,4 @@ inner join
 		and cast(AWT.Activity_Date as date) between @Start_Date and @End_Date
 )J003 on J003.Provider_ID = J002.Provider_ID
 
+order by J003.Authorisation_Date
