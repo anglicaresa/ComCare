@@ -91,11 +91,29 @@
           <AssociatedConnUserName />
           <FullPath>Internal_TimeSheetBreakDown_EmployeeID.sql</FullPath>
         </FileNode>
+        <FileNode Name="Internal_TimeSheetBreakDown_EmployeeID_Totals.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>Internal_TimeSheetBreakDown_EmployeeID_Totals.sql</FullPath>
+        </FileNode>
         <FileNode Name="Internal_TimeSheetBreakDown_T1.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:Devsql-1\WHOUSE:True</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>Devsql-1\WHOUSE</AssociatedConnSrvName>
           <AssociatedConnUserName />
           <FullPath>Internal_TimeSheetBreakDown_T1.sql</FullPath>
+        </FileNode>
+        <FileNode Name="Internal_TimeSheetBreakDown_T1_totals.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:Devsql-1\WHOUSE:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>Devsql-1\WHOUSE</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>Internal_TimeSheetBreakDown_T1_totals.sql</FullPath>
+        </FileNode>
+        <FileNode Name="Internal_TimeSheetBreakDown_Totals.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>Internal_TimeSheetBreakDown_Totals.sql</FullPath>
         </FileNode>
         <FileNode Name="OrganisationName.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
