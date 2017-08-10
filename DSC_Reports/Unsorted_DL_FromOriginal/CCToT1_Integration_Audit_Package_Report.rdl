@@ -1,12 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Report xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner" xmlns:cl="http://schemas.microsoft.com/sqlserver/reporting/2010/01/componentdefinition" xmlns="http://schemas.microsoft.com/sqlserver/reporting/2010/01/reportdefinition">
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
   <AutoRefresh>0</AutoRefresh>
   <DataSources>
-    <DataSource Name="asadwh">
-      <ConnectionProperties>
-        <DataProvider>SQL</DataProvider>
-        <ConnectString>Data Source=devsql-1\whouse;Initial Catalog=asadwh</ConnectString>
-      </ConnectionProperties>
+    <DataSource Name="DataSource_ASADWH_OverRide">
+      <DataSourceReference>ASADWH</DataSourceReference>
       <rd:SecurityType>DataBase</rd:SecurityType>
       <rd:DataSourceID>76efc458-cfc6-4958-82bd-ddcd99f1104a</rd:DataSourceID>
     </DataSource>
@@ -14,7 +11,7 @@
   <DataSets>
     <DataSet Name="caremodel">
       <Query>
-        <DataSourceName>asadwh</DataSourceName>
+        <DataSourceName>DataSource_ASADWH_OverRide</DataSourceName>
         <CommandText>select  distinct CareModelDescription as CareModel
 from CC_IntegraionAudit_Packagefile </CommandText>
       </Query>
@@ -27,7 +24,7 @@ from CC_IntegraionAudit_Packagefile </CommandText>
     </DataSet>
     <DataSet Name="Program">
       <Query>
-        <DataSourceName>asadwh</DataSourceName>
+        <DataSourceName>DataSource_ASADWH_OverRide</DataSourceName>
         <QueryParameters>
           <QueryParameter Name="@CareModel">
             <Value>=Parameters!CareModel.Value</Value>
@@ -46,7 +43,7 @@ where CareModelDescription in (@CareModel)</CommandText>
     </DataSet>
     <DataSet Name="Month">
       <Query>
-        <DataSourceName>asadwh</DataSourceName>
+        <DataSourceName>DataSource_ASADWH_OverRide</DataSourceName>
         <CommandText>select  
     distinct CAST(YEAR(activity_date) AS VARCHAR(4))+
           (CASE LEN(MONTH(activity_date))
@@ -60,8 +57,7 @@ order by CAST(YEAR(activity_date) AS VARCHAR(4))+
           (CASE LEN(MONTH(activity_date))
             WHEN 1 THEN '0'+ CAST(MONTH(activity_date) AS VARCHAR(2))
             ELSE CAST(MONTH(activity_date) AS VARCHAR(2)) 
-           END) asc
-</CommandText>
+           END) asc</CommandText>
       </Query>
       <Fields>
         <Field Name="Month">
@@ -72,7 +68,7 @@ order by CAST(YEAR(activity_date) AS VARCHAR(4))+
     </DataSet>
     <DataSet Name="packagefile">
       <Query>
-        <DataSourceName>asadwh</DataSourceName>
+        <DataSourceName>DataSource_ASADWH_OverRide</DataSourceName>
         <QueryParameters>
           <QueryParameter Name="@CareModel">
             <Value>=Parameters!CareModel.Value</Value>
@@ -1069,6 +1065,29 @@ order by CAST(YEAR(activity_date) AS VARCHAR(4))+
       <MultiValue>true</MultiValue>
     </ReportParameter>
   </ReportParameters>
+  <ReportParametersLayout>
+    <GridLayoutDefinition>
+      <NumberOfColumns>2</NumberOfColumns>
+      <NumberOfRows>2</NumberOfRows>
+      <CellDefinitions>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>CareModel</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>Program</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>1</RowIndex>
+          <ParameterName>Month</ParameterName>
+        </CellDefinition>
+      </CellDefinitions>
+    </GridLayoutDefinition>
+  </ReportParametersLayout>
   <EmbeddedImages>
     <EmbeddedImage Name="AnglicareSA1">
       <MIMEType>image/png</MIMEType>

@@ -1,12 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Report xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner" xmlns:cl="http://schemas.microsoft.com/sqlserver/reporting/2010/01/componentdefinition" xmlns="http://schemas.microsoft.com/sqlserver/reporting/2010/01/reportdefinition">
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
   <AutoRefresh>0</AutoRefresh>
   <DataSources>
-    <DataSource Name="asadwh">
-      <ConnectionProperties>
-        <DataProvider>SQL</DataProvider>
-        <ConnectString>Data Source=devsql-1\whouse;Initial Catalog=asadwh</ConnectString>
-      </ConnectionProperties>
+    <DataSource Name="DataSource_ASADWH_OverRide">
+      <DataSourceReference>ASADWH</DataSourceReference>
       <rd:SecurityType>DataBase</rd:SecurityType>
       <rd:DataSourceID>76efc458-cfc6-4958-82bd-ddcd99f1104a</rd:DataSourceID>
     </DataSource>
@@ -14,7 +11,7 @@
   <DataSets>
     <DataSet Name="packagefile">
       <Query>
-        <DataSourceName>asadwh</DataSourceName>
+        <DataSourceName>DataSource_ASADWH_OverRide</DataSourceName>
         <QueryParameters>
           <QueryParameter Name="@Month">
             <Value>=Parameters!Month.Value</Value>
@@ -93,7 +90,7 @@ order by a.Billing_Period_From</CommandText>
     </DataSet>
     <DataSet Name="caremodel">
       <Query>
-        <DataSourceName>asadwh</DataSourceName>
+        <DataSourceName>DataSource_ASADWH_OverRide</DataSourceName>
         <CommandText>select  distinct e.description as CareModel
 from [APPSQL-3\COMCAREPROD].COMCAREPROD.DBO.FB_Client_CB_Transaction as a
 left join [APPSQL-3\COMCAREPROD].COMCAREPROD.DBO.FC_Client_Contract as b
@@ -117,7 +114,7 @@ group by a.person_id,a.Billing_Period_From,a.Billing_Period_to,a.GL_Account_Code
     </DataSet>
     <DataSet Name="Program">
       <Query>
-        <DataSourceName>asadwh</DataSourceName>
+        <DataSourceName>DataSource_ASADWH_OverRide</DataSourceName>
         <QueryParameters>
           <QueryParameter Name="@CareModel">
             <Value>=Parameters!CareModel.Value</Value>
@@ -146,7 +143,7 @@ group by a.person_id,a.Billing_Period_From,a.Billing_Period_to,a.GL_Account_Code
     </DataSet>
     <DataSet Name="Month">
       <Query>
-        <DataSourceName>asadwh</DataSourceName>
+        <DataSourceName>DataSource_ASADWH_OverRide</DataSourceName>
         <CommandText>select  distinct ( CAST(YEAR( a.Billing_Period_From) AS VARCHAR(4))+
           (CASE LEN(MONTH( a.Billing_Period_From))
             WHEN 1 THEN '0'+ CAST(MONTH( a.Billing_Period_From) AS VARCHAR(2))
@@ -1110,7 +1107,7 @@ group by a.person_id,a.Billing_Period_From,a.Billing_Period_to,a.GL_Account_Code
             <Top>0.55493cm</Top>
             <Left>0.44662cm</Left>
             <Height>1.8cm</Height>
-            <Width>32.15165cm</Width>
+            <Width>32.15166cm</Width>
             <Style>
               <Border>
                 <Style>None</Style>
@@ -1448,6 +1445,29 @@ group by a.person_id,a.Billing_Period_From,a.Billing_Period_to,a.GL_Account_Code
       <MultiValue>true</MultiValue>
     </ReportParameter>
   </ReportParameters>
+  <ReportParametersLayout>
+    <GridLayoutDefinition>
+      <NumberOfColumns>2</NumberOfColumns>
+      <NumberOfRows>2</NumberOfRows>
+      <CellDefinitions>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>CareModel</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>Program</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>1</RowIndex>
+          <ParameterName>Month</ParameterName>
+        </CellDefinition>
+      </CellDefinitions>
+    </GridLayoutDefinition>
+  </ReportParametersLayout>
   <EmbeddedImages>
     <EmbeddedImage Name="AnglicareSA1">
       <MIMEType>image/png</MIMEType>

@@ -106,10 +106,6 @@
       <FullPath>HomeCare_Care_Plan_Details_Report.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>RAC Roster Report.rdl</Name>
-      <FullPath>RAC Roster Report.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
       <Name>StaffComCareBookingReport.rdl</Name>
       <FullPath>StaffComCareBookingReport.rdl</FullPath>
     </ProjectItem>

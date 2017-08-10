@@ -42,6 +42,10 @@
       <FullPath>RAC_Allocation_SL_rollback.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
+      <Name>RAC_PerProviderPerDay.rdl</Name>
+      <FullPath>RAC_PerProviderPerDay.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
       <Name>RAC_Roster.rdl</Name>
       <FullPath>RAC_Roster.rdl</FullPath>
     </ProjectItem>
@@ -58,8 +62,8 @@
       <FullPath>RAC_ViewTimeSheetAdjustments.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>RAC_PerProviderPerDay.rdl</Name>
-      <FullPath>RAC_PerProviderPerDay.rdl</FullPath>
+      <Name>RAC Roster Report.rdl</Name>
+      <FullPath>RAC Roster Report.rdl</FullPath>
     </ProjectItem>
   </Reports>
   <Configurations>

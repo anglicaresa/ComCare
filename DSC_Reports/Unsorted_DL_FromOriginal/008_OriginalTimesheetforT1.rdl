@@ -2,12 +2,8 @@
 <Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
   <AutoRefresh>0</AutoRefresh>
   <DataSources>
-    <DataSource Name="ASADWH">
-      <ConnectionProperties>
-        <DataProvider>SQL</DataProvider>
-        <ConnectString>Data Source=DEVSQL-1 \WHOUSE;Initial Catalog=ASADWH</ConnectString>
-        <Prompt>Specify a user name and password for data source ASADWH:</Prompt>
-      </ConnectionProperties>
+    <DataSource Name="DataSource_ASADWH_OverRide">
+      <DataSourceReference>ASADWH</DataSourceReference>
       <rd:SecurityType>DataBase</rd:SecurityType>
       <rd:DataSourceID>76efc458-cfc6-4958-82bd-ddcd99f1104a</rd:DataSourceID>
     </DataSource>
@@ -15,7 +11,7 @@
   <DataSets>
     <DataSet Name="OTimesheet">
       <Query>
-        <DataSourceName>ASADWH</DataSourceName>
+        <DataSourceName>DataSource_ASADWH_OverRide</DataSourceName>
         <QueryParameters>
           <QueryParameter Name="@EmployeeID">
             <Value>=Parameters!EmployeeID.Value</Value>
@@ -165,7 +161,7 @@ order by ProviderId,Activity_Start_Date,Activity_Start_Time asc</CommandText>
     </DataSet>
     <DataSet Name="employeeid">
       <Query>
-        <DataSourceName>ASADWH</DataSourceName>
+        <DataSourceName>DataSource_ASADWH_OverRide</DataSourceName>
         <QueryParameters>
           <QueryParameter Name="@Pay_Period">
             <Value>=Parameters!Pay_Period.Value</Value>

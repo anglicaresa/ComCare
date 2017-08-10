@@ -2,12 +2,8 @@
 <Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
   <AutoRefresh>0</AutoRefresh>
   <DataSources>
-    <DataSource Name="ASADWH">
-      <ConnectionProperties>
-        <DataProvider>SQL</DataProvider>
-        <ConnectString>Data Source=DEVSQL-1 \WHOUSE;Initial Catalog=ASADWH</ConnectString>
-        <IntegratedSecurity>true</IntegratedSecurity>
-      </ConnectionProperties>
+    <DataSource Name="DataSource_ASADWH_OverRide">
+      <DataSourceReference>ASADWH</DataSourceReference>
       <rd:SecurityType>Integrated</rd:SecurityType>
       <rd:DataSourceID>76efc458-cfc6-4958-82bd-ddcd99f1104a</rd:DataSourceID>
     </DataSource>
@@ -15,7 +11,7 @@
   <DataSets>
     <DataSet Name="AdjustAWT_HisReport">
       <Query>
-        <DataSourceName>ASADWH</DataSourceName>
+        <DataSourceName>DataSource_ASADWH_OverRide</DataSourceName>
         <QueryParameters>
           <QueryParameter Name="@OrgName">
             <Value>=Parameters!OrgName.Value</Value>
