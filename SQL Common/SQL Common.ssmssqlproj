@@ -61,6 +61,18 @@
           <AssociatedConnUserName />
           <FullPath>ComCare_MobileDevice.sql</FullPath>
         </FileNode>
+        <FileNode Name="DataValidation_TABLE_Actual_Service_Charge_Item.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>DataValidation_TABLE_Actual_Service_Charge_Item.sql</FullPath>
+        </FileNode>
+        <FileNode Name="DataValidation_TABLE_FC_Transaction.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>DataValidation_TABLE_FC_Transaction.sql</FullPath>
+        </FileNode>
         <FileNode Name="DC_IndirectActivity.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
@@ -108,6 +120,12 @@
           <AssociatedConnSrvName>Devsql-1\WHOUSE</AssociatedConnSrvName>
           <AssociatedConnUserName />
           <FullPath>Internal_TimeSheetBreakDown_T1_totals.sql</FullPath>
+        </FileNode>
+        <FileNode Name="Internal_TimeSheetBreakDown_T1_Totals_pay.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:Devsql-1\WHOUSE:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>Devsql-1\WHOUSE</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>Internal_TimeSheetBreakDown_T1_Totals_pay.sql</FullPath>
         </FileNode>
         <FileNode Name="Internal_TimeSheetBreakDown_Totals.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
