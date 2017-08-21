@@ -67,6 +67,12 @@
           <AssociatedConnUserName />
           <FullPath>HCP_BushFireArea.sql</FullPath>
         </FileNode>
+        <FileNode Name="HCP_ClientContactDetails.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>HCP_ClientContactDetails.sql</FullPath>
+        </FileNode>
         <FileNode Name="HCP_Clients_BasicDailyFee.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
@@ -97,11 +103,23 @@
           <AssociatedConnUserName />
           <FullPath>HCP_Package_Remediation.sql</FullPath>
         </FileNode>
+        <FileNode Name="HCP_PackageByClient.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>HCP_PackageByClient.sql</FullPath>
+        </FileNode>
         <FileNode Name="HCP_Provider_Schedule.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
           <AssociatedConnUserName />
           <FullPath>HCP_Provider_Schedule.sql</FullPath>
+        </FileNode>
+        <FileNode Name="HCP_Provider_Schedule_ClientAlert.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>HCP_Provider_Schedule_ClientAlert.sql</FullPath>
         </FileNode>
         <FileNode Name="HCP_ServiceAdvisorCaseLoad.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>

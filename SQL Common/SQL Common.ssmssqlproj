@@ -49,6 +49,12 @@
           <AssociatedConnUserName />
           <FullPath>ClientSetup_Audit.sql</FullPath>
         </FileNode>
+        <FileNode Name="ComCare_ClientTransactionOperatingAccount.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>ComCare_ClientTransactionOperatingAccount.sql</FullPath>
+        </FileNode>
         <FileNode Name="ComCare_FundingProgAudit.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>

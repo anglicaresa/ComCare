@@ -2,11 +2,17 @@
 --select distinct Activity_type from FC_Transaction
 --select Description from dbo.FC_Transaction_Type
 
+declare @TransactionType table(Type VarChar(128))
+insert into @TransactionType
+	select 
+		TT.Description 
+	from dbo.FC_Transaction_Type TT 
+	where 1=1
 
 
---declare @Client_ID int = 10077133 
+
 declare @Client_ID int = 10104433
-declare @TransactionSource VarChar(128) = 'Income Tested'
+declare @FiltIncomeTested int = 1
 
 select 
 	J001.Client_ID
@@ -21,9 +27,6 @@ Left outer join [dbo].FC_Account J004 on J004.client_Contract_ID = J001.client_C
 Left outer join 
 (
 	select --distinct
---		FC_T.*
---		,FCP.Period_Start_Date
---/*
 		FC_T.FC_Account_ID 'FC_Account_ID'
 		,FC_TT.Description 'Transaction_Type'
 		,FC_T.Transaction_Source 'Transaction_Source'
@@ -53,9 +56,9 @@ left outer join dbo.Person J006 on J006.Person_ID = J001.Client_ID
 where
 	1=1
 	and J001.Client_ID = @Client_ID
-	and J005.Transaction_Source in (@TransactionSource)
---	and J005.Comments like '%adj%'
---	and cast(J005.Activity_Date as date) = '2017-07-17'
+	--and J005.Transaction_Type in (@TransactionType)
+	and J005.Transaction_Type in (select * from @TransactionType)
+
 order by
 J005.Activity_Date
 ,J005.TransationDate
