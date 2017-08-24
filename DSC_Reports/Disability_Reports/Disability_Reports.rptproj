@@ -46,6 +46,10 @@
       <FullPath>DA_DC_IndirctActivity_Report.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
+      <Name>DA_DC_ProviderSchedule.rdl</Name>
+      <FullPath>DA_DC_ProviderSchedule.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
       <Name>DA_DC_Roster.rdl</Name>
       <FullPath>DA_DC_Roster.rdl</FullPath>
     </ProjectItem>
@@ -74,6 +78,10 @@
       <FullPath>DC_ClientBasicDailyFee.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
+      <Name>DC_ClientSetupAudit.rdl</Name>
+      <FullPath>DC_ClientSetupAudit.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
       <Name>DC_MonthlyServiceStatement.rdl</Name>
       <FullPath>DC_MonthlyServiceStatement.rdl</FullPath>
     </ProjectItem>
@@ -90,8 +98,8 @@
       <FullPath>DC_TimeSheet_Vs_Schedule.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>DC_ClientSetupAudit.rdl</Name>
-      <FullPath>DC_ClientSetupAudit.rdl</FullPath>
+      <Name>DA_DC_ClientContactDetails.rdl</Name>
+      <FullPath>DA_DC_ClientContactDetails.rdl</FullPath>
     </ProjectItem>
   </Reports>
   <Configurations>

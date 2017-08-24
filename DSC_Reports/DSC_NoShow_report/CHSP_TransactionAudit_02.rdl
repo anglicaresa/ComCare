@@ -30,7 +30,72 @@
             <Value>=Parameters!ContractType.Value</Value>
           </QueryParameter>
         </QueryParameters>
-        <CommandText>select * from
+        <CommandText>--/*
+Declare @NoChargeTasks table (taskTypeCode varchar(16))
+insert into @NoChargeTasks values
+	('GMHMA')
+	,('GECBR')
+	,('GECRFS')
+	,('GEDA')
+	,('GEDAFS')
+	,('GEDSI')
+	,('GEGEAT')
+	,('GEGEFS')
+	,('GEHMA')
+	,('GEHMAF')
+	,('GEHMO')
+	,('GEHMOF')
+	,('GENU')
+	,('GENUFS')
+	,('GEPC')
+	,('GEPCFS')
+	,('GESIFS')
+	,('GESSI')
+	,('GETR')
+	,('GETRFS')
+	,('INNFFHCP')
+	,('INCBR')
+	,('INCRFS')
+	,('INDA')
+	,('INDAFS')
+	,('INGEAT')
+	,('INGEFS')
+	,('INHCP')
+	,('INHMA')
+	,('INHMAF')
+	,('INHMO')
+	,('INHMOF')
+	,('INNU')
+	,('INNUFS')
+	,('INPC')
+	,('INPCFS')
+	,('INSIFS')
+	,('INSSI')
+	,('INTR')
+	,('INTRFS')
+	,('REACH')
+	,('RECBR')
+	,('RECRFS')
+	,('REDA')
+	,('REDAFS')
+	,('REGEAT')
+	,('REGEFS')
+	,('RVHCP')
+	,('RCHCPF')
+	,('REHMA')
+	,('REHMAF')
+	,('REHMO')
+	,('REHMOF')
+	,('RENU')
+	,('RENUFS')
+	,('REPC')
+	,('REPCFS')
+	,('RESIFS')
+	,('RESSI')
+	,('RETR')
+	,('RETRFS')
+
+select * from
 (
 	select
 		J001.Client_ID
@@ -44,7 +109,7 @@
 		,IIF (J011.Description is NULL,'No Contract',J011.Description) 'contract_type'
 		,J004.Description 'task_Description'
 		,J001.Client_Not_Home
-		,IIF (J002.Client_ID IS NULL, 0, 1) 'Has_Charge_Item'
+		,IIF (J002.Client_ID IS NULL, IIF(J066.taskTypeCode is null,0,5), 1) 'Has_Charge_Item'-------------------NEW
 		,convert (int ,'0') 'In_WiA_Only'
 		,J002.Line_Description 'Charge_Item_Line_Description'
 		,J002.Amount
@@ -153,6 +218,8 @@ left outer join
 	left outer join dbo.FC_Contract_Area_Product J010 ON J010.CAP_ID = J001.CAP_ID
 	left outer join dbo.FC_Funder_Contract J011 ON J011.Funder_Contract_ID = J010.Funder_Contract_ID
 
+	Left outer join @NoChargeTasks J066 on J066.taskTypeCode = J001.Task_Type_Code-------------------NEW
+
 	Where 
 		1=1
 		and @DuplicateChargeItem = 0
@@ -181,7 +248,7 @@ Union
 ---------------------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------------------
 --/*
-select * from
+select distinct * from
 (
 	select
 		J001.Client_ID
@@ -194,7 +261,7 @@ select * from
 		,IIF (J011.Description is NULL,'No Contract',J011.Description) 'contract_type'
 		,J004.Description 'task_Description'
 		,J001.Client_Not_Home
-		,IIF (J002.Client_ID IS NULL, 0, 1) 'Has_Charge_Item'
+		,IIF (J002.Client_ID IS NULL, IIF(J066.taskTypeCode is null,0,5), 1) 'Has_Charge_Item'
 		,IIF (J001.Client_Not_Home IS NULL, 1, 0) 'In_WiA_Only'
 		,J002.Line_Description 'Charge_Item_Line_Description'
 		,J002.Amount
@@ -334,6 +401,7 @@ select * from
 	Left Outer Join dbo.FC_Contract_Area_Product J010 ON J010.CAP_ID = J001.CAP_ID
 	LEFT OUTER JOIN dbo.FC_Funder_Contract J011 ON J011.Funder_Contract_ID = J010.Funder_Contract_ID
 
+	Left outer join @NoChargeTasks J066 on J066.taskTypeCode = J001.Task_Type_Code
 	Where 
 		1=1
 		and @DuplicateChargeItem = 0
@@ -350,7 +418,7 @@ select * from
 --		AND (IIF (J011.Description is NULL,'No Contract',J011.Description) in (select * from @ContractType))
 		and (IIF (J011.Description is NULL,'No Contract',J011.Description) in (@ContractType))
 
-
+/*
 	Group by
 		J001.Client_ID
 	--	,2
@@ -367,6 +435,7 @@ select * from
 		,J002.Line_Description
 		,J002.Amount
 		,J009.Organisation_Name
+		--*/
 )t2
 --*/
 
@@ -476,7 +545,6 @@ select * from
 --	AND (IIF (J012.Description is NULL,'No Contract',J012.Description) in (select * from @ContractType))
 	and (IIF (J012.Description is NULL,'No Contract',J012.Description) in (@ContractType))
 	and J013.Task_Type_Code not like '%HCP%'
-
 )t3
 
 --*/
@@ -599,6 +667,9 @@ where
                   <Width>3.77cm</Width>
                 </TablixColumn>
                 <TablixColumn>
+                  <Width>8.61188cm</Width>
+                </TablixColumn>
+                <TablixColumn>
                   <Width>1.865cm</Width>
                 </TablixColumn>
                 <TablixColumn>
@@ -614,7 +685,7 @@ where
                   <Width>1.97083cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>13.54729cm</Width>
+                  <Width>11.40416cm</Width>
                 </TablixColumn>
                 <TablixColumn>
                   <Width>1.50812cm</Width>
@@ -720,6 +791,44 @@ where
                             </Paragraph>
                           </Paragraphs>
                           <rd:DefaultName>Textbox29</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BottomBorder>
+                              <Style>None</Style>
+                            </BottomBorder>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox6">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value />
+                                  <Style>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox6</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -1120,6 +1229,44 @@ where
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
+                        <Textbox Name="Textbox8">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Task Description</Value>
+                                  <Style>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox8</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Style>None</Style>
+                            </TopBorder>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
                         <Textbox Name="Textbox7">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
@@ -1426,18 +1573,12 @@ where
                                 <TextRun>
                                   <Value>=Fields!Client_ID.Value</Value>
                                   <Style>
-                                    <Color>=
-IIF
+                                    <Color>=Switch
 (
-	Fields!Has_Charge_Item.Value &gt; 1
-	,"Blue"
-	,IIF
-	(
-		Fields!Has_Charge_Item.Value = 1
-		,"Black"
-		,"Red"
-	)
-	
+	Fields!Has_Charge_Item.Value = 0,"Red"
+	,Fields!Has_Charge_Item.Value = 1,"Black"
+	,Fields!Has_Charge_Item.Value = 2,"Blue"
+	,Fields!Has_Charge_Item.Value = 5,"Black"
 )</Color>
                                   </Style>
                                 </TextRun>
@@ -1485,18 +1626,12 @@ IIF
 )</Value>
                                   <Style>
                                     <Format>d/MM/yyyy h:mm tt</Format>
-                                    <Color>=
-IIF
+                                    <Color>=Switch
 (
-	Fields!Has_Charge_Item.Value &gt; 1
-	,"Blue"
-	,IIF
-	(
-		Fields!Has_Charge_Item.Value = 1
-		,"Black"
-		,"Red"
-	)
-	
+	Fields!Has_Charge_Item.Value = 0,"Red"
+	,Fields!Has_Charge_Item.Value = 1,"Black"
+	,Fields!Has_Charge_Item.Value = 2,"Blue"
+	,Fields!Has_Charge_Item.Value = 5,"Black"
 )</Color>
                                   </Style>
                                 </TextRun>
@@ -1544,18 +1679,12 @@ IIF
 )</Value>
                                   <Style>
                                     <Format>d/MM/yyyy h:mm tt</Format>
-                                    <Color>=
-IIF
+                                    <Color>=Switch
 (
-	Fields!Has_Charge_Item.Value &gt; 1
-	,"Blue"
-	,IIF
-	(
-		Fields!Has_Charge_Item.Value = 1
-		,"Black"
-		,"Red"
-	)
-	
+	Fields!Has_Charge_Item.Value = 0,"Red"
+	,Fields!Has_Charge_Item.Value = 1,"Black"
+	,Fields!Has_Charge_Item.Value = 2,"Blue"
+	,Fields!Has_Charge_Item.Value = 5,"Black"
 )</Color>
                                   </Style>
                                 </TextRun>
@@ -1566,6 +1695,47 @@ IIF
                             </Paragraph>
                           </Paragraphs>
                           <rd:DefaultName>Actual_Visit_Time</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="task_Description">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!task_Description.Value</Value>
+                                  <Style>
+                                    <Color>=Switch
+(
+	Fields!Has_Charge_Item.Value = 0,"Red"
+	,Fields!Has_Charge_Item.Value = 1,"Black"
+	,Fields!Has_Charge_Item.Value = 2,"Blue"
+	,Fields!Has_Charge_Item.Value = 5,"Black"
+)</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>task_Description</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -1596,24 +1766,18 @@ IIF
 	,"---"
 	,IIF
 	(
-		Fields!Client_Not_Home.Value = 1
+		Fields!Client_Not_Home.Value = 1 or Fields!Client_Not_Home.Value = "1"
 		,"True"
 		,"False"
 	)
 )</Value>
                                   <Style>
-                                    <Color>=
-IIF
+                                    <Color>=Switch
 (
-	Fields!Has_Charge_Item.Value &gt; 1
-	,"Blue"
-	,IIF
-	(
-		Fields!Has_Charge_Item.Value = 1
-		,"Black"
-		,"Red"
-	)
-	
+	Fields!Has_Charge_Item.Value = 0,"Red"
+	,Fields!Has_Charge_Item.Value = 1,"Black"
+	,Fields!Has_Charge_Item.Value = 2,"Blue"
+	,Fields!Has_Charge_Item.Value = 5,"Black"
 )</Color>
                                   </Style>
                                 </TextRun>
@@ -1649,18 +1813,12 @@ IIF
                                 <TextRun>
                                   <Value>=Fields!Provider_ID.Value</Value>
                                   <Style>
-                                    <Color>=
-IIF
+                                    <Color>=Switch
 (
-	Fields!Has_Charge_Item.Value &gt; 1
-	,"Blue"
-	,IIF
-	(
-		Fields!Has_Charge_Item.Value = 1
-		,"Black"
-		,"Red"
-	)
-	
+	Fields!Has_Charge_Item.Value = 0,"Red"
+	,Fields!Has_Charge_Item.Value = 1,"Black"
+	,Fields!Has_Charge_Item.Value = 2,"Blue"
+	,Fields!Has_Charge_Item.Value = 5,"Black"
 )</Color>
                                   </Style>
                                 </TextRun>
@@ -1695,18 +1853,12 @@ IIF
                                   <Value>=Fields!Scheduled_Duration.Value/60</Value>
                                   <Style>
                                     <Format>0.00;(0.00)</Format>
-                                    <Color>=
-IIF
+                                    <Color>=Switch
 (
-	Fields!Has_Charge_Item.Value &gt; 1
-	,"Blue"
-	,IIF
-	(
-		Fields!Has_Charge_Item.Value = 1
-		,"Black"
-		,"Red"
-	)
-	
+	Fields!Has_Charge_Item.Value = 0,"Red"
+	,Fields!Has_Charge_Item.Value = 1,"Black"
+	,Fields!Has_Charge_Item.Value = 2,"Blue"
+	,Fields!Has_Charge_Item.Value = 5,"Black"
 )</Color>
                                   </Style>
                                 </TextRun>
@@ -1741,18 +1893,12 @@ IIF
                                   <Value>=Fields!Actual_Duration.Value/60</Value>
                                   <Style>
                                     <Format>0.00;(0.00)</Format>
-                                    <Color>=
-IIF
+                                    <Color>=Switch
 (
-	Fields!Has_Charge_Item.Value &gt; 1
-	,"Blue"
-	,IIF
-	(
-		Fields!Has_Charge_Item.Value = 1
-		,"Black"
-		,"Red"
-	)
-	
+	Fields!Has_Charge_Item.Value = 0,"Red"
+	,Fields!Has_Charge_Item.Value = 1,"Black"
+	,Fields!Has_Charge_Item.Value = 2,"Blue"
+	,Fields!Has_Charge_Item.Value = 5,"Black"
 )</Color>
                                   </Style>
                                 </TextRun>
@@ -1784,30 +1930,20 @@ IIF
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>=
-IIF(
-	Fields!Has_Charge_Item.Value = 2
-	,"Dup"
-	,IIF
-	(
-		Fields!Has_Charge_Item.Value = 1
-		,"Yes"
-		,"No"
-	)
+                                  <Value>=Switch
+(
+	Fields!Has_Charge_Item.Value = 0,"No"
+	,Fields!Has_Charge_Item.Value = 1,"Yes"
+	,Fields!Has_Charge_Item.Value = 2,"Dup"
+	,Fields!Has_Charge_Item.Value = 5,"N/A"
 )</Value>
                                   <Style>
-                                    <Color>=
-IIF
+                                    <Color>=Switch
 (
-	Fields!Has_Charge_Item.Value &gt; 1
-	,"Blue"
-	,IIF
-	(
-		Fields!Has_Charge_Item.Value = 1
-		,"Black"
-		,"Red"
-	)
-	
+	Fields!Has_Charge_Item.Value = 0,"Red"
+	,Fields!Has_Charge_Item.Value = 1,"Black"
+	,Fields!Has_Charge_Item.Value = 2,"Blue"
+	,Fields!Has_Charge_Item.Value = 5,"Black"
 )</Color>
                                   </Style>
                                 </TextRun>
@@ -1841,26 +1977,20 @@ IIF
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>=
-IIF
+                                  <Value>=Switch
 (
-	Fields!Has_Charge_Item.Value &gt; 0
-	,Fields!Charge_Item_Line_Description.Value
-	,"------ NO CHARGE ITEM ------  " &amp; Fields!task_Description.Value
+	Fields!Has_Charge_Item.Value = 0,"------ NO CHARGE ITEM ------  "
+	,Fields!Has_Charge_Item.Value = 1, Fields!Charge_Item_Line_Description.Value
+	,Fields!Has_Charge_Item.Value = 2, Fields!Charge_Item_Line_Description.Value
+	,Fields!Has_Charge_Item.Value = 5,"No Charge for task"
 )</Value>
                                   <Style>
-                                    <Color>=
-IIF
+                                    <Color>=Switch
 (
-	Fields!Has_Charge_Item.Value &gt; 1
-	,"Blue"
-	,IIF
-	(
-		Fields!Has_Charge_Item.Value = 1
-		,"Black"
-		,"Red"
-	)
-	
+	Fields!Has_Charge_Item.Value = 0,"Red"
+	,Fields!Has_Charge_Item.Value = 1,"Black"
+	,Fields!Has_Charge_Item.Value = 2,"Blue"
+	,Fields!Has_Charge_Item.Value = 5,"Black"
 )</Color>
                                   </Style>
                                 </TextRun>
@@ -1901,18 +2031,12 @@ IIF
 )</Value>
                                   <Style>
                                     <Format>'$'0.00;('$'0.00)</Format>
-                                    <Color>=
-IIF
+                                    <Color>=Switch
 (
-	Fields!Has_Charge_Item.Value &gt; 1
-	,"Blue"
-	,IIF
-	(
-		Fields!Has_Charge_Item.Value = 1
-		,"Black"
-		,"Red"
-	)
-	
+	Fields!Has_Charge_Item.Value = 0,"Red"
+	,Fields!Has_Charge_Item.Value = 1,"Black"
+	,Fields!Has_Charge_Item.Value = 2,"Blue"
+	,Fields!Has_Charge_Item.Value = 5,"Black"
 )</Color>
                                   </Style>
                                 </TextRun>
@@ -1953,18 +2077,12 @@ IIF
 	,Fields!contract_type.Value
 )</Value>
                                   <Style>
-                                    <Color>=
-IIF
+                                    <Color>=Switch
 (
-	Fields!Has_Charge_Item.Value &gt; 1
-	,"Blue"
-	,IIF
-	(
-		Fields!Has_Charge_Item.Value = 1
-		,"Black"
-		,"Red"
-	)
-	
+	Fields!Has_Charge_Item.Value = 0,"Red"
+	,Fields!Has_Charge_Item.Value = 1,"Black"
+	,Fields!Has_Charge_Item.Value = 2,"Blue"
+	,Fields!Has_Charge_Item.Value = 5,"Black"
 )</Color>
                                   </Style>
                                 </TextRun>
@@ -2004,6 +2122,7 @@ IIF
                 <TablixMember />
                 <TablixMember />
                 <TablixMember />
+                <TablixMember />
               </TablixMembers>
             </TablixColumnHierarchy>
             <TablixRowHierarchy>
@@ -2021,7 +2140,7 @@ IIF
 (
 	IIF
 	(
-		Parameters!HideGood.Value = "Yes" and Fields!Has_Charge_Item.Value = 1
+		Parameters!HideGood.Value = "Yes" and (Fields!Has_Charge_Item.Value = 1 or Fields!Has_Charge_Item.Value = 5)
 		,True
 		,False 
 	)
@@ -2036,7 +2155,7 @@ IIF
             <FixedRowHeaders>true</FixedRowHeaders>
             <DataSetName>DataSet1</DataSetName>
             <Height>2.38208cm</Height>
-            <Width>43.76021cm</Width>
+            <Width>50.22896cm</Width>
             <Style>
               <Border>
                 <Style>None</Style>
@@ -2047,10 +2166,10 @@ IIF
         <Height>0.93783in</Height>
         <Style />
       </Body>
-      <Width>17.22843in</Width>
+      <Width>19.77518in</Width>
       <Page>
         <PageHeader>
-          <Height>2.135cm</Height>
+          <Height>1.95863cm</Height>
           <PrintOnFirstPage>true</PrintOnFirstPage>
           <PrintOnLastPage>true</PrintOnLastPage>
           <ReportItems>
@@ -2058,7 +2177,7 @@ IIF
               <Source>Embedded</Source>
               <Value>Logo_AnglicareSA</Value>
               <Sizing>FitProportional</Sizing>
-              <Left>31.61583cm</Left>
+              <Left>38.08458cm</Left>
               <Height>1.95862cm</Height>
               <Width>12.14438cm</Width>
               <Style>
@@ -2132,8 +2251,9 @@ IIF
                 </Paragraph>
               </Paragraphs>
               <rd:DefaultName>Textbox38</rd:DefaultName>
+              <Top>0.00001cm</Top>
               <Height>1.95862cm</Height>
-              <Width>31.61583cm</Width>
+              <Width>38.08458cm</Width>
               <ZIndex>1</ZIndex>
               <Style>
                 <Border>

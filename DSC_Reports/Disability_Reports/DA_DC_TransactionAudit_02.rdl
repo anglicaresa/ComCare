@@ -1655,7 +1655,7 @@ IIF
 	,"---"
 	,IIF
 	(
-		Fields!Client_Not_Home.Value = 1
+		Fields!Client_Not_Home.Value = 1 or Fields!Client_Not_Home.Value = "1"
 		,"True"
 		,"False"
 	)

@@ -3,545 +3,423 @@
   <df:DefaultFontFamily>Segoe UI</df:DefaultFontFamily>
   <AutoRefresh>0</AutoRefresh>
   <DataSources>
-    <DataSource Name="REF_ASADWH">
+    <DataSource Name="Ref_Prod">
       <DataSourceReference>ComCareProd Reports</DataSourceReference>
       <rd:SecurityType>None</rd:SecurityType>
-      <rd:DataSourceID>49f9dfe8-6b26-41bf-b1e3-017be446d96e</rd:DataSourceID>
+      <rd:DataSourceID>7697e670-0275-4042-bcf4-19f7d27cc1a4</rd:DataSourceID>
     </DataSource>
   </DataSources>
   <DataSets>
     <DataSet Name="DataSet1">
       <Query>
-        <DataSourceName>REF_ASADWH</DataSourceName>
+        <DataSourceName>Ref_Prod</DataSourceName>
         <QueryParameters>
-          <QueryParameter Name="@Organisation">
-            <Value>=Parameters!Organisation.Value</Value>
+          <QueryParameter Name="@Start_Date">
+            <Value>=Parameters!Start_Date.Value</Value>
           </QueryParameter>
-          <QueryParameter Name="@StartDate">
-            <Value>=Parameters!StartDate.Value</Value>
+          <QueryParameter Name="@End_Date">
+            <Value>=Parameters!End_Date.Value</Value>
           </QueryParameter>
-          <QueryParameter Name="@EndDate">
-            <Value>=Parameters!EndDate.Value</Value>
+          <QueryParameter Name="@Centre">
+            <Value>=Parameters!Centre.Value</Value>
           </QueryParameter>
-          <QueryParameter Name="@ContractType">
-            <Value>=Parameters!ContractType.Value</Value>
+          <QueryParameter Name="@ClassCodeFilter">
+            <Value>=Parameters!ClassCodeFilter.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@TeamFilt">
+            <Value>=Parameters!TeamFilt.Value</Value>
           </QueryParameter>
         </QueryParameters>
-        <CommandText>---------------------------------------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------------------------------------
---/*
-select * from
+        <CommandText>Declare @ProvRiskAlert Table (Code int)
+insert into @ProvRiskAlert values (2),(3),(6),(8)
+--Create DateRange and set start of week
+SET DATEFIRST 1
+
+---------------------------
+--Main quiry
+---------------------------
+Select * from 
 (
 	select
-		J001.Client_ID 'Client_ID'
-		,J001.Provider_ID 'Provider_ID'
-		,IIF(J033.WiA_Schedule_TimeKILL = 'true', null, Cast (J033.Schedule_Time as Datetime)) 'Schedule_Visit_Time'	
-		,J033.Scheduled_Duration 'Scheduled_Duration'
-		,(Cast (cast(J001.Visit_Date as date) as Datetime) + Cast (Cast (J001.Visit_Time as Time) as Datetime)) 'Actual_Visit_Time'
-		,J001.Visit_Duration 'Actual_Duration'
-		,J088.CareModel 'CareModel'
-		,J004.[Description] 'task_Description'
-		,cast(J001.Client_Not_Home as int) 'Client_Not_Home'
-		,IIF (J002.Client_ID IS NULL, 0, 1) 'Has_Charge_Item'
-		,convert (int ,'0') 'In_WiA_Only'
-		,J002.Line_Description 'Charge_Item_Line_Description'
-		,J002.Amount 'Amount'
-		,J088.funderContract 'funderContract'
-		,iif(J001.Group_Activity_ID is Null, 0, 1) 'HasGroupActivity'
-		,J001.Travel_Km 'Travel_Km'
+		iif (J005.Organisation_Name is not null, J005.Organisation_Name, Jx002.Organisation_Name) 'Centre'
+		,case 
+			when J001.Internal_Task_Code = 71 then 'Overnight Respite'
+			When J001.Internal_Task_Code = 76 then 'Overnight Respite'
+			when J001.Internal_Task_Code = 13 then 'Admin'
+			else J004.Description 
+			end 'Team'
+		,J003.Generated_Provider_Code 'ServiceProvision'
+		,iif(J003.Provider_Class_Code is null, Jx001.Provider_Class_code, J003.Provider_Class_Code)'Provider_Class_Code'
+		,iif (J001.SPPID = 0 or J001.SPPID is null, Jx003.Description, J007.Description) 'Provider_Class'
+		,(
+			Case
+				when DatePart(dw, cast(J001.Schedule_StartTime as date)) = 1 then 'Monday'
+				when DatePart(dw, cast(J001.Schedule_StartTime as date)) = 2 then 'Tuesday'
+				when DatePart(dw, cast(J001.Schedule_StartTime as date)) = 3 then 'Wednesday'
+				when DatePart(dw, cast(J001.Schedule_StartTime as date)) = 4 then 'Thursday'
+				when DatePart(dw, cast(J001.Schedule_StartTime as date)) = 5 then 'Friday'
+				when DatePart(dw, cast(J001.Schedule_StartTime as date)) = 6 then 'Saturday'
+				when DatePart(dw, cast(J001.Schedule_StartTime as date)) = 7 then 'Sunday'
+			end
+		) 'DayOfWeek'
+		,J001.Activity_Date 'Activity_Date'
+		,J001.Schedule_StartTime 'StartTime'
+		,J001.Schedule_Duration 'Duration'
+		,J001.Schedule_EndTime 'EndTime'
+		,J001.Provider_ID
+		,J001.Client_ID
+--		,J001.Absence_Code
+		,(J002.Last_Name + ', ' + J002.Preferred_Name) 'ProviderName'
+		,J012.Client_Name
+		,iif(J001.Override_Address_ID &lt;&gt; 0,J013.Client_Address, J012.Client_Address)'Visit_Address'
+		,iif(J001.Override_Address_ID &lt;&gt; 0,J013.Access_Comments, J012.Access_Comments)'Access_Comments'
+		,J014.Phone 'Client_PH'
+		--DeBug Info.
+--		/*
+		,J003.Service_Prov_Position_ID 'SPPID'
+--		,J008.Description 'Task_Type'
+		,iif(J001.Event_Type = 18,J009.Description, J008.Description) 'Task_Type'
+		,J009.Description 'Internal_Task_Type'
+		,J010.Description 'Event_Type'
+		,J001.Event_Type 'Event_Type_code'
+		,J011.Description 'Group_Activity'
+		,iif(J015.Alert_Type_ID is null,0,iif(J015.Alert_Type_ID in(select * from @ProvRiskAlert),2,1))'ClientAlert'
+		,J001.RN
+		--*/
+		--END DeBug Info.
 
-	from [dbo].Actual_Service J001
-
-	Left outer Join
+	From 
 	(
-		select
-			FC_CC.Client_ID 'Client_ID'
-			,FC_T.Visit_Date 'Visit_Date'
-			,FC_T.Comments 'Line_Description'
-			,cast ((select Text from dbo.Split(FC_T.Source_Record_Key, '/') where Record_Number = 3) as int) 'Visit_No'
-			,cast ((select Text from dbo.Split(FC_T.Source_Record_Key, '/') where Record_Number = 5) as int) 'Service_Prov_Position_ID'
-			,cast ((select Text from dbo.Split(FC_T.Source_Record_Key, '/') where Record_Number = 4) as int) 'Provider_ID'
-			,(FC_T.Actual_Amount * -1.0) 'Amount'
-			,FC_FC.Description 'funderContract'
-			,FC_FCM.Description 'CareModel'
-		from [dbo].FC_Client_Contract FC_CC
-		Left outer Join [dbo].FC_Funder_Contract FC_FC	on FC_FC.funder_Contract_ID = FC_CC.funder_Contract_ID
-		Left outer Join [dbo].FC_Funding_Care_Model FC_FCM on FC_FCM.Funding_Care_Model_ID = FC_FC.Funding_Care_Model_ID
-		Left outer join [dbo].FC_Account FC_A on FC_A.client_Contract_ID = FC_CC.client_Contract_ID
+		Select
+			WiA.SPPID 'SPPID'
+			,WIA.Client_ID
+			,cast (WiA.Activity_Date as date) 'Activity_Date'
+			,cast (WiA.Schedule_Time as datetime) 'Schedule_StartTime'
+			,DateAdd(MINUTE, WiA.Schedule_Duration,cast(WiA.Schedule_Time as datetime))'Schedule_EndTime'
+			,WiA.Absence_Code 'Absence_Code'
+			,WiA.Provider_ID 'Provider_ID'
+			,WiA.Schedule_Duration 'Schedule_Duration'
+			,WiA.Generated_Provider_Code 'Generated_Provider_Code'
+			,WiA.Schedule_Task_Type
+			,WiA.Internal_Task_Code
+			,WiA.Event_Type
+			,WiA.Group_Activity_ID
+			,WiA.Override_Address_ID
+			,WiA.Destination_Address_ID
+			,ROW_NUMBER () -- sort by importance of 'covered' 'absent' and 'Un-Alocated'.
+				over 
+				(
+					Partition by cast(WiA.Schedule_Time as Datetime), WiA.SPPID,WiA.Client_ID Order by 
+						Case
+							when ((WiA.Provider_ID &gt; 0) and (WiA.Absence_Code is NULL)) then concat('1_',WiA.Provider_ID)
+							when (WiA.Provider_ID &gt; 0) and (WiA.Absence_Code is not NULL) then concat('2_',WiA.Provider_ID)
+						else 'z'
+					end
+				) 'RN'
+		From dbo.Wi_Activity WiA
+		where convert(date, Wia.Activity_Date) between dateadd(day,-7,@Start_Date) and dateadd(day,7,@End_Date)
+	)J001
 
-		Left outer join 
+	Left Outer Join dbo.Person J002 on J002.Person_ID = J001.Provider_ID
+	Left outer join dbo.Service_Provision_Position J003 on J003.Service_Prov_Position_ID = J001.SPPID
+	Left outer join dbo.Service_Delivery_Work_Team J004 on J004.Team_No = J003.Team_No and J004.Centre_ID = J003.Centre_ID
+	Left outer join dbo.Organisation J005 on J005.Organisation_ID = J004.Centre_ID
+
+	Left outer join dbo.Provider_Contract Jx001 on Jx001.Provider_ID = J001.Provider_ID and (J001.SPPID = 0 or J001.SPPID is null)
+	Left outer join dbo.Organisation Jx002 on Jx002.Organisation_ID = Jx001.Organisation_ID
+	Left outer join dbo.Provider_Classification Jx003 on Jx003.Provider_Class_Code = Jx001.Provider_Class_Code
+
+	Left outer join dbo.Service_Provision_Allocation J006 on J006.Service_Prov_Position_ID = J003.Service_Prov_Position_ID
+	Left outer join dbo.Provider_Classification J007 on J007.Provider_Class_Code = J003.Provider_Class_Code
+	Left outer join dbo.Task_Type J008 on J008.Task_Type_Code = J001.Schedule_Task_Type
+	Left outer join dbo.Indirect_Activity_Type J009 on J009.Indirect_Activity_Type_Code = J001.Internal_Task_Code
+	Left outer join dbo.WI_Activity_Event_Type J010 on J010.Event_Type = J001.Event_Type
+	Left outer join dbo.Group_Activity J011 on J011.Group_Activity_ID = J001.Group_Activity_ID
+	--select top 1 * from Address
+	left outer join 
+	(
+		select 
+		P.Person_ID
+		,Concat(P.Last_Name,', ',P.Preferred_Name)'Client_Name'
+		,Concat
 		(
-			select
-				FC_T.FC_Account_ID 'FC_Account_ID'
-				,FC_T.FC_Transaction_Type_ID 'FC_Transaction_Type_ID'
-				,FC_T.Activity_Date 'Visit_Date'
-				,FC_T.Transaction_Source 'Transaction_Source'
-				,FC_T.Estimated_Amount 'Estimated_Amount'
-				,FC_T.Actual_Amount 'Actual_Amount'
-				,FC_T.Balance_After_Txn 'Balance_After_Txn'
-				,FC_T.Source_Table 'Source_Table'
-				,FC_T.Source_Record_Key 'Source_Record_Key'
-				,FC_T.Comments 'Comments'
-				,ROW_NUMBER() over(
-									partition by FC_T.FC_Account_ID, FC_T.Activity_Date
-									order by 
-									case
-									when FC_T.Actual_Amount = 0.0 then 'zzzz'
-									else 
-									FC_T.Actual_Amount
-									end desc
-								)'RN'
-			from [dbo].FC_Transaction FC_T
-			where 
-				1=1
-				and FC_T.FC_Transaction_Type_ID = 3
-				and FC_T.Actual_Amount &lt;&gt; 0.0
-
-		)FC_T on FC_T.FC_Account_ID = FC_A.FC_Account_ID
-
-	)J002 ON 
-			J002.Client_ID = J001.Client_ID 
-			and J002.Visit_Date = J001.Visit_Date 
-			and J002.Visit_No = J001.Visit_No
-			and J002.Service_Prov_Position_ID = J001.Service_Prov_Position_ID
-			and J002.Provider_ID = J001.Provider_ID
-
-
-	left outer join
-	(
-		select
-			Wi_A.Client_ID
-			,Wi_A.Wi_Record_ID 'Wi_Record_ID'
-			,Wi_A.Activity_Date
-			,Wi_A.SPPID
-			,Wi_A.Schedule_Time 'Schedule_Time'
-			,Wi_A.Schedule_Duration 'Scheduled_Duration'
-			,Wi_A.ReSchedule 'ReSchedule'
-			,Wi_A.Activity_Start_time 'Activity_Start_time'
-			,iif(Wi_A.ReSchedule is not null and Wi_A.Activity_Start_time is not null, 'True', 'Flase') 'WiA_Schedule_TimeKILL'
-			,AWT.Allocated_Task_ID 'Allocated_Task_ID'
-			,Wi_A.Round_Allocation_ID 'Round_Allocation_ID'
-		from [dbo].wi_activity Wi_A
-		left outer join [dbo].activity_work_table AWT on AWT.Allocated_Task_ID = Wi_A.Round_Allocation_ID and AWT.activity_date = Wi_A.activity_date
-	)J033 ON 
-		J033.Client_ID = J001.Client_ID 
-		and J033.Activity_Date = J001.Visit_Date 
-		and J033.SPPID = J001.Service_Prov_Position_ID 
-		and (J001.Allocated_Task_ID = J033.Allocated_Task_ID or J001.Allocated_Task_ID = J033.Round_Allocation_ID)
-	
-	Left outer Join
-	(
-		select
-			FC_CC.Client_ID 'Client_ID'
-			,FC_FC.Description 'funderContract'
-			,FC_FCM.Description 'CareModel'
-		from [dbo].FC_Client_Contract FC_CC
-		Left outer Join [dbo].FC_Funder_Contract FC_FC	on FC_FC.funder_Contract_ID = FC_CC.funder_Contract_ID
-		Left outer Join [dbo].FC_Funding_Care_Model FC_FCM on FC_FCM.Funding_Care_Model_ID = FC_FC.Funding_Care_Model_ID
-
-	)J088 on J088.Client_ID = J001.Client_ID	
-
-	left outer join [dbo].[Task_Type] J004 on J004.Task_Type_Code = J001.Task_Type_Code
-	left outer join [dbo].[Service_Delivery] J005 ON J001.[Client_ID] = J005.[Client_ID]
+			A.Building_Name
+			,iif(A.Building_Name is null,null,', ')
+			,A.Dwelling_Number
+			,iif(A.Dwelling_Number is null,null,' ')
+			,A.Street_or_PO_Box
+			,iif(A.Street_or_PO_Box is null,null,', ')
+			,S.Suburb_Name
+			,iif(S.Suburb_Name is null,null,' ')
+			,A.Post_Code
+		)'Client_Address'
+		,A.Access_Comments
+		from dbo.Person P
+		left outer join dbo.Period_of_Residency PR on PR.Person_ID = P.Person_ID
+		left outer join dbo.Address A on A.Address_ID = PR.Address_ID
+		left outer join dbo.Suburb S on S.Suburb_ID = A.Suburb_ID
+	)J012 on J012.Person_ID = J001.Client_ID
 
 	left outer join 
 	(
-		Select 
-			SD.[Client_ID]
-			,O.[Organisation_Name]
-			,SD.[Service_Type_Code]
-			,ROW_NUMBER ()
-				over 
-				(
-					Partition by SD.[Client_ID] Order by
-						CASE
-						WHEN O.[Organisation_Name] = @Organisation THEN '1'
-						ELSE O.[Organisation_Name] END ASC
-				)'RN'
-		from [dbo].[Service_Delivery] SD
-			join [dbo].[Period_of_Residency] PR on PR.Person_ID = SD.Client_ID
-			join [dbo].[Address] A on A.Address_ID = PR.Address_ID
-			Join [dbo].[Service_Provision] SP on A.Suburb_ID = SP.Suburb_ID and SP.Service_Type_Code = SD.Service_Type_Code
-			Join [dbo].[Organisation] O on Sp.Centre_ID = O.Organisation_ID
-		Where PR.To_Date is null and PR.Display_Indicator  = 1
-	) J006 ON J006.[Client_ID] = J001.[Client_ID] AND J006.[Service_Type_Code] = J005.[Service_Type_Code]
-
-	left outer Join
-	(
-		select
-			CCB.[Client_ID] 'Client_ID'
-			,Org.[Organisation_Name] 'Organisation_Name'
-			,CBG.[Description] 'ContractBillingGroup'
-			,CCB.Contract_Billing_ID 'Contract_Billing_ID'
-			,ROW_NUMBER ()
-				over 
-				(
-					Partition by CCB.[Client_ID] Order by
-						CASE
-						WHEN Org.[Organisation_Name] = @Organisation THEN '1'
-						ELSE Org.[Organisation_Name] END ASC
-				) 'RN'
-		from [dbo].[FB_Client_Contract_Billing] CCB
-			left outer join [dbo].[FB_Contract_Billing_Group] CBG on CBG.[Contract_Billing_Group_ID] = CCB.[Contract_Billing_Group_ID]
-			left outer Join [dbo].[FB_Client_Contract_Billed_To] CCBT on CCBT.[Client_CB_ID] = CCB.[Client_CB_ID]
-			left outer Join [dbo].[FB_Client_CB_Split] CCBS on CCBS.[Client_Contract_Billed_To_ID] = CCBT.[Client_Contract_Billed_To_ID]
-			left outer Join [dbo].[Organisation] Org on CCBS.[Organisation_ID] = Org.[Organisation_ID]
-
-	)J009 on J009.[Client_ID] = J001.[Client_ID]
-
-	left outer join [dbo].[FC_Contract_Area_Product] J010 ON J010.[CAP_ID] = J001.[CAP_ID]
-	left outer join [dbo].[FC_Funder_Contract] J011 ON J011.[Funder_Contract_ID] = J010.[Funder_Contract_ID]
-
-	Where 
-		1=1
---		and J001.Client_ID = @Client_ID_
-		and (J006.RN &lt; 2 or J006.RN is NULL)
-		and (J009.RN &lt; 2 or J009.rn is null)
-		and convert (datetime, J001.Visit_Date) between @StartDate and (DATEADD(s, 84599, @EndDate))
-		and J088.CareModel = 'Home Care Package'
-		
-
-		and J006.[Organisation_Name] = @Organisation
---		AND (IIF (J088.funderContract is NULL,'No Contract',J088.funderContract) in (select * from @ContractType))
-		and (IIF (J088.funderContract is NULL,'No Contract',J088.funderContract) in (@ContractType))
-
-) t1
-
---group Activity filter
-
----------------------------------------------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------------------------------------------
---*/
---/*
-Union
-
----------------------------------------------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------------------------------------------
---/*
-select * from
-(
-	select
-		J001.Client_ID 'Client_ID'
-		,J001.WiA_Provider_ID 'Provider_ID'
-		,IIF(J001.WiA_Schedule_TimeKILL = 'true', null, Cast (J001.WiA_Schedule_Time as Datetime)) 'Schedule_Visit_Time'	
-		,J001.WiA_Scheduled_Duration 'Scheduled_Duration'
-		,(Cast (J001.AcS_Activity_Start_Time as Datetime)) 'Actual_Visit_Time'
-		,J001.AcS_Visit_Duration 'Actual_Duration'
-		,J088.CareModel 'CareModel'
-		,J004.[Description] 'task_Description'
-		,cast(J001.Client_Not_Home as int) 'Client_Not_Home'
-		,IIF (J002.Client_ID IS NULL, 0, 1) 'Has_Charge_Item'
-		,IIF (J001.Client_Not_Home IS NULL, 1, 0) 'In_WiA_Only'
-		,J002.Line_Description 'Charge_Item_Line_Description'
-		,J002.Amount 'Amount'
-		,J088.funderContract 'funderContract'
-		,iif(J001.Group_Activity_ID is Null, 0, 1) 'HasGroupActivity'
-		,J001.Travel_Km 'Travel_Km'
-	FROM 
-	(
-		Select
-			IIF(Ac_S.Activity_Start_Time IS NULL, 'FALSE', 'TRUE') 'In_Actual_Service'
-			,Wi_A.SPPID 'WiA_SPPID'
-			,Ac_S.Service_Prov_Position_ID 'AcS_SPPID'
-			,Ac_S.Provider_ID 'AcS_Provider_ID'
-			,Wi_A.[Activity_Date] 'WiA_Activity_Date'
-			,Wi_A.Activity_Start_Time 'WiA_Activity_Start_Time'
-			,Wi_A.Activity_End_Time 'WiA_Activity_End_Time'
-			,Wi_A.Client_ID 'Client_ID'
-			,Wi_A.Provider_ID 'WiA_Provider_ID'
-			,Wi_A.Schedule_Sequence_No 'WiA_Schedule_Sequence_No'
-			,Wi_A.Schedule_Task_Type 'WiA_Schedule_Task_Type'
-			,iif(Wi_A.ReSchedule is not null and Wi_A.Activity_Start_time is not null, 'True', 'Flase') 'WiA_Schedule_TimeKILL'
-			,Convert (DateTime, Wi_A.Schedule_Time) 'WiA_Schedule_Time'
-			,IIF
-				( 
-					Ac_S.Activity_Start_Time is not null
-					, Ac_S.Activity_Start_Time
-					,cast (cast (Ac_S.Visit_Date as Date ) as DateTime ) 
-					+ cast(cast ( Ac_S.Visit_Time as Time ) as DateTime)
-				) 'AcS_Activity_Start_Time'
-			,Wi_A.Schedule_Duration 'WiA_Scheduled_Duration'
-			,Wi_A.Activity_ID 'WiA_Activity_ID'
-			,Ac_S.Visit_Duration 'AcS_Visit_Duration'
-			,Ac_S.Client_Not_Home 'Client_Not_Home'
-			,Ac_S.Visit_Date 'AcS_Visit_Date'
-			,Ac_S.Visit_No 'Visit_No'
-			,IIF(Ac_S.Task_Type_Code is null,Wi_A.Schedule_Task_Type, Ac_S.Task_Type_Code) 'Task_Type_Code'
-			,Wi_A.[CAP_ID] 'CAP_ID'
-			,Wi_A.[Absence_Code]
-			,Wi_A.Group_Activity_ID 'Group_Activity_ID'
-			,AC_S.Travel_Km 'Travel_Km'
-			,ROW_NUMBER () -- sort by importance of 'covered' 'absent' and 'Un-Alocated'.
-			over 
-			(
-				Partition by Wi_A.Client_ID, Wi_A.[Activity_Date], Wi_A.[SPPID], Wi_A.Schedule_Time
-				 Order by 
-					Case
-						when ((Wi_A.[Provider_ID] &gt; 0) and (Wi_A.[Absence_Code] is NULL)) then '1'
-						when (Wi_A.[Provider_ID] &gt; 0) and (Wi_A.[Absence_Code] is not NULL) then '2'
-					else 'z'
-				end
-			) AS 'RN'
-		from dbo.WI_Activity Wi_A
-		Left Outer Join dbo.Actual_Service Ac_S 
-		ON 
-			1=1
-			and Wi_A.Client_ID = Ac_S.Client_ID 
-			and Wi_A.SPPID = Ac_S.Service_Prov_Position_ID
-			and Wi_A.Activity_Date = Ac_S.Visit_Date
-			and Wi_A.Round_Allocation_ID = Ac_S.Allocated_Task_ID
-
-		where
-			1=1
-			and Wi_A.Cancellation_Date is NULL
-			and Wi_A.Client_ID IS NOT NULL		
-	)J001
-
-	Left outer Join
-	(
-		select
-			FC_CC.Client_ID 'Client_ID'
-			,FC_T.Visit_Date 'Visit_Date'
-			,FC_T.Comments 'Line_Description'
-			,cast ((select Text from dbo.Split(FC_T.Source_Record_Key, '/') where Record_Number = 3) as int) 'Visit_No'
-			,cast ((select Text from dbo.Split(FC_T.Source_Record_Key, '/') where Record_Number = 5) as int) 'Service_Prov_Position_ID'
-			,cast ((select Text from dbo.Split(FC_T.Source_Record_Key, '/') where Record_Number = 4) as int) 'Provider_ID'
-			,(FC_T.Actual_Amount * -1.0) 'Amount'
-			,FC_FC.Description 'funderContract'
-			,FC_FCM.Description 'CareModel'
-		from [dbo].FC_Client_Contract FC_CC
-		Left outer Join [dbo].FC_Funder_Contract FC_FC	on FC_FC.funder_Contract_ID = FC_CC.funder_Contract_ID
-		Left outer Join [dbo].FC_Funding_Care_Model FC_FCM on FC_FCM.Funding_Care_Model_ID = FC_FC.Funding_Care_Model_ID
-		Left outer join [dbo].FC_Account FC_A on FC_A.client_Contract_ID = FC_CC.client_Contract_ID
-		
-
-		Left outer join 
+		select 
+		A.Address_ID
+		,Concat
 		(
-			select 
-				FC_T.FC_Account_ID 'FC_Account_ID'
-				,FC_T.FC_Transaction_Type_ID 'FC_Transaction_Type_ID'
-				,FC_T.Activity_Date 'Visit_Date'
-				,FC_T.Transaction_Source 'Transaction_Source'
-				,FC_T.Estimated_Amount 'Estimated_Amount'
-				,FC_T.Actual_Amount 'Actual_Amount'
-				,FC_T.Balance_After_Txn 'Balance_After_Txn'
-				,FC_T.Source_Table 'Source_Table'
-				,FC_T.Source_Record_Key 'Source_Record_Key'
-				,FC_T.Comments 'Comments'
-				,ROW_NUMBER() over(
-									partition by FC_T.FC_Account_ID, FC_T.Activity_Date
-									order by 
-									case
-									when FC_T.Actual_Amount = 0.0 then 'zzzz'
-									else 
-									FC_T.Actual_Amount --desc
-									end desc
-								)'RN'
-			from [dbo].FC_Transaction FC_T
-			where 
-				1=1
-				and FC_T.FC_Transaction_Type_ID = 3
-				and FC_T.Actual_Amount &lt;&gt; 0.0
+			A.Building_Name
+			,iif(A.Building_Name is null,null,', ')
+			,A.Dwelling_Number
+			,iif(A.Dwelling_Number is null,null,' ')
+			,A.Street_or_PO_Box
+			,iif(A.Street_or_PO_Box is null,null,', ')
+			,S.Suburb_Name
+			,iif(S.Suburb_Name is null,null,' ')
+			,A.Post_Code
+		)'Client_Address'
+		,A.Access_Comments
+		from dbo.Address A
+		left outer join dbo.Suburb S on S.Suburb_ID = A.Suburb_ID
+	)J013 on J013.Address_ID = J001.Override_Address_ID-- and J001.Override_Address_ID &lt;&gt; 0
 
-		)FC_T on FC_T.FC_Account_ID = FC_A.FC_Account_ID
-
-	)J002 ON 
-			J002.Client_ID = J001.Client_ID 
-			and J002.Visit_Date = J001.AcS_Visit_Date 
-			and J002.Visit_No = J001.Visit_No
-			and J002.Service_Prov_Position_ID = J001.AcS_SPPID
-			and J002.Provider_ID = J001.AcS_Provider_ID
-
-	Left outer Join
+	Left outer join dbo.Person_Current_Address_Phone J014 on J014.Person_id = J001.Client_ID
+	Left outer join 
 	(
-		select
-			FC_CC.Client_ID 'Client_ID'
-			,FC_FC.Description 'funderContract'
-			,FC_FCM.Description 'CareModel'
-		from [dbo].FC_Client_Contract FC_CC
-		Left outer Join [dbo].FC_Funder_Contract FC_FC	on FC_FC.funder_Contract_ID = FC_CC.funder_Contract_ID
-		Left outer Join [dbo].FC_Funding_Care_Model FC_FCM on FC_FCM.Funding_Care_Model_ID = FC_FC.Funding_Care_Model_ID
+		select 
+		PA.Alert_Type_ID
+		,PA.Person_ID
+		,ROW_NUMBER()over
+		(
+			partition by PA.Person_ID 
+			order by Case
+			when PA.Alert_Type_ID in (select * from @ProvRiskAlert) then '1'
+			else 'z'
+			end
+		)'RN'
+		from dbo.Person_Alert PA
 
-	)J088 on J088.Client_ID = J001.Client_ID
-
-	Left outer Join [dbo].[Task_Type] J004 on J004.Task_Type_Code = J001.Task_Type_Code
-	Left Outer Join [dbo].[Service_Delivery] J005 ON J001.[Client_ID] = J005.[Client_ID]
-
-	Left outer JOIN 
-	(
-		Select 
-			SD.[Client_ID]
-			,O.[Organisation_Name]
-			,SD.[Service_Type_Code]
-			,ROW_NUMBER ()
-				over 
-				(
-					Partition by SD.[Client_ID] Order by
-						CASE
-						WHEN O.[Organisation_Name] = @Organisation THEN '1'
-						ELSE O.[Organisation_Name] END ASC
-				) AS 'RN'
-		from [dbo].[Service_Delivery] SD
-			join [dbo].[Period_of_Residency] PR on PR.Person_ID = SD.Client_ID
-			join [dbo].[Address] A on A.Address_ID = PR.Address_ID
-			Join [dbo].[Service_Provision] SP on A.Suburb_ID = SP.Suburb_ID and SP.Service_Type_Code = SD.Service_Type_Code
-			Join [dbo].[Organisation] O on Sp.Centre_ID = O.Organisation_ID
-		Where PR.To_Date is null and PR.Display_Indicator  = 1
-	) J006 ON J006.[Client_ID] = J001.[Client_ID] AND J006.[Service_Type_Code] = J005.[Service_Type_Code]
-
-	Left outer Join
-	(
-		select
-			CCB.[Client_ID] 'Client_ID'
-			,Org.[Organisation_Name] 'Organisation_Name'
-			,CBG.[Description] 'ContractBillingGroup'
-			,ROW_NUMBER ()
-				over 
-				(
-					Partition by CCB.[Client_ID] Order by
-						CASE
-						WHEN Org.[Organisation_Name] = @Organisation THEN '1'
-						ELSE Org.[Organisation_Name] END ASC
-				) 'RN'
-		from [dbo].[FB_Client_Contract_Billing] CCB
-			left outer join [dbo].[FB_Contract_Billing_Group] CBG on CBG.[Contract_Billing_Group_ID] = CCB.[Contract_Billing_Group_ID]
-			left outer Join [dbo].[FB_Client_Contract_Billed_To] CCBT on CCBT.[Client_CB_ID] = CCB.[Client_CB_ID]
-			left outer Join [dbo].[FB_Client_CB_Split] CCBS on CCBS.[Client_Contract_Billed_To_ID] = CCBT.[Client_Contract_Billed_To_ID]
-			left outer Join [dbo].[Organisation] Org on CCBS.[Organisation_ID] = Org.[Organisation_ID]
-
-	)J009 on J009.[Client_ID] = J001.[Client_ID]
-
-	Left Outer Join [dbo].[FC_Contract_Area_Product] J010 ON J010.[CAP_ID] = J001.[CAP_ID]
-	LEFT OUTER JOIN [dbo].[FC_Funder_Contract] J011 ON J011.[Funder_Contract_ID] = J010.[Funder_Contract_ID]
-
-	Where 
+	)J015 on J015.Person_ID = J001.Client_ID
+	where
 		1=1
---		and J001.Client_ID = @Client_ID_
-		
-		and 1 = iif(J001.RN &gt; 1 and J001.WiA_Provider_ID = 0, 0, 1)
-		and (J006.RN &lt; 2 or J006.RN is null)
-		and (J009.RN &lt; 2 or J009.RN is null)
-		and convert(datetime, J001.WiA_Schedule_Time) between @StartDate and (DATEADD(s, 84599, @EndDate))
-		and J001.Client_ID IS NOT NULL
-		and J088.CareModel = 'Home Care Package'
-
-		and J006.[Organisation_Name] = @Organisation
---		AND (IIF (J088.funderContract is NULL,'No Contract',J088.funderContract) in (select * from @ContractType))
-		and (IIF (J011.Description is NULL,'No Contract',J011.Description) in (@ContractType))
-
-
-	Group by
-		J001.Client_ID
-		,J001.WiA_Provider_ID 
-		,IIF(J001.WiA_Schedule_TimeKILL = 'true', null, Cast (J001.WiA_Schedule_Time as Datetime)) 	
-		,J001.WiA_Scheduled_Duration 
-		,(Cast (J001.AcS_Activity_Start_Time as Datetime)) 
-		,J001.AcS_Visit_Duration
-		,J088.CareModel 
-		,J004.[Description] 
-		,J001.Client_Not_Home
-		,IIF (J002.Client_ID IS NULL, 0, 1) 
-		,IIF (J001.Client_Not_Home IS NULL, 1, 0) 
-		,J002.Line_Description 
-		,J002.Amount
-		,J088.funderContract
-		,iif(J001.Group_Activity_ID is Null, 0, 1)
-		,J001.Travel_Km
-)t2
-
-
+		and (J015.RN &lt; 2 or J015.RN is null)
+		and J001.Provider_ID &lt;&gt; 0
+		and J001.Schedule_Duration is not null
+		and J001.Activity_Date between @Start_Date and @End_Date
+		and (J005.Organisation_Name = @Centre or Jx002.Organisation_Name = @Centre)
+--		/*
+		and J001.Event_Type &lt;&gt; 12
+		and J001.Event_Type &lt;&gt; 13
+		and J001.Event_type &lt;&gt; 17
+		and J001.Event_type &lt;&gt; 16
+		and J001.Event_type &lt;&gt; 5
+--		*/
+/*
+		and J003.Provider_Class_Code in (@ClassCodeFilter)
+		and J004.Description in (@TeamFilt)
 --*/
+
+) as T1
+where
+	1=1
+--/*
+	and t1.Provider_Class_Code in (@ClassCodeFilter)
+	and t1.Team in (@TeamFilt)
 --*/
+group by 
+	T1.Centre
+	,T1.Team
+	,T1.ServiceProvision
+	,T1.Provider_Class_Code
+	,T1.Provider_Class
+	,t1.DayOfWeek
+	,t1.Activity_Date
+	,t1.StartTime
+	,t1.Duration
+	,t1.EndTime
+	,t1.Provider_ID
+	,t1.Client_ID
+--	,t1.Absence_Code
+	,t1.ProviderName
+	,t1.Client_Name
+	,t1.Visit_Address
+	,t1.Access_Comments
+	,t1.Client_PH
+	--DeBug Info.
+--	/*
+	,t1.SPPID
+	,t1.Task_Type
+	,t1.Internal_Task_Type
+	,t1.Event_Type
+	,t1.Event_Type_code
+	,t1.Group_Activity
+	,t1.ClientAlert
+	,t1.RN
+--*/
+
 order by
-1,3,5,12</CommandText>
+	t1.Activity_Date
+	,T1.ServiceProvision
+	,T1.Provider_Class_Code
+	,T1.StartTime
+	,T1.Group_Activity
+	,T1.Client_ID
+	,T1.EndTime
+
+SET DATEFIRST 7</CommandText>
       </Query>
       <Fields>
-        <Field Name="Client_ID">
-          <DataField>Client_ID</DataField>
-          <rd:TypeName>System.Int32</rd:TypeName>
+        <Field Name="Centre">
+          <DataField>Centre</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Team">
+          <DataField>Team</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="ServiceProvision">
+          <DataField>ServiceProvision</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Provider_Class_Code">
+          <DataField>Provider_Class_Code</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Provider_Class">
+          <DataField>Provider_Class</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="DayOfWeek">
+          <DataField>DayOfWeek</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Activity_Date">
+          <DataField>Activity_Date</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="StartTime">
+          <DataField>StartTime</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="Duration">
+          <DataField>Duration</DataField>
+          <rd:TypeName>System.Int16</rd:TypeName>
+        </Field>
+        <Field Name="EndTime">
+          <DataField>EndTime</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
         </Field>
         <Field Name="Provider_ID">
           <DataField>Provider_ID</DataField>
           <rd:TypeName>System.Int32</rd:TypeName>
         </Field>
-        <Field Name="Schedule_Visit_Time">
-          <DataField>Schedule_Visit_Time</DataField>
-          <rd:TypeName>System.DateTime</rd:TypeName>
-        </Field>
-        <Field Name="Scheduled_Duration">
-          <DataField>Scheduled_Duration</DataField>
-          <rd:TypeName>System.Int16</rd:TypeName>
-        </Field>
-        <Field Name="Actual_Visit_Time">
-          <DataField>Actual_Visit_Time</DataField>
-          <rd:TypeName>System.DateTime</rd:TypeName>
-        </Field>
-        <Field Name="Actual_Duration">
-          <DataField>Actual_Duration</DataField>
-          <rd:TypeName>System.Int16</rd:TypeName>
-        </Field>
-        <Field Name="CareModel">
-          <DataField>CareModel</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-        <Field Name="task_Description">
-          <DataField>task_Description</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-        <Field Name="Client_Not_Home">
-          <DataField>Client_Not_Home</DataField>
+        <Field Name="Client_ID">
+          <DataField>Client_ID</DataField>
           <rd:TypeName>System.Int32</rd:TypeName>
         </Field>
-        <Field Name="Has_Charge_Item">
-          <DataField>Has_Charge_Item</DataField>
-          <rd:TypeName>System.Int32</rd:TypeName>
-        </Field>
-        <Field Name="In_WiA_Only">
-          <DataField>In_WiA_Only</DataField>
-          <rd:TypeName>System.Int32</rd:TypeName>
-        </Field>
-        <Field Name="Charge_Item_Line_Description">
-          <DataField>Charge_Item_Line_Description</DataField>
+        <Field Name="ProviderName">
+          <DataField>ProviderName</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
-        <Field Name="Amount">
-          <DataField>Amount</DataField>
+        <Field Name="Client_Name">
+          <DataField>Client_Name</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Visit_Address">
+          <DataField>Visit_Address</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Access_Comments">
+          <DataField>Access_Comments</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Client_PH">
+          <DataField>Client_PH</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="SPPID">
+          <DataField>SPPID</DataField>
           <rd:TypeName>System.Decimal</rd:TypeName>
         </Field>
-        <Field Name="funderContract">
-          <DataField>funderContract</DataField>
+        <Field Name="Task_Type">
+          <DataField>Task_Type</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
-        <Field Name="HasGroupActivity">
-          <DataField>HasGroupActivity</DataField>
+        <Field Name="Internal_Task_Type">
+          <DataField>Internal_Task_Type</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Event_Type">
+          <DataField>Event_Type</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Event_Type_code">
+          <DataField>Event_Type_code</DataField>
+          <rd:TypeName>System.Int16</rd:TypeName>
+        </Field>
+        <Field Name="Group_Activity">
+          <DataField>Group_Activity</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="ClientAlert">
+          <DataField>ClientAlert</DataField>
           <rd:TypeName>System.Int32</rd:TypeName>
         </Field>
-        <Field Name="Travel_Km">
-          <DataField>Travel_Km</DataField>
-          <rd:TypeName>System.Decimal</rd:TypeName>
+        <Field Name="RN">
+          <DataField>RN</DataField>
+          <rd:TypeName>System.Int64</rd:TypeName>
         </Field>
       </Fields>
     </DataSet>
     <DataSet Name="DataSet2">
       <Query>
-        <DataSourceName>REF_ASADWH</DataSourceName>
-        <CommandText>select 'No Contract' Description where 1=1
-union
-select
-	Description
-from [dbo].[FC_Funder_Contract]
+        <DataSourceName>Ref_Prod</DataSourceName>
+        <CommandText>select 
+	Organisation_Name 'OrgNm'
+	
+	from [dbo].organisation
 where 
-	1=1
-	AND (Description like '%Care at Home' )
+--	Organisation_Name like 'Home Care %'
+	Organisation_Name like 'Disab%'
 order by 1</CommandText>
       </Query>
       <Fields>
+        <Field Name="OrgNm">
+          <DataField>OrgNm</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="DataSet3">
+      <Query>
+        <DataSourceName>Ref_Prod</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@Centre">
+            <Value>=Parameters!Centre.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>select 
+	J003.Provider_Class_Code
+	,J004.Description
+
+from [dbo].[Organisation] J001
+
+inner join [dbo].[Service_Delivery_Work_Team] J002 on J002.[Centre_ID] = J001.[Organisation_ID]
+left outer join [dbo].[Service_Provision_Position] J003 on J003.[Centre_ID] = J002.[Centre_ID] and J003.Team_No = J002.Team_No
+inner join [dbo].[Provider_Classification] J004 on J004.Provider_Class_Code = J003.Provider_Class_Code
+
+where
+	1=1
+	and J001.Organisation_Name = @Centre
+
+Group by
+	J003.Provider_Class_Code
+	,J004.Description
+order by 2,1</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="Provider_Class_Code">
+          <DataField>Provider_Class_Code</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
         <Field Name="Description">
           <DataField>Description</DataField>
           <rd:TypeName>System.String</rd:TypeName>
@@ -550,17 +428,164 @@ order by 1</CommandText>
     </DataSet>
     <DataSet Name="DataSet4">
       <Query>
-        <DataSourceName>REF_ASADWH</DataSourceName>
-        <CommandText>select Organisation_Name from [dbo].[Organisation]
-where 
+        <DataSourceName>Ref_Prod</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@Centre">
+            <Value>=Parameters!Centre.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@ClassCodeFilter">
+            <Value>=Parameters!ClassCodeFilter.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>select * from
+(
+select 
+	iif('DSW'in (@ClassCodeFilter),'Overnight Respite',null) as Team 
+Union
+
+select 
+	J002.Description 'Team'
+
+from [dbo].[Organisation] J001
+
+inner join [dbo].[Service_Delivery_Work_Team] J002 on J002.[Centre_ID] = J001.[Organisation_ID]
+left outer join [dbo].[Service_Provision_Position] J003 on J003.[Centre_ID] = J002.[Centre_ID] and J003.Team_No = J002.Team_No
+--inner join [dbo].[Provider_Classification] J004 on J004.Provider_Class_Code = J003.Provider_Class_Code
+
+where
 	1=1
-	and organisation_type_code = 1
-	and Organisation_Name like 'Home Care %'</CommandText>
+	and J001.Organisation_Name = @Centre
+	and J002.Effective_Date_To is null
+	and J003.Provider_Class_Code in (@ClassCodeFilter)
+)T1
+where T1.Team is not null
+
+Group by
+T1.Team
+
+order by 1</CommandText>
       </Query>
       <Fields>
-        <Field Name="Organisation_Name">
-          <DataField>Organisation_Name</DataField>
+        <Field Name="Team">
+          <DataField>Team</DataField>
           <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="DataSet_ClientAlert">
+      <Query>
+        <DataSourceName>Ref_Prod</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@Start_Date">
+            <Value>=Parameters!Start_Date.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@End_Date">
+            <Value>=Parameters!End_Date.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Centre">
+            <Value>=Parameters!Centre.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>
+---------------------------
+--Main quiry
+---------------------------
+Declare @ProvRiskAlert Table (Code int)
+insert into @ProvRiskAlert values (2),(3),(6),(8)
+
+Select * from 
+(
+	select
+		J001.Client_ID
+		,J012.Client_Name
+		,J014.Phone 'Client_PH'
+		,J016.Description'Alert_type'
+		,J015.Alert_Comments'Alert_Comments'
+		,iif(J015.Alert_Type_ID is null,0,iif(J015.Alert_Type_ID in(select * from @ProvRiskAlert),2,1))'HighlightAlert'
+
+	From 
+	(
+		Select
+			WiA.SPPID 'SPPID'
+			,WIA.Client_ID
+			,cast (WiA.Activity_Date as date) 'Activity_Date'
+			,WiA.Provider_ID 'Provider_ID'
+			,WiA.Schedule_Duration 'Schedule_Duration'
+		From dbo.Wi_Activity WiA
+		where 
+			convert(date, Wia.Activity_Date) between dateadd(day,-7,@Start_Date) and dateadd(day,7,@End_Date)
+			and Wia.Event_Type &lt;&gt; 12
+			and Wia.Event_Type &lt;&gt; 13
+			and Wia.Event_type &lt;&gt; 17
+			and Wia.Event_type &lt;&gt; 16
+	)J001
+
+	Left Outer Join dbo.Person J002 on J002.Person_ID = J001.Provider_ID
+	Left outer join dbo.Service_Provision_Position J003 on J003.Service_Prov_Position_ID = J001.SPPID
+	Left outer join dbo.Service_Delivery_Work_Team J004 on J004.Team_No = J003.Team_No and J004.Centre_ID = J003.Centre_ID
+	Left outer join dbo.Organisation J005 on J005.Organisation_ID = J004.Centre_ID
+
+	left outer join 
+	(
+		select 
+		P.Person_ID
+		,Concat(P.Last_Name,', ',P.Preferred_Name)'Client_Name'
+		from dbo.Person P
+	)J012 on J012.Person_ID = J001.Client_ID
+
+	Left outer join dbo.Person_Current_Address_Phone J014 on J014.Person_id = J001.Client_ID
+	Left outer join dbo.Person_Alert J015 on J015.Person_ID = J001.Client_ID
+	Left outer join dbo.Alert_Type J016 on J016.Alert_Type_ID = J015.Alert_Type_ID
+
+	where
+		1=1
+		and J001.Provider_ID &lt;&gt; 0
+		and J001.Schedule_Duration is not null
+		and J001.Activity_Date between @Start_Date and @End_Date
+		and J005.Organisation_Name = @Centre
+
+) as T1
+where
+	1=1
+	and t1.Alert_type is not null
+
+group by 
+	t1.Client_ID
+	,t1.Client_Name
+	,t1.Client_PH
+	,t1.Alert_type
+	,t1.Alert_Comments
+	,t1.HighlightAlert
+
+order by
+	t1.Client_Name
+	,T1.Client_ID
+</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="Client_ID">
+          <DataField>Client_ID</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="Client_Name">
+          <DataField>Client_Name</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Client_PH">
+          <DataField>Client_PH</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Alert_type">
+          <DataField>Alert_type</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Alert_Comments">
+          <DataField>Alert_Comments</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="HighlightAlert">
+          <DataField>HighlightAlert</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
         </Field>
       </Fields>
     </DataSet>
@@ -569,59 +594,29 @@ where
     <ReportSection>
       <Body>
         <ReportItems>
-          <Tablix Name="Tablix1">
+          <Tablix Name="Tablix3">
             <TablixBody>
               <TablixColumns>
                 <TablixColumn>
-                  <Width>2.02375cm</Width>
+                  <Width>3.21437cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>3.63771cm</Width>
+                  <Width>1.21708cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>3.77cm</Width>
+                  <Width>3.21438cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>1.865cm</Width>
-                </TablixColumn>
-                <TablixColumn>
-                  <Width>1.91792cm</Width>
-                </TablixColumn>
-                <TablixColumn>
-                  <Width>1.5475cm</Width>
-                </TablixColumn>
-                <TablixColumn>
-                  <Width>1.33583cm</Width>
-                </TablixColumn>
-                <TablixColumn>
-                  <Width>1.50812cm</Width>
-                </TablixColumn>
-                <TablixColumn>
-                  <Width>1.97083cm</Width>
-                </TablixColumn>
-                <TablixColumn>
-                  <Width>1.52104cm</Width>
-                </TablixColumn>
-                <TablixColumn>
-                  <Width>13.54729cm</Width>
-                </TablixColumn>
-                <TablixColumn>
-                  <Width>1.50812cm</Width>
-                </TablixColumn>
-                <TablixColumn>
-                  <Width>4.12751cm</Width>
-                </TablixColumn>
-                <TablixColumn>
-                  <Width>6.7598cm</Width>
+                  <Width>5.84791cm</Width>
                 </TablixColumn>
               </TablixColumns>
               <TablixRows>
                 <TablixRow>
-                  <Height>0.6cm</Height>
+                  <Height>0.70583cm</Height>
                   <TablixCells>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Textbox27">
+                        <Textbox Name="Textbox56">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
@@ -630,399 +625,189 @@ where
                                 <TextRun>
                                   <Value />
                                   <Style>
-                                    <Color>White</Color>
+                                    <FontSize>11pt</FontSize>
                                   </Style>
                                 </TextRun>
                               </TextRuns>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Textbox27</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BottomBorder>
-                              <Style>None</Style>
-                            </BottomBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox28">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value />
-                                  <Style>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox28</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BottomBorder>
-                              <Style>None</Style>
-                            </BottomBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox29">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value />
-                                  <Style>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style>
-                                <TextAlign>Right</TextAlign>
-                              </Style>
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox29</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BottomBorder>
-                              <Style>None</Style>
-                            </BottomBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox30">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value />
-                                  <Style>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style>
-                                <TextAlign>Center</TextAlign>
-                              </Style>
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox30</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BottomBorder>
-                              <Style>None</Style>
-                            </BottomBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox31">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value />
-                                  <Style>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox31</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BottomBorder>
-                              <Style>None</Style>
-                            </BottomBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox32">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>Duration</Value>
-                                  <Style>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style>
-                                <TextAlign>Center</TextAlign>
-                              </Style>
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox32</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BottomBorder>
-                              <Style>None</Style>
-                            </BottomBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                        <ColSpan>2</ColSpan>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell />
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox6">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value />
-                                  <Style>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style>
-                                <TextAlign>Center</TextAlign>
-                              </Style>
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox6</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BottomBorder>
-                              <Style>None</Style>
-                            </BottomBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox34">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value />
-                                  <Style>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style>
-                                <TextAlign>Center</TextAlign>
-                              </Style>
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox34</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BottomBorder>
-                              <Style>None</Style>
-                            </BottomBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox12">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value />
-                                  <Style>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style>
-                                <TextAlign>Center</TextAlign>
-                              </Style>
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox12</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BottomBorder>
-                              <Style>None</Style>
-                            </BottomBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox35">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value />
-                                  <Style>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox35</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BottomBorder>
-                              <Style>None</Style>
-                            </BottomBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox36">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value />
-                                  <Style>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox36</rd:DefaultName>
+                          <rd:DefaultName>Textbox56</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
                               <Style>Solid</Style>
                             </Border>
                             <TopBorder>
-                              <Style>Solid</Style>
-                            </TopBorder>
-                            <BottomBorder>
                               <Style>None</Style>
-                            </BottomBorder>
+                            </TopBorder>
+                            <LeftBorder>
+                              <Style>None</Style>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Style>None</Style>
+                            </RightBorder>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox93">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value />
+                                  <Style>
+                                    <FontSize>11pt</FontSize>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox93</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Style>None</Style>
+                            </TopBorder>
+                            <LeftBorder>
+                              <Style>None</Style>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Style>None</Style>
+                            </RightBorder>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox57">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value />
+                                  <Style>
+                                    <FontSize>11pt</FontSize>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox57</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Style>None</Style>
+                            </TopBorder>
+                            <LeftBorder>
+                              <Style>None</Style>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Style>None</Style>
+                            </RightBorder>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox58">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value />
+                                  <Style>
+                                    <FontSize>11pt</FontSize>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox58</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Style>None</Style>
+                            </TopBorder>
+                            <LeftBorder>
+                              <Style>None</Style>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Style>None</Style>
+                            </RightBorder>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.75875cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox63">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Client</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox63</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
                             <BackgroundColor>#004b8e</BackgroundColor>
                             <PaddingLeft>2pt</PaddingLeft>
                             <PaddingRight>2pt</PaddingRight>
@@ -1034,15 +819,16 @@ where
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Textbox2">
+                        <Textbox Name="Textbox94">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value />
+                                  <Value>Alert</Value>
                                   <Style>
+                                    <FontWeight>Bold</FontWeight>
                                     <Color>White</Color>
                                   </Style>
                                 </TextRun>
@@ -1050,18 +836,12 @@ where
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Textbox2</rd:DefaultName>
+                          <rd:DefaultName>Textbox94</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
                               <Style>Solid</Style>
                             </Border>
-                            <TopBorder>
-                              <Style>Solid</Style>
-                            </TopBorder>
-                            <BottomBorder>
-                              <Style>None</Style>
-                            </BottomBorder>
                             <BackgroundColor>#004b8e</BackgroundColor>
                             <PaddingLeft>2pt</PaddingLeft>
                             <PaddingRight>2pt</PaddingRight>
@@ -1073,15 +853,16 @@ where
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Textbox37">
+                        <Textbox Name="Textbox64">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value />
+                                  <Value>Cient Phone</Value>
                                   <Style>
+                                    <FontWeight>Bold</FontWeight>
                                     <Color>White</Color>
                                   </Style>
                                 </TextRun>
@@ -1089,18 +870,46 @@ where
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Textbox37</rd:DefaultName>
+                          <rd:DefaultName>Textbox64</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
                               <Style>Solid</Style>
                             </Border>
-                            <TopBorder>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox65">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Visit Address + Comments</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox65</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
                               <Style>Solid</Style>
-                            </TopBorder>
-                            <BottomBorder>
-                              <Style>None</Style>
-                            </BottomBorder>
+                            </Border>
                             <BackgroundColor>#004b8e</BackgroundColor>
                             <PaddingLeft>2pt</PaddingLeft>
                             <PaddingRight>2pt</PaddingRight>
@@ -1113,36 +922,33 @@ where
                   </TablixCells>
                 </TablixRow>
                 <TablixRow>
-                  <Height>1.18208cm</Height>
+                  <Height>0.52062cm</Height>
                   <TablixCells>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Textbox1">
+                        <Textbox Name="Client_Name1">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Client ID</Value>
+                                  <Value>="&lt;b&gt;"+Fields!Client_Name.Value+"&lt;/b&gt;"+"&lt;Br&gt;"+ cstr(Fields!Client_ID.Value)</Value>
+                                  <MarkupType>HTML</MarkupType>
                                   <Style>
-                                    <Color>White</Color>
+                                    <FontSize>8pt</FontSize>
                                   </Style>
                                 </TextRun>
                               </TextRuns>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Textbox1</rd:DefaultName>
+                          <rd:DefaultName>Client_Name1</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
                               <Style>Solid</Style>
                             </Border>
-                            <TopBorder>
-                              <Style>None</Style>
-                            </TopBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
                             <PaddingLeft>2pt</PaddingLeft>
                             <PaddingRight>2pt</PaddingRight>
                             <PaddingTop>2pt</PaddingTop>
@@ -1153,32 +959,29 @@ where
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Textbox3">
+                        <Textbox Name="Textbox95">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Schedule Visit Time</Value>
+                                  <Value>=Switch(Fields!ClientAlert.Value = 0 and not(isnothing(Fields!Client_ID.Value)),"No",Fields!ClientAlert.Value = 1,"Yes",Fields!ClientAlert.Value = 2,"&lt;b&gt;&lt;U&gt;Yes&lt;/b&gt;&lt;/u&gt;",isnothing(Fields!Client_ID.Value),nothing)</Value>
+                                  <MarkupType>HTML</MarkupType>
                                   <Style>
-                                    <Color>White</Color>
+                                    <FontSize>8pt</FontSize>
                                   </Style>
                                 </TextRun>
                               </TextRuns>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Textbox3</rd:DefaultName>
+                          <rd:DefaultName>Textbox95</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
                               <Style>Solid</Style>
                             </Border>
-                            <TopBorder>
-                              <Style>None</Style>
-                            </TopBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
                             <PaddingLeft>2pt</PaddingLeft>
                             <PaddingRight>2pt</PaddingRight>
                             <PaddingTop>2pt</PaddingTop>
@@ -1189,108 +992,28 @@ where
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Textbox5">
+                        <Textbox Name="Client_PH">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Actual Visit Time</Value>
+                                  <Value>=iif(inStr(Fields!Client_PH.Value,"@")=0,Fields!Client_PH.Value,nothing)</Value>
                                   <Style>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style>
-                                <TextAlign>Left</TextAlign>
-                              </Style>
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox5</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <TopBorder>
-                              <Style>None</Style>
-                            </TopBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox7">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>Client Not Home</Value>
-                                  <Style>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style>
-                                <TextAlign>Center</TextAlign>
-                              </Style>
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox7</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <TopBorder>
-                              <Style>None</Style>
-                            </TopBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox9">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>Provider ID</Value>
-                                  <Style>
-                                    <Color>White</Color>
+                                    <FontSize>8pt</FontSize>
                                   </Style>
                                 </TextRun>
                               </TextRuns>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Textbox9</rd:DefaultName>
+                          <rd:DefaultName>Client_PH</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
                               <Style>Solid</Style>
                             </Border>
-                            <TopBorder>
-                              <Style>None</Style>
-                            </TopBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
                             <PaddingLeft>2pt</PaddingLeft>
                             <PaddingRight>2pt</PaddingRight>
                             <PaddingTop>2pt</PaddingTop>
@@ -1301,935 +1024,29 @@ where
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Textbox11">
+                        <Textbox Name="Visit_Address">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Sched</Value>
+                                  <Value>="&lt;b&gt;"+Fields!Visit_Address.Value+"&lt;/b&gt;" + iif(isnothing(Fields!Access_Comments.Value),nothing ,"&lt;Br&gt;" + Fields!Access_Comments.Value)</Value>
+                                  <MarkupType>HTML</MarkupType>
                                   <Style>
-                                    <Color>White</Color>
+                                    <FontSize>8pt</FontSize>
                                   </Style>
                                 </TextRun>
                               </TextRuns>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Textbox11</rd:DefaultName>
+                          <rd:DefaultName>Visit_Address</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
                               <Style>Solid</Style>
                             </Border>
-                            <TopBorder>
-                              <Style>None</Style>
-                            </TopBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox13">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>Act</Value>
-                                  <Style>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox13</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <TopBorder>
-                              <Style>None</Style>
-                            </TopBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox8">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>Km Traveled</Value>
-                                  <Style>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox8</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <TopBorder>
-                              <Style>None</Style>
-                            </TopBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox25">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>Has Charge Item</Value>
-                                  <Style>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style>
-                                <TextAlign>Left</TextAlign>
-                              </Style>
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox25</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <TopBorder>
-                              <Style>None</Style>
-                            </TopBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox14">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>Is Group Activity</Value>
-                                  <Style>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style>
-                                <TextAlign>Left</TextAlign>
-                              </Style>
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox14</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <TopBorder>
-                              <Style>None</Style>
-                            </TopBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox19">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>Charge Item Line Description</Value>
-                                  <Style>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox19</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <TopBorder>
-                              <Style>None</Style>
-                            </TopBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox21">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>Amount</Value>
-                                  <Style>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox21</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <TopBorder>
-                              <Style>None</Style>
-                            </TopBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox4">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>Care Model</Value>
-                                  <Style>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox4</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <TopBorder>
-                              <Style>None</Style>
-                            </TopBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox23">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>Funder Contract</Value>
-                                  <Style>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox23</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <TopBorder>
-                              <Style>None</Style>
-                            </TopBorder>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                  </TablixCells>
-                </TablixRow>
-                <TablixRow>
-                  <Height>0.6cm</Height>
-                  <TablixCells>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Client_ID">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=Fields!Client_ID.Value</Value>
-                                  <Style>
-                                    <Color>=
-IIF
-(
-	Fields!Has_Charge_Item.Value = 1
-	,"Black"
-	,"Red"
-)</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style>
-                                <TextAlign>Right</TextAlign>
-                              </Style>
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Client_ID</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Schedule_Visit_Time">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=
-IIF
-(
-	isnothing(Fields!Schedule_Visit_Time.Value)
-	,"-not on record-"
-	,Fields!Schedule_Visit_Time.Value
-)</Value>
-                                  <Style>
-                                    <Format>d/MM/yyyy h:mm tt</Format>
-                                    <Color>=
-IIF
-(
-	Fields!Has_Charge_Item.Value = 1
-	,"Black"
-	,"Red"
-)</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style>
-                                <TextAlign>Right</TextAlign>
-                              </Style>
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Schedule_Visit_Time</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Actual_Visit_Time">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=
-IIF
-(
-	isnothing(Fields!Actual_Visit_Time.Value)
-	,"-not on record-"
-	,Fields!Actual_Visit_Time.Value
-)</Value>
-                                  <Style>
-                                    <Format>d/MM/yyyy h:mm tt</Format>
-                                    <Color>=
-IIF
-(
-	Fields!Has_Charge_Item.Value = 1
-	,"Black"
-	,"Red"
-)</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style>
-                                <TextAlign>Right</TextAlign>
-                              </Style>
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Actual_Visit_Time</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Client_Not_Home">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=
-IIF
-(
-	Fields!Client_Not_Home.Value = 1
-	,"True"
-	,"False"
-)</Value>
-                                  <Style>
-                                    <Color>=
-IIF
-(
-	Fields!Has_Charge_Item.Value = 1
-	,"Black"
-	,"Red"
-)</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style>
-                                <TextAlign>Center</TextAlign>
-                              </Style>
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Client_Not_Home</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Provider_ID">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=iif(Fields!Provider_ID.Value = 0, "Not Allocated",Fields!Provider_ID.Value)</Value>
-                                  <Style>
-                                    <Color>=
-IIF
-(
-	Fields!Has_Charge_Item.Value = 1
-	,"Black"
-	,"Red"
-)</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Provider_ID</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Scheduled_Duration">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=Fields!Scheduled_Duration.Value/60</Value>
-                                  <Style>
-                                    <Format>0.00;(0.00)</Format>
-                                    <Color>=
-IIF
-(
-	Fields!Has_Charge_Item.Value = 1
-	,"Black"
-	,"Red"
-)</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Scheduled_Duration</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Actual_Duration">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=Fields!Actual_Duration.Value/60</Value>
-                                  <Style>
-                                    <Format>0.00;(0.00)</Format>
-                                    <Color>=
-IIF
-(
-	Fields!Has_Charge_Item.Value = 1
-	,"Black"
-	,"Red"
-)</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Actual_Duration</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Travel_Km">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=
-iif
-(
-isnothing(Fields!Travel_Km.Value)
-,"---"
-,Fields!Travel_Km.Value
-)</Value>
-                                  <Style>
-                                    <Color>=
-IIF
-(
-	Fields!Has_Charge_Item.Value = 1
-	,"Black"
-	,"Red"
-)</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Travel_Km</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Has_Charge_Item">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=
-IIF
-(
-	Fields!Has_Charge_Item.Value = 1
-	,"True"
-	,"False"
-)</Value>
-                                  <Style>
-                                    <Color>=
-IIF
-(
-	Fields!Has_Charge_Item.Value = 1
-	,"Black"
-	,"Red"
-)</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style>
-                                <TextAlign>Center</TextAlign>
-                              </Style>
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Has_Charge_Item</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="HasGroupActivity">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=IIF(Fields!HasGroupActivity.Value = 1, "Yes", "No")</Value>
-                                  <Style>
-                                    <Color>=
-IIF
-(
-	Fields!Has_Charge_Item.Value = 1
-	,"Black"
-	,"Red"
-)</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style>
-                                <TextAlign>Center</TextAlign>
-                              </Style>
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>HasGroupActivity</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Charge_Item_Line_Description">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=
-IIF
-(
-	Fields!Has_Charge_Item.Value = 1
-	,Fields!Charge_Item_Line_Description.Value
-	,"------ NO CHARGE ITEM ------  " &amp; Fields!task_Description.Value
-)</Value>
-                                  <Style>
-                                    <Color>=
-IIF
-(
-	Fields!Has_Charge_Item.Value = 1
-	,"Black"
-	,"Red"
-)</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Charge_Item_Line_Description</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Amount">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=
-IIF
-(
-	isnothing (Fields!Amount.Value)
-	,"---"
-	,Fields!Amount.Value
-)</Value>
-                                  <Style>
-                                    <Format>'$'0.00;('$'0.00)</Format>
-                                    <Color>=
-IIF
-(
-	Fields!Has_Charge_Item.Value = 1
-	,"Black"
-	,"Red"
-)</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Amount</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                            <rd:FormatSymbolCulture>en-AU</rd:FormatSymbolCulture>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="CareModel">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=Fields!CareModel.Value</Value>
-                                  <Style>
-                                    <Color>=
-IIF
-(
-	Fields!Has_Charge_Item.Value = 1
-	,"Black"
-	,"Red"
-)</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>CareModel</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="funderContract">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=Fields!funderContract.Value</Value>
-                                  <Style>
-                                    <Color>=
-IIF
-(
-	Fields!Has_Charge_Item.Value = 1
-	,"Black"
-	,"Red"
-)</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>funderContract</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
                             <PaddingLeft>2pt</PaddingLeft>
                             <PaddingRight>2pt</PaddingRight>
                             <PaddingTop>2pt</PaddingTop>
@@ -2248,14 +1065,716 @@ IIF
                 <TablixMember />
                 <TablixMember />
                 <TablixMember />
-                <TablixMember />
-                <TablixMember />
-                <TablixMember />
-                <TablixMember />
-                <TablixMember />
-                <TablixMember />
-                <TablixMember />
-                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <Group Name="Activity_Date">
+                    <GroupExpressions>
+                      <GroupExpression>=Fields!Activity_Date.Value</GroupExpression>
+                    </GroupExpressions>
+                    <PageBreak>
+                      <BreakLocation>Between</BreakLocation>
+                    </PageBreak>
+                  </Group>
+                  <SortExpressions>
+                    <SortExpression>
+                      <Value>=Fields!Activity_Date.Value</Value>
+                    </SortExpression>
+                  </SortExpressions>
+                  <TablixMembers>
+                    <TablixMember>
+                      <TablixHeader>
+                        <Size>14.20626cm</Size>
+                        <CellContents>
+                          <Textbox Name="Textbox52">
+                            <CanGrow>true</CanGrow>
+                            <KeepTogether>true</KeepTogether>
+                            <Paragraphs>
+                              <Paragraph>
+                                <TextRuns>
+                                  <TextRun>
+                                    <Value>=Fields!DayOfWeek.Value +" " + Fields!Activity_Date.Value</Value>
+                                    <Style>
+                                      <FontSize>11pt</FontSize>
+                                      <FontWeight>Bold</FontWeight>
+                                    </Style>
+                                  </TextRun>
+                                </TextRuns>
+                                <Style />
+                              </Paragraph>
+                            </Paragraphs>
+                            <rd:DefaultName>Textbox52</rd:DefaultName>
+                            <Style>
+                              <Border>
+                                <Color>LightGrey</Color>
+                                <Style>Solid</Style>
+                              </Border>
+                              <TopBorder>
+                                <Style>None</Style>
+                              </TopBorder>
+                              <LeftBorder>
+                                <Style>None</Style>
+                              </LeftBorder>
+                              <RightBorder>
+                                <Style>None</Style>
+                              </RightBorder>
+                              <PaddingLeft>2pt</PaddingLeft>
+                              <PaddingRight>2pt</PaddingRight>
+                              <PaddingTop>2pt</PaddingTop>
+                              <PaddingBottom>2pt</PaddingBottom>
+                            </Style>
+                          </Textbox>
+                        </CellContents>
+                      </TablixHeader>
+                      <TablixMembers>
+                        <TablixMember />
+                      </TablixMembers>
+                      <KeepWithGroup>After</KeepWithGroup>
+                      <RepeatOnNewPage>true</RepeatOnNewPage>
+                    </TablixMember>
+                    <TablixMember>
+                      <TablixHeader>
+                        <Size>3.36021cm</Size>
+                        <CellContents>
+                          <Textbox Name="Textbox59">
+                            <CanGrow>true</CanGrow>
+                            <KeepTogether>true</KeepTogether>
+                            <Paragraphs>
+                              <Paragraph>
+                                <TextRuns>
+                                  <TextRun>
+                                    <Value>Team &amp; Prov Class</Value>
+                                    <Style>
+                                      <FontWeight>Bold</FontWeight>
+                                      <Color>White</Color>
+                                    </Style>
+                                  </TextRun>
+                                </TextRuns>
+                                <Style />
+                              </Paragraph>
+                            </Paragraphs>
+                            <rd:DefaultName>Textbox59</rd:DefaultName>
+                            <Style>
+                              <Border>
+                                <Color>LightGrey</Color>
+                                <Style>Solid</Style>
+                              </Border>
+                              <BackgroundColor>#004b8e</BackgroundColor>
+                              <PaddingLeft>2pt</PaddingLeft>
+                              <PaddingRight>2pt</PaddingRight>
+                              <PaddingTop>2pt</PaddingTop>
+                              <PaddingBottom>2pt</PaddingBottom>
+                            </Style>
+                          </Textbox>
+                        </CellContents>
+                      </TablixHeader>
+                      <TablixMembers>
+                        <TablixMember>
+                          <TablixHeader>
+                            <Size>2.9119cm</Size>
+                            <CellContents>
+                              <Textbox Name="Textbox60">
+                                <CanGrow>true</CanGrow>
+                                <KeepTogether>true</KeepTogether>
+                                <Paragraphs>
+                                  <Paragraph>
+                                    <TextRuns>
+                                      <TextRun>
+                                        <Value>Provider</Value>
+                                        <Style>
+                                          <FontWeight>Bold</FontWeight>
+                                          <Color>White</Color>
+                                        </Style>
+                                      </TextRun>
+                                    </TextRuns>
+                                    <Style />
+                                  </Paragraph>
+                                </Paragraphs>
+                                <rd:DefaultName>Textbox60</rd:DefaultName>
+                                <Style>
+                                  <Border>
+                                    <Color>LightGrey</Color>
+                                    <Style>Solid</Style>
+                                  </Border>
+                                  <BackgroundColor>#004b8e</BackgroundColor>
+                                  <PaddingLeft>2pt</PaddingLeft>
+                                  <PaddingRight>2pt</PaddingRight>
+                                  <PaddingTop>2pt</PaddingTop>
+                                  <PaddingBottom>2pt</PaddingBottom>
+                                </Style>
+                              </Textbox>
+                            </CellContents>
+                          </TablixHeader>
+                          <TablixMembers>
+                            <TablixMember>
+                              <TablixHeader>
+                                <Size>2.23889cm</Size>
+                                <CellContents>
+                                  <Textbox Name="Textbox61">
+                                    <CanGrow>true</CanGrow>
+                                    <KeepTogether>true</KeepTogether>
+                                    <Paragraphs>
+                                      <Paragraph>
+                                        <TextRuns>
+                                          <TextRun>
+                                            <Value>Time</Value>
+                                            <Style>
+                                              <FontWeight>Bold</FontWeight>
+                                              <Color>White</Color>
+                                            </Style>
+                                          </TextRun>
+                                        </TextRuns>
+                                        <Style />
+                                      </Paragraph>
+                                    </Paragraphs>
+                                    <rd:DefaultName>Textbox61</rd:DefaultName>
+                                    <Style>
+                                      <Border>
+                                        <Color>LightGrey</Color>
+                                        <Style>Solid</Style>
+                                      </Border>
+                                      <BackgroundColor>#004b8e</BackgroundColor>
+                                      <PaddingLeft>2pt</PaddingLeft>
+                                      <PaddingRight>2pt</PaddingRight>
+                                      <PaddingTop>2pt</PaddingTop>
+                                      <PaddingBottom>2pt</PaddingBottom>
+                                    </Style>
+                                  </Textbox>
+                                </CellContents>
+                              </TablixHeader>
+                              <TablixMembers>
+                                <TablixMember>
+                                  <TablixHeader>
+                                    <Size>5.69526cm</Size>
+                                    <CellContents>
+                                      <Textbox Name="Textbox62">
+                                        <CanGrow>true</CanGrow>
+                                        <KeepTogether>true</KeepTogether>
+                                        <Paragraphs>
+                                          <Paragraph>
+                                            <TextRuns>
+                                              <TextRun>
+                                                <Value>Task</Value>
+                                                <Style>
+                                                  <FontWeight>Bold</FontWeight>
+                                                  <Color>White</Color>
+                                                </Style>
+                                              </TextRun>
+                                            </TextRuns>
+                                            <Style />
+                                          </Paragraph>
+                                        </Paragraphs>
+                                        <rd:DefaultName>Textbox62</rd:DefaultName>
+                                        <Style>
+                                          <Border>
+                                            <Color>LightGrey</Color>
+                                            <Style>Solid</Style>
+                                          </Border>
+                                          <BackgroundColor>#004b8e</BackgroundColor>
+                                          <PaddingLeft>2pt</PaddingLeft>
+                                          <PaddingRight>2pt</PaddingRight>
+                                          <PaddingTop>2pt</PaddingTop>
+                                          <PaddingBottom>2pt</PaddingBottom>
+                                        </Style>
+                                      </Textbox>
+                                    </CellContents>
+                                  </TablixHeader>
+                                  <TablixMembers>
+                                    <TablixMember />
+                                  </TablixMembers>
+                                </TablixMember>
+                              </TablixMembers>
+                            </TablixMember>
+                          </TablixMembers>
+                        </TablixMember>
+                      </TablixMembers>
+                      <KeepWithGroup>After</KeepWithGroup>
+                      <RepeatOnNewPage>true</RepeatOnNewPage>
+                    </TablixMember>
+                    <TablixMember>
+                      <Group Name="Team">
+                        <GroupExpressions>
+                          <GroupExpression>=Fields!Team.Value</GroupExpression>
+                          <GroupExpression>=Fields!Provider_Class.Value</GroupExpression>
+                        </GroupExpressions>
+                      </Group>
+                      <SortExpressions>
+                        <SortExpression>
+                          <Value>=Fields!Team.Value</Value>
+                        </SortExpression>
+                      </SortExpressions>
+                      <TablixHeader>
+                        <Size>3.36021cm</Size>
+                        <CellContents>
+                          <Textbox Name="Team">
+                            <CanGrow>true</CanGrow>
+                            <KeepTogether>true</KeepTogether>
+                            <Paragraphs>
+                              <Paragraph>
+                                <TextRuns>
+                                  <TextRun>
+                                    <Value>="&lt;b&gt;"+Fields!Team.Value+"&lt;/b&gt;" +"&lt;Br&gt;"+Fields!Provider_Class.Value</Value>
+                                    <MarkupType>HTML</MarkupType>
+                                    <Style>
+                                      <FontSize>8pt</FontSize>
+                                    </Style>
+                                  </TextRun>
+                                </TextRuns>
+                                <Style />
+                              </Paragraph>
+                            </Paragraphs>
+                            <rd:DefaultName>Team</rd:DefaultName>
+                            <Style>
+                              <Border>
+                                <Color>LightGrey</Color>
+                                <Style>Solid</Style>
+                              </Border>
+                              <PaddingLeft>2pt</PaddingLeft>
+                              <PaddingRight>2pt</PaddingRight>
+                              <PaddingTop>2pt</PaddingTop>
+                              <PaddingBottom>2pt</PaddingBottom>
+                            </Style>
+                          </Textbox>
+                        </CellContents>
+                      </TablixHeader>
+                      <TablixMembers>
+                        <TablixMember>
+                          <Group Name="ProviderName">
+                            <GroupExpressions>
+                              <GroupExpression>=Fields!ProviderName.Value</GroupExpression>
+                            </GroupExpressions>
+                          </Group>
+                          <SortExpressions>
+                            <SortExpression>
+                              <Value>=Fields!ProviderName.Value</Value>
+                            </SortExpression>
+                          </SortExpressions>
+                          <TablixHeader>
+                            <Size>2.9119cm</Size>
+                            <CellContents>
+                              <Textbox Name="ProviderName">
+                                <CanGrow>true</CanGrow>
+                                <KeepTogether>true</KeepTogether>
+                                <Paragraphs>
+                                  <Paragraph>
+                                    <TextRuns>
+                                      <TextRun>
+                                        <Value>="&lt;b&gt;"+Fields!ProviderName.Value+"&lt;/b&gt;" +"&lt;Br&gt;"+ cstr(Fields!Provider_ID.Value)</Value>
+                                        <MarkupType>HTML</MarkupType>
+                                        <Style>
+                                          <FontSize>8pt</FontSize>
+                                        </Style>
+                                      </TextRun>
+                                    </TextRuns>
+                                    <Style />
+                                  </Paragraph>
+                                </Paragraphs>
+                                <rd:DefaultName>ProviderName</rd:DefaultName>
+                                <Style>
+                                  <Border>
+                                    <Color>LightGrey</Color>
+                                    <Style>Solid</Style>
+                                  </Border>
+                                  <PaddingLeft>2pt</PaddingLeft>
+                                  <PaddingRight>2pt</PaddingRight>
+                                  <PaddingTop>2pt</PaddingTop>
+                                  <PaddingBottom>2pt</PaddingBottom>
+                                </Style>
+                              </Textbox>
+                            </CellContents>
+                          </TablixHeader>
+                          <TablixMembers>
+                            <TablixMember>
+                              <Group Name="StartTime">
+                                <GroupExpressions>
+                                  <GroupExpression>=Fields!StartTime.Value</GroupExpression>
+                                </GroupExpressions>
+                              </Group>
+                              <SortExpressions>
+                                <SortExpression>
+                                  <Value>=Fields!StartTime.Value</Value>
+                                </SortExpression>
+                              </SortExpressions>
+                              <TablixHeader>
+                                <Size>2.23889cm</Size>
+                                <CellContents>
+                                  <Textbox Name="StartTime1">
+                                    <CanGrow>true</CanGrow>
+                                    <KeepTogether>true</KeepTogether>
+                                    <Paragraphs>
+                                      <Paragraph>
+                                        <TextRuns>
+                                          <TextRun>
+                                            <Value>="&lt;b&gt;"+Format(Fields!StartTime.Value, "HH:mm") + " - " + Format(Fields!EndTime.Value, "HH:mm")+"&lt;/b&gt;"  +"&lt;Br&gt;"+ "[Dur: "+ Cstr(Fields!Duration.Value)+ " min]"</Value>
+                                            <MarkupType>HTML</MarkupType>
+                                            <Style>
+                                              <FontSize>8pt</FontSize>
+                                            </Style>
+                                          </TextRun>
+                                        </TextRuns>
+                                        <Style />
+                                      </Paragraph>
+                                    </Paragraphs>
+                                    <rd:DefaultName>StartTime1</rd:DefaultName>
+                                    <Style>
+                                      <Border>
+                                        <Color>LightGrey</Color>
+                                        <Style>Solid</Style>
+                                      </Border>
+                                      <PaddingLeft>2pt</PaddingLeft>
+                                      <PaddingRight>2pt</PaddingRight>
+                                      <PaddingTop>2pt</PaddingTop>
+                                      <PaddingBottom>2pt</PaddingBottom>
+                                    </Style>
+                                  </Textbox>
+                                </CellContents>
+                              </TablixHeader>
+                              <TablixMembers>
+                                <TablixMember>
+                                  <Group Name="Event_Type">
+                                    <GroupExpressions>
+                                      <GroupExpression>=Fields!Event_Type.Value</GroupExpression>
+                                    </GroupExpressions>
+                                  </Group>
+                                  <SortExpressions>
+                                    <SortExpression>
+                                      <Value>=Fields!Event_Type_code.Value</Value>
+                                      <Direction>Descending</Direction>
+                                    </SortExpression>
+                                  </SortExpressions>
+                                  <TablixHeader>
+                                    <Size>5.69526cm</Size>
+                                    <CellContents>
+                                      <Textbox Name="Event_Type">
+                                        <CanGrow>true</CanGrow>
+                                        <KeepTogether>true</KeepTogether>
+                                        <Paragraphs>
+                                          <Paragraph>
+                                            <TextRuns>
+                                              <TextRun>
+                                                <Value>="&lt;b&gt;"+Fields!Event_Type.Value+"&lt;/b&gt;"
++iif
+(
+	(isNothing(Fields!Group_Activity.Value) and Fields!Event_Type_code.Value &lt;&gt; 23) or (Fields!Event_Type_code.Value = 23)
+	,Nothing
+	," GA: "+ Fields!Group_Activity.Value
+)
++"&lt;Br&gt;"
++iif (Fields!Event_Type_code.Value &lt;&gt; 23, Fields!Task_Type.Value, Fields!Group_Activity.Value)</Value>
+                                                <MarkupType>HTML</MarkupType>
+                                                <Style>
+                                                  <FontSize>8pt</FontSize>
+                                                </Style>
+                                              </TextRun>
+                                            </TextRuns>
+                                            <Style />
+                                          </Paragraph>
+                                        </Paragraphs>
+                                        <rd:DefaultName>Event_Type</rd:DefaultName>
+                                        <Style>
+                                          <Border>
+                                            <Color>LightGrey</Color>
+                                            <Style>Solid</Style>
+                                          </Border>
+                                          <PaddingLeft>2pt</PaddingLeft>
+                                          <PaddingRight>2pt</PaddingRight>
+                                          <PaddingTop>2pt</PaddingTop>
+                                          <PaddingBottom>2pt</PaddingBottom>
+                                        </Style>
+                                      </Textbox>
+                                    </CellContents>
+                                  </TablixHeader>
+                                  <TablixMembers>
+                                    <TablixMember>
+                                      <Group Name="Details1" />
+                                    </TablixMember>
+                                  </TablixMembers>
+                                </TablixMember>
+                              </TablixMembers>
+                            </TablixMember>
+                          </TablixMembers>
+                        </TablixMember>
+                      </TablixMembers>
+                    </TablixMember>
+                  </TablixMembers>
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            <DataSetName>DataSet1</DataSetName>
+            <Height>1.9852cm</Height>
+            <Width>27.7cm</Width>
+            <Visibility>
+              <Hidden>=iif(Parameters!IncludeClientAlert.Value =2, True, false)</Hidden>
+            </Visibility>
+            <Style>
+              <Border>
+                <Style>None</Style>
+              </Border>
+            </Style>
+          </Tablix>
+          <Tablix Name="Tablix5">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn>
+                  <Width>4.34589cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>15.4252cm</Width>
+                </TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.6cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox83">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value />
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox83</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BottomBorder>
+                              <Style>None</Style>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Style>None</Style>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Style>None</Style>
+                            </RightBorder>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox90">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value />
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox90</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BottomBorder>
+                              <Style>None</Style>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Style>None</Style>
+                            </LeftBorder>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.6cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox72">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Alert Type</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox72</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Style>None</Style>
+                            </TopBorder>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox91">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Alert Comments</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox91</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Style>None</Style>
+                            </TopBorder>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.54708cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ClientAlert">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=switch
+(
+	Fields!HighlightAlert.Value = 1,Fields!Alert_type.Value
+	,Fields!HighlightAlert.Value = 2, "&lt;b&gt;" +Fields!Alert_type.Value + "&lt;/b&gt;"
+)</Value>
+                                  <MarkupType>HTML</MarkupType>
+                                  <Style>
+                                    <FontSize>8pt</FontSize>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>ClientAlert</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Alert_Comments">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=switch
+(
+	Fields!HighlightAlert.Value = 1,Fields!Alert_Comments.Value
+	,Fields!HighlightAlert.Value = 2, "&lt;b&gt;" +Fields!Alert_Comments.Value + "&lt;/b&gt;"
+)</Value>
+                                  <MarkupType>HTML</MarkupType>
+                                  <Style>
+                                    <FontSize>8pt</FontSize>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Alert_Comments</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>4pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy>
+              <TablixMembers>
                 <TablixMember />
                 <TablixMember />
               </TablixMembers>
@@ -2263,50 +1782,336 @@ IIF
             <TablixRowHierarchy>
               <TablixMembers>
                 <TablixMember>
+                  <TablixHeader>
+                    <Size>7.92891cm</Size>
+                    <CellContents>
+                      <Textbox Name="Textbox80">
+                        <CanGrow>true</CanGrow>
+                        <KeepTogether>true</KeepTogether>
+                        <Paragraphs>
+                          <Paragraph>
+                            <TextRuns>
+                              <TextRun>
+                                <Value>Client Alerts</Value>
+                                <Style>
+                                  <FontWeight>Bold</FontWeight>
+                                  <Color>White</Color>
+                                </Style>
+                              </TextRun>
+                            </TextRuns>
+                            <Style />
+                          </Paragraph>
+                        </Paragraphs>
+                        <rd:DefaultName>Textbox80</rd:DefaultName>
+                        <Style>
+                          <Border>
+                            <Color>LightGrey</Color>
+                            <Style>Solid</Style>
+                          </Border>
+                          <BottomBorder>
+                            <Style>None</Style>
+                          </BottomBorder>
+                          <RightBorder>
+                            <Style>None</Style>
+                          </RightBorder>
+                          <BackgroundColor>#004b8e</BackgroundColor>
+                          <PaddingLeft>2pt</PaddingLeft>
+                          <PaddingRight>2pt</PaddingRight>
+                          <PaddingTop>2pt</PaddingTop>
+                          <PaddingBottom>2pt</PaddingBottom>
+                        </Style>
+                      </Textbox>
+                    </CellContents>
+                  </TablixHeader>
                   <KeepWithGroup>After</KeepWithGroup>
+                  <RepeatOnNewPage>true</RepeatOnNewPage>
                 </TablixMember>
                 <TablixMember>
+                  <TablixHeader>
+                    <Size>3.36021cm</Size>
+                    <CellContents>
+                      <Textbox Name="Textbox78">
+                        <CanGrow>true</CanGrow>
+                        <KeepTogether>true</KeepTogether>
+                        <Paragraphs>
+                          <Paragraph>
+                            <TextRuns>
+                              <TextRun>
+                                <Value>Name</Value>
+                                <Style>
+                                  <FontWeight>Bold</FontWeight>
+                                  <Color>White</Color>
+                                </Style>
+                              </TextRun>
+                            </TextRuns>
+                            <Style />
+                          </Paragraph>
+                        </Paragraphs>
+                        <rd:DefaultName>Textbox78</rd:DefaultName>
+                        <Style>
+                          <Border>
+                            <Color>LightGrey</Color>
+                            <Style>Solid</Style>
+                          </Border>
+                          <TopBorder>
+                            <Style>None</Style>
+                          </TopBorder>
+                          <BackgroundColor>#004b8e</BackgroundColor>
+                          <PaddingLeft>2pt</PaddingLeft>
+                          <PaddingRight>2pt</PaddingRight>
+                          <PaddingTop>2pt</PaddingTop>
+                          <PaddingBottom>2pt</PaddingBottom>
+                        </Style>
+                      </Textbox>
+                    </CellContents>
+                  </TablixHeader>
+                  <TablixMembers>
+                    <TablixMember>
+                      <TablixHeader>
+                        <Size>1.88002cm</Size>
+                        <CellContents>
+                          <Textbox Name="Textbox76">
+                            <CanGrow>true</CanGrow>
+                            <KeepTogether>true</KeepTogether>
+                            <Paragraphs>
+                              <Paragraph>
+                                <TextRuns>
+                                  <TextRun>
+                                    <Value>ID</Value>
+                                    <Style>
+                                      <FontWeight>Bold</FontWeight>
+                                      <Color>White</Color>
+                                    </Style>
+                                  </TextRun>
+                                </TextRuns>
+                                <Style />
+                              </Paragraph>
+                            </Paragraphs>
+                            <rd:DefaultName>Textbox76</rd:DefaultName>
+                            <Style>
+                              <Border>
+                                <Color>LightGrey</Color>
+                                <Style>Solid</Style>
+                              </Border>
+                              <TopBorder>
+                                <Style>None</Style>
+                              </TopBorder>
+                              <BackgroundColor>#004b8e</BackgroundColor>
+                              <PaddingLeft>2pt</PaddingLeft>
+                              <PaddingRight>2pt</PaddingRight>
+                              <PaddingTop>2pt</PaddingTop>
+                              <PaddingBottom>2pt</PaddingBottom>
+                            </Style>
+                          </Textbox>
+                        </CellContents>
+                      </TablixHeader>
+                      <TablixMembers>
+                        <TablixMember>
+                          <TablixHeader>
+                            <Size>2.68868cm</Size>
+                            <CellContents>
+                              <Textbox Name="Textbox74">
+                                <CanGrow>true</CanGrow>
+                                <KeepTogether>true</KeepTogether>
+                                <Paragraphs>
+                                  <Paragraph>
+                                    <TextRuns>
+                                      <TextRun>
+                                        <Value>Phone</Value>
+                                        <Style>
+                                          <FontWeight>Bold</FontWeight>
+                                          <Color>White</Color>
+                                        </Style>
+                                      </TextRun>
+                                    </TextRuns>
+                                    <Style />
+                                  </Paragraph>
+                                </Paragraphs>
+                                <rd:DefaultName>Textbox74</rd:DefaultName>
+                                <Style>
+                                  <Border>
+                                    <Color>LightGrey</Color>
+                                    <Style>Solid</Style>
+                                  </Border>
+                                  <TopBorder>
+                                    <Style>None</Style>
+                                  </TopBorder>
+                                  <BackgroundColor>#004b8e</BackgroundColor>
+                                  <PaddingLeft>2pt</PaddingLeft>
+                                  <PaddingRight>2pt</PaddingRight>
+                                  <PaddingTop>2pt</PaddingTop>
+                                  <PaddingBottom>2pt</PaddingBottom>
+                                </Style>
+                              </Textbox>
+                            </CellContents>
+                          </TablixHeader>
+                          <TablixMembers>
+                            <TablixMember />
+                          </TablixMembers>
+                        </TablixMember>
+                      </TablixMembers>
+                    </TablixMember>
+                  </TablixMembers>
                   <KeepWithGroup>After</KeepWithGroup>
+                  <RepeatOnNewPage>true</RepeatOnNewPage>
                 </TablixMember>
                 <TablixMember>
-                  <Group Name="Details">
-                    <Filters>
-                      <Filter>
-                        <FilterExpression>=1</FilterExpression>
-                        <Operator>Equal</Operator>
-                        <FilterValues>
-                          <FilterValue DataType="Integer">=
-Switch
-(
-	Parameters!GroupActivity.Value = 0, 1
-	,Parameters!GroupActivity.Value = 1, IIF(Fields!HasGroupActivity.Value = 0,1,0)
-	,Parameters!GroupActivity.Value = 2, Fields!HasGroupActivity.Value
-)</FilterValue>
-                        </FilterValues>
-                      </Filter>
-                    </Filters>
+                  <Group Name="Client_Name">
+                    <GroupExpressions>
+                      <GroupExpression>=Fields!Client_Name.Value</GroupExpression>
+                    </GroupExpressions>
                   </Group>
-                  <Visibility>
-                    <Hidden>=
-(
-	IIF
-	(
-		Parameters!HideGood.Value = "Yes" and Fields!Has_Charge_Item.Value = 1
-		,True
-		,False 
-	)
-)</Hidden>
-                  </Visibility>
+                  <SortExpressions>
+                    <SortExpression>
+                      <Value>=Fields!Client_Name.Value</Value>
+                    </SortExpression>
+                  </SortExpressions>
+                  <TablixHeader>
+                    <Size>3.36021cm</Size>
+                    <CellContents>
+                      <Textbox Name="Client_Name">
+                        <CanGrow>true</CanGrow>
+                        <KeepTogether>true</KeepTogether>
+                        <Paragraphs>
+                          <Paragraph>
+                            <TextRuns>
+                              <TextRun>
+                                <Value>=Fields!Client_Name.Value</Value>
+                                <Style>
+                                  <FontSize>8pt</FontSize>
+                                </Style>
+                              </TextRun>
+                            </TextRuns>
+                            <Style />
+                          </Paragraph>
+                        </Paragraphs>
+                        <rd:DefaultName>Client_Name</rd:DefaultName>
+                        <Style>
+                          <Border>
+                            <Color>LightGrey</Color>
+                            <Style>Solid</Style>
+                          </Border>
+                          <PaddingLeft>2pt</PaddingLeft>
+                          <PaddingRight>2pt</PaddingRight>
+                          <PaddingTop>2pt</PaddingTop>
+                          <PaddingBottom>2pt</PaddingBottom>
+                        </Style>
+                      </Textbox>
+                    </CellContents>
+                  </TablixHeader>
+                  <TablixMembers>
+                    <TablixMember>
+                      <Group Name="Client_ID">
+                        <GroupExpressions>
+                          <GroupExpression>=Fields!Client_ID.Value</GroupExpression>
+                        </GroupExpressions>
+                      </Group>
+                      <SortExpressions>
+                        <SortExpression>
+                          <Value>=Fields!Client_ID.Value</Value>
+                        </SortExpression>
+                      </SortExpressions>
+                      <TablixHeader>
+                        <Size>1.88002cm</Size>
+                        <CellContents>
+                          <Textbox Name="Client_ID">
+                            <CanGrow>true</CanGrow>
+                            <KeepTogether>true</KeepTogether>
+                            <Paragraphs>
+                              <Paragraph>
+                                <TextRuns>
+                                  <TextRun>
+                                    <Value>=Fields!Client_ID.Value</Value>
+                                    <Style>
+                                      <FontSize>8pt</FontSize>
+                                    </Style>
+                                  </TextRun>
+                                </TextRuns>
+                                <Style />
+                              </Paragraph>
+                            </Paragraphs>
+                            <rd:DefaultName>Client_ID</rd:DefaultName>
+                            <Style>
+                              <Border>
+                                <Color>LightGrey</Color>
+                                <Style>Solid</Style>
+                              </Border>
+                              <PaddingLeft>2pt</PaddingLeft>
+                              <PaddingRight>2pt</PaddingRight>
+                              <PaddingTop>2pt</PaddingTop>
+                              <PaddingBottom>2pt</PaddingBottom>
+                            </Style>
+                          </Textbox>
+                        </CellContents>
+                      </TablixHeader>
+                      <TablixMembers>
+                        <TablixMember>
+                          <Group Name="Client_PH">
+                            <GroupExpressions>
+                              <GroupExpression>=Fields!Client_PH.Value</GroupExpression>
+                            </GroupExpressions>
+                          </Group>
+                          <SortExpressions>
+                            <SortExpression>
+                              <Value>=Fields!Client_PH.Value</Value>
+                            </SortExpression>
+                          </SortExpressions>
+                          <TablixHeader>
+                            <Size>2.68868cm</Size>
+                            <CellContents>
+                              <Textbox Name="Client_PH1">
+                                <CanGrow>true</CanGrow>
+                                <KeepTogether>true</KeepTogether>
+                                <Paragraphs>
+                                  <Paragraph>
+                                    <TextRuns>
+                                      <TextRun>
+                                        <Value>=iif(InStr(Fields!Client_PH.Value , "@") = 0,Fields!Client_PH.Value,nothing)</Value>
+                                        <Style>
+                                          <FontSize>8pt</FontSize>
+                                        </Style>
+                                      </TextRun>
+                                    </TextRuns>
+                                    <Style />
+                                  </Paragraph>
+                                </Paragraphs>
+                                <rd:DefaultName>Client_PH1</rd:DefaultName>
+                                <Style>
+                                  <Border>
+                                    <Color>LightGrey</Color>
+                                    <Style>Solid</Style>
+                                  </Border>
+                                  <PaddingLeft>2pt</PaddingLeft>
+                                  <PaddingRight>2pt</PaddingRight>
+                                  <PaddingTop>2pt</PaddingTop>
+                                  <PaddingBottom>2pt</PaddingBottom>
+                                </Style>
+                              </Textbox>
+                            </CellContents>
+                          </TablixHeader>
+                          <TablixMembers>
+                            <TablixMember>
+                              <Group Name="Details" />
+                            </TablixMember>
+                          </TablixMembers>
+                        </TablixMember>
+                      </TablixMembers>
+                    </TablixMember>
+                  </TablixMembers>
                 </TablixMember>
               </TablixMembers>
             </TablixRowHierarchy>
-            <RepeatColumnHeaders>true</RepeatColumnHeaders>
-            <RepeatRowHeaders>true</RepeatRowHeaders>
-            <FixedColumnHeaders>true</FixedColumnHeaders>
-            <FixedRowHeaders>true</FixedRowHeaders>
-            <DataSetName>DataSet1</DataSetName>
-            <Height>2.38208cm</Height>
-            <Width>47.04042cm</Width>
+            <DataSetName>DataSet_ClientAlert</DataSetName>
+            <PageBreak>
+              <BreakLocation>Start</BreakLocation>
+            </PageBreak>
+            <Top>1.98521cm</Top>
+            <Height>1.74708cm</Height>
+            <Width>27.7cm</Width>
+            <ZIndex>1</ZIndex>
+            <Visibility>
+              <Hidden>=iif(Parameters!IncludeClientAlert.Value = 1, True, False)</Hidden>
+            </Visibility>
             <Style>
               <Border>
                 <Style>None</Style>
@@ -2314,98 +2119,142 @@ Switch
             </Style>
           </Tablix>
         </ReportItems>
-        <Height>0.93783in</Height>
+        <Height>1.46941in</Height>
         <Style />
       </Body>
-      <Width>18.51985in</Width>
+      <Width>10.90551in</Width>
       <Page>
         <PageHeader>
-          <Height>1.95863cm</Height>
+          <Height>1.0814cm</Height>
           <PrintOnFirstPage>true</PrintOnFirstPage>
           <PrintOnLastPage>true</PrintOnLastPage>
           <ReportItems>
-            <Image Name="Logo">
-              <Source>Embedded</Source>
-              <Value>Logo_AnglicareSA</Value>
-              <Sizing>FitProportional</Sizing>
-              <Left>40.28062cm</Left>
-              <Height>1.95862cm</Height>
-              <Width>6.7598cm</Width>
-              <Style>
-                <Border>
-                  <Style>None</Style>
-                </Border>
-              </Style>
-            </Image>
-            <Textbox Name="Textbox38">
+            <Textbox Name="Textbox8">
               <CanGrow>true</CanGrow>
               <KeepTogether>true</KeepTogether>
               <Paragraphs>
                 <Paragraph>
                   <TextRuns>
                     <TextRun>
-                      <Value>Home Care Package Remediation</Value>
+                      <Value>Provider Schedule </Value>
                       <Style>
-                        <FontSize>16pt</FontSize>
+                        <FontSize>20pt</FontSize>
                         <FontWeight>Bold</FontWeight>
                         <Color>#004b8e</Color>
                       </Style>
                     </TextRun>
-                  </TextRuns>
-                  <Style />
-                </Paragraph>
-                <Paragraph>
-                  <TextRuns>
                     <TextRun>
-                      <Value>=Parameters!Organisation.Value</Value>
-                      <Style>
-                        <FontWeight>Bold</FontWeight>
-                      </Style>
-                    </TextRun>
-                    <TextRun>
-                      <Value> for period </Value>
+                      <Value>=Parameters!Centre.Value</Value>
                       <Style>
                         <FontWeight>Normal</FontWeight>
-                      </Style>
-                    </TextRun>
-                    <TextRun>
-                      <Value>=Format(Parameters!StartDate.Value, "dd/MM/yyyy") &amp; " to " &amp; Format(Parameters!EndDate.Value, "dd/MM/yyyy")</Value>
-                      <Style>
-                        <FontWeight>Bold</FontWeight>
-                      </Style>
-                    </TextRun>
-                    <TextRun>
-                      <Value xml:space="preserve"> </Value>
-                      <Style>
-                        <FontWeight>Normal</FontWeight>
-                      </Style>
-                    </TextRun>
-                  </TextRuns>
-                  <Style />
-                </Paragraph>
-                <Paragraph>
-                  <TextRuns>
-                    <TextRun>
-                      <Value>covering contract('s) </Value>
-                      <Style>
-                        <FontWeight>Normal</FontWeight>
-                      </Style>
-                    </TextRun>
-                    <TextRun>
-                      <Value>=Join(Parameters!ContractType.Value ,", ")</Value>
-                      <Style>
-                        <FontWeight>Bold</FontWeight>
                       </Style>
                     </TextRun>
                   </TextRuns>
                   <Style />
                 </Paragraph>
               </Paragraphs>
-              <rd:DefaultName>Textbox38</rd:DefaultName>
-              <Top>0.00001cm</Top>
-              <Height>1.95862cm</Height>
-              <Width>34.64499cm</Width>
+              <rd:DefaultName>Textbox8</rd:DefaultName>
+              <Height>1.0814cm</Height>
+              <Width>21.82563cm</Width>
+              <Style>
+                <Border>
+                  <Style>None</Style>
+                </Border>
+                <PaddingLeft>2pt</PaddingLeft>
+                <PaddingRight>2pt</PaddingRight>
+                <PaddingTop>2pt</PaddingTop>
+                <PaddingBottom>2pt</PaddingBottom>
+              </Style>
+            </Textbox>
+            <Image Name="Logo">
+              <Source>Embedded</Source>
+              <Value>Logo_AnglicareSA</Value>
+              <Sizing>FitProportional</Sizing>
+              <Left>21.82563cm</Left>
+              <Height>1.0814cm</Height>
+              <Width>5.87437cm</Width>
               <ZIndex>1</ZIndex>
+              <Style>
+                <Border>
+                  <Style>None</Style>
+                </Border>
+              </Style>
+            </Image>
+          </ReportItems>
+          <Style>
+            <Border>
+              <Style>None</Style>
+            </Border>
+          </Style>
+        </PageHeader>
+        <PageFooter>
+          <Height>0.88648cm</Height>
+          <PrintOnFirstPage>true</PrintOnFirstPage>
+          <PrintOnLastPage>true</PrintOnLastPage>
+          <ReportItems>
+            <Textbox Name="Textbox1">
+              <CanGrow>true</CanGrow>
+              <KeepTogether>true</KeepTogether>
+              <Paragraphs>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>="Report created on: " + Format(Today(), "dd/MM/yyyy")</Value>
+                      <Style />
+                    </TextRun>
+                  </TextRuns>
+                  <Style />
+                </Paragraph>
+              </Paragraphs>
+              <rd:DefaultName>Textbox1</rd:DefaultName>
+              <Top>0.28648cm</Top>
+              <Height>0.6cm</Height>
+              <Width>6.27211cm</Width>
+              <Style>
+                <Border>
+                  <Style>None</Style>
+                </Border>
+                <PaddingLeft>2pt</PaddingLeft>
+                <PaddingRight>2pt</PaddingRight>
+                <PaddingTop>2pt</PaddingTop>
+                <PaddingBottom>2pt</PaddingBottom>
+              </Style>
+            </Textbox>
+            <Line Name="Line2">
+              <Top>0.14537cm</Top>
+              <Height>0cm</Height>
+              <Width>27.7cm</Width>
+              <ZIndex>1</ZIndex>
+              <Style>
+                <Border>
+                  <Color>#004b8e</Color>
+                  <Style>Solid</Style>
+                  <Width>2pt</Width>
+                </Border>
+              </Style>
+            </Line>
+            <Textbox Name="Textbox157">
+              <CanGrow>true</CanGrow>
+              <KeepTogether>true</KeepTogether>
+              <Paragraphs>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>="Page "+ Cstr(Globals!PageNumber)+" of "+ cstr(Globals!TotalPages)</Value>
+                      <Style />
+                    </TextRun>
+                  </TextRuns>
+                  <Style>
+                    <TextAlign>Right</TextAlign>
+                  </Style>
+                </Paragraph>
+              </Paragraphs>
+              <rd:DefaultName>Textbox157</rd:DefaultName>
+              <Top>0.28648cm</Top>
+              <Left>21.82563cm</Left>
+              <Height>0.6cm</Height>
+              <Width>5.87437cm</Width>
+              <ZIndex>2</ZIndex>
               <Style>
                 <Border>
                   <Style>None</Style>
@@ -2422,13 +2271,11 @@ Switch
               <Style>None</Style>
             </Border>
           </Style>
-        </PageHeader>
+        </PageFooter>
         <PageHeight>21cm</PageHeight>
         <PageWidth>29.7cm</PageWidth>
-        <InteractiveHeight>21cm</InteractiveHeight>
-        <InteractiveWidth>27.7cm</InteractiveWidth>
-        <LeftMargin>1cm</LeftMargin>
-        <RightMargin>1cm</RightMargin>
+        <LeftMargin>0.99cm</LeftMargin>
+        <RightMargin>0.99cm</RightMargin>
         <TopMargin>1cm</TopMargin>
         <BottomMargin>1cm</BottomMargin>
         <ColumnSpacing>0.13cm</ColumnSpacing>
@@ -2437,96 +2284,94 @@ Switch
     </ReportSection>
   </ReportSections>
   <ReportParameters>
-    <ReportParameter Name="StartDate">
+    <ReportParameter Name="Start_Date">
       <DataType>DateTime</DataType>
       <DefaultValue>
         <Values>
-          <Value>=DateAdd(DateInterval.Day, -13, Today())</Value>
+          <Value>=Today()</Value>
         </Values>
       </DefaultValue>
       <Prompt>Start Date</Prompt>
     </ReportParameter>
-    <ReportParameter Name="EndDate">
+    <ReportParameter Name="End_Date">
       <DataType>DateTime</DataType>
       <DefaultValue>
         <Values>
-          <Value>=today()</Value>
+          <Value>=DateAdd("d", 1, Today())</Value>
         </Values>
       </DefaultValue>
       <Prompt>End Date</Prompt>
     </ReportParameter>
-    <ReportParameter Name="HideGood">
+    <ReportParameter Name="Centre">
       <DataType>String</DataType>
-      <DefaultValue>
-        <Values>
-          <Value>="No"</Value>
-        </Values>
-      </DefaultValue>
-      <Prompt>Hide Good Entries</Prompt>
-      <ValidValues>
-        <ParameterValues>
-          <ParameterValue>
-            <Value>="Yes"</Value>
-            <Label>Yes</Label>
-          </ParameterValue>
-          <ParameterValue>
-            <Value>="No"</Value>
-            <Label>No</Label>
-          </ParameterValue>
-        </ParameterValues>
-      </ValidValues>
-    </ReportParameter>
-    <ReportParameter Name="Organisation">
-      <DataType>String</DataType>
-      <Prompt>Organisation</Prompt>
-      <ValidValues>
-        <DataSetReference>
-          <DataSetName>DataSet4</DataSetName>
-          <ValueField>Organisation_Name</ValueField>
-          <LabelField>Organisation_Name</LabelField>
-        </DataSetReference>
-      </ValidValues>
-    </ReportParameter>
-    <ReportParameter Name="ContractType">
-      <DataType>String</DataType>
-      <DefaultValue>
-        <DataSetReference>
-          <DataSetName>DataSet2</DataSetName>
-          <ValueField>Description</ValueField>
-        </DataSetReference>
-      </DefaultValue>
-      <Prompt>Contract Type</Prompt>
+      <Prompt>Centre</Prompt>
       <ValidValues>
         <DataSetReference>
           <DataSetName>DataSet2</DataSetName>
-          <ValueField>Description</ValueField>
+          <ValueField>OrgNm</ValueField>
+          <LabelField>OrgNm</LabelField>
+        </DataSetReference>
+      </ValidValues>
+    </ReportParameter>
+    <ReportParameter Name="ClassCodeFilter">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>DataSet3</DataSetName>
+          <ValueField>Provider_Class_Code</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <Prompt>Provider Class Filter</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>DataSet3</DataSetName>
+          <ValueField>Provider_Class_Code</ValueField>
           <LabelField>Description</LabelField>
         </DataSetReference>
       </ValidValues>
       <MultiValue>true</MultiValue>
       <UsedInQuery>True</UsedInQuery>
     </ReportParameter>
-    <ReportParameter Name="GroupActivity">
+    <ReportParameter Name="TeamFilt">
       <DataType>String</DataType>
       <DefaultValue>
+        <DataSetReference>
+          <DataSetName>DataSet4</DataSetName>
+          <ValueField>Team</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <Prompt>Team Filter</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>DataSet4</DataSetName>
+          <ValueField>Team</ValueField>
+          <LabelField>Team</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <MultiValue>true</MultiValue>
+      <UsedInQuery>True</UsedInQuery>
+    </ReportParameter>
+    <ReportParameter Name="IncludeClientAlert">
+      <DataType>Integer</DataType>
+      <DefaultValue>
         <Values>
-          <Value>0</Value>
+          <Value>=0</Value>
         </Values>
       </DefaultValue>
-      <Prompt>Group Activity</Prompt>
+      <Prompt>Tables to show</Prompt>
       <ValidValues>
         <ParameterValues>
           <ParameterValue>
-            <Value>0</Value>
-            <Label>Show Group Activity</Label>
+            <Value>=0</Value>
+            <Label>Schedule and Allert Table</Label>
           </ParameterValue>
           <ParameterValue>
-            <Value>1</Value>
-            <Label>Hide Group Acitity</Label>
+            <Value>=1</Value>
+            <Label>Schedule Only</Label>
           </ParameterValue>
           <ParameterValue>
-            <Value>2</Value>
-            <Label>Show Group Actity Only</Label>
+            <Value>=2</Value>
+            <Label>Alert Table Only</Label>
           </ParameterValue>
         </ParameterValues>
       </ValidValues>
@@ -2534,38 +2379,38 @@ Switch
   </ReportParameters>
   <ReportParametersLayout>
     <GridLayoutDefinition>
-      <NumberOfColumns>4</NumberOfColumns>
+      <NumberOfColumns>3</NumberOfColumns>
       <NumberOfRows>2</NumberOfRows>
       <CellDefinitions>
         <CellDefinition>
           <ColumnIndex>0</ColumnIndex>
           <RowIndex>0</RowIndex>
-          <ParameterName>StartDate</ParameterName>
+          <ParameterName>Start_Date</ParameterName>
         </CellDefinition>
         <CellDefinition>
           <ColumnIndex>1</ColumnIndex>
           <RowIndex>0</RowIndex>
-          <ParameterName>EndDate</ParameterName>
+          <ParameterName>End_Date</ParameterName>
         </CellDefinition>
         <CellDefinition>
           <ColumnIndex>2</ColumnIndex>
           <RowIndex>0</RowIndex>
-          <ParameterName>HideGood</ParameterName>
-        </CellDefinition>
-        <CellDefinition>
-          <ColumnIndex>3</ColumnIndex>
-          <RowIndex>0</RowIndex>
-          <ParameterName>Organisation</ParameterName>
+          <ParameterName>Centre</ParameterName>
         </CellDefinition>
         <CellDefinition>
           <ColumnIndex>0</ColumnIndex>
           <RowIndex>1</RowIndex>
-          <ParameterName>ContractType</ParameterName>
+          <ParameterName>ClassCodeFilter</ParameterName>
         </CellDefinition>
         <CellDefinition>
           <ColumnIndex>1</ColumnIndex>
           <RowIndex>1</RowIndex>
-          <ParameterName>GroupActivity</ParameterName>
+          <ParameterName>TeamFilt</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>2</ColumnIndex>
+          <RowIndex>1</RowIndex>
+          <ParameterName>IncludeClientAlert</ParameterName>
         </CellDefinition>
       </CellDefinitions>
     </GridLayoutDefinition>
@@ -3082,6 +2927,7 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA///gyWADqVGJ0AAAAABJRU5ErkJggg==</ImageData>
     </EmbeddedImage>
   </EmbeddedImages>
+  <Language>en-AU</Language>
   <rd:ReportUnitType>Cm</rd:ReportUnitType>
-  <rd:ReportID>f229c7bf-1593-4e1b-aa21-eb42667bd632</rd:ReportID>
+  <rd:ReportID>b802ce18-9866-4eb1-a99c-a75be0f3c7d5</rd:ReportID>
 </Report>

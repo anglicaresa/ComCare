@@ -82,10 +82,6 @@
       <FullPath>CCToT1_Integration_Audit_Package_Report.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>ComCareBookingReport.rdl</Name>
-      <FullPath>ComCareBookingReport.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
       <Name>ComCareBookingReport_new.rdl</Name>
       <FullPath>ComCareBookingReport_new.rdl</FullPath>
     </ProjectItem>
@@ -96,10 +92,6 @@
     <ProjectItem>
       <Name>Fix_Address_Issue.rdl</Name>
       <FullPath>Fix_Address_Issue.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>HCP_Rates.rdl</Name>
-      <FullPath>HCP_Rates.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
       <Name>HomeCare_Care_Plan_Details_Report.rdl</Name>
