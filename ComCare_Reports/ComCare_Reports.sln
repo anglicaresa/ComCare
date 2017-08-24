@@ -9,8 +9,6 @@ Project("{F14B399A-7131-4C87-9E4B-1186C45EF12D}") = "RAC_Reports", "RAC_Reports\
 EndProject
 Project("{F14B399A-7131-4C87-9E4B-1186C45EF12D}") = "Common_Reports", "Common_Reports\Common_Reports.rptproj", "{A18EC2EA-D76E-4C1B-A36E-F9D908AD70A4}"
 EndProject
-Project("{F14B399A-7131-4C87-9E4B-1186C45EF12D}") = "zOld_Reports", "Report Project1\zOld_Reports.rptproj", "{9B1EC0E8-83AD-4A3F-A063-3D39E4CA7487}"
-EndProject
 Project("{F14B399A-7131-4C87-9E4B-1186C45EF12D}") = "Unsorted_DL_FromOriginal", "Unsorted_DL_FromOriginal\Unsorted_DL_FromOriginal.rptproj", "{DCF7763D-56C2-4947-A7BC-C887007E33DF}"
 EndProject
 Project("{F14B399A-7131-4C87-9E4B-1186C45EF12D}") = "HomeCare_reports", "HomeCare_reports\HomeCare_reports.rptproj", "{E062EDD1-55C7-4D9B-861D-278EF639CFBE}"
@@ -123,28 +121,6 @@ Global
 		{A18EC2EA-D76E-4C1B-A36E-F9D908AD70A4}.Release|Default.ActiveCfg = Release
 		{A18EC2EA-D76E-4C1B-A36E-F9D908AD70A4}.Release|Default.Build.0 = Release
 		{A18EC2EA-D76E-4C1B-A36E-F9D908AD70A4}.Release|Default.Deploy.0 = Release
-		{9B1EC0E8-83AD-4A3F-A063-3D39E4CA7487}.CC_DEV|Default.ActiveCfg = ComCareDEV
-		{9B1EC0E8-83AD-4A3F-A063-3D39E4CA7487}.CC_Prod|Default.ActiveCfg = ComCareProd
-		{9B1EC0E8-83AD-4A3F-A063-3D39E4CA7487}.CC_Train|Default.ActiveCfg = ComCareTrain
-		{9B1EC0E8-83AD-4A3F-A063-3D39E4CA7487}.CC_UAT|Default.ActiveCfg = ComCareUAT
-		{9B1EC0E8-83AD-4A3F-A063-3D39E4CA7487}.ComCareDEV|Default.ActiveCfg = ComCareDEV
-		{9B1EC0E8-83AD-4A3F-A063-3D39E4CA7487}.ComCareDEV|Default.Build.0 = ComCareDEV
-		{9B1EC0E8-83AD-4A3F-A063-3D39E4CA7487}.ComCareDEV|Default.Deploy.0 = ComCareDEV
-		{9B1EC0E8-83AD-4A3F-A063-3D39E4CA7487}.ComCareProd|Default.ActiveCfg = ComCareProd
-		{9B1EC0E8-83AD-4A3F-A063-3D39E4CA7487}.ComCareProd|Default.Build.0 = ComCareProd
-		{9B1EC0E8-83AD-4A3F-A063-3D39E4CA7487}.ComCareProd|Default.Deploy.0 = ComCareProd
-		{9B1EC0E8-83AD-4A3F-A063-3D39E4CA7487}.ComCareTrain|Default.ActiveCfg = ComCareTrain
-		{9B1EC0E8-83AD-4A3F-A063-3D39E4CA7487}.ComCareTrain|Default.Build.0 = ComCareTrain
-		{9B1EC0E8-83AD-4A3F-A063-3D39E4CA7487}.ComCareTrain|Default.Deploy.0 = ComCareTrain
-		{9B1EC0E8-83AD-4A3F-A063-3D39E4CA7487}.ComCareUAT|Default.ActiveCfg = ComCareUAT
-		{9B1EC0E8-83AD-4A3F-A063-3D39E4CA7487}.ComCareUAT|Default.Build.0 = ComCareUAT
-		{9B1EC0E8-83AD-4A3F-A063-3D39E4CA7487}.ComCareUAT|Default.Deploy.0 = ComCareUAT
-		{9B1EC0E8-83AD-4A3F-A063-3D39E4CA7487}.Debug|Default.ActiveCfg = Debug
-		{9B1EC0E8-83AD-4A3F-A063-3D39E4CA7487}.DebugLocal|Default.ActiveCfg = DebugLocal
-		{9B1EC0E8-83AD-4A3F-A063-3D39E4CA7487}.DebugLocal|Default.Build.0 = DebugLocal
-		{9B1EC0E8-83AD-4A3F-A063-3D39E4CA7487}.Release|Default.ActiveCfg = Release
-		{9B1EC0E8-83AD-4A3F-A063-3D39E4CA7487}.Release|Default.Build.0 = Release
-		{9B1EC0E8-83AD-4A3F-A063-3D39E4CA7487}.Release|Default.Deploy.0 = Release
 		{DCF7763D-56C2-4947-A7BC-C887007E33DF}.CC_DEV|Default.ActiveCfg = Release
 		{DCF7763D-56C2-4947-A7BC-C887007E33DF}.CC_DEV|Default.Build.0 = Release
 		{DCF7763D-56C2-4947-A7BC-C887007E33DF}.CC_DEV|Default.Deploy.0 = Release
