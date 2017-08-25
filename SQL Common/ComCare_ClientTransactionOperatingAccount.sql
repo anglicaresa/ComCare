@@ -1,18 +1,20 @@
 
 --select distinct Activity_type from FC_Transaction
 --select Description from dbo.FC_Transaction_Type
-
+--use ComCareProd
+--/*
 declare @TransactionType table(Type VarChar(128))
+
 insert into @TransactionType
 	select 
-		TT.Description 
-	from dbo.FC_Transaction_Type TT 
+		FC_TT1.Description
+	from dbo.FC_Transaction_Type FC_TT1 
 	where 1=1
-
+--*/
 
 
 declare @Client_ID int = 10104433
-declare @FiltIncomeTested int = 1
+declare @FiltIncomeTested int = 0
 
 select 
 	J001.Client_ID
@@ -59,7 +61,10 @@ where
 	--and J005.Transaction_Type in (@TransactionType)
 	and J005.Transaction_Type in (select * from @TransactionType)
 
+	and 1 = IIF( J005.Comments like '%Income Tested%', 1, @FiltIncomeTested)
+
 order by
-J005.Activity_Date
-,J005.TransationDate
+J005.TransationDate
+,J005.Activity_Date
+
 

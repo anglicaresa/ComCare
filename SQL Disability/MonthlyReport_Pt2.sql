@@ -18,7 +18,7 @@ PRINT @EndDate
 */
 
 
-select
+select distinct
 	J001.Client_ID
 	,J001.Visit_Date
 	,J001.Rate
@@ -26,19 +26,19 @@ select
 	,J001.Amount
 	,J001.Rate_Type
 	,J001.Line_Description
-	,J002.Description as Origin_ItemNumber
-	,J004.Description as TypeOfUnit
-	,J003.[UOM_Code]
+	,J002.Description 'Origin_ItemNumber'
+	,J004.Description 'TypeOfUnit'
+	,J003.UOM_Code
 	,J002.Contract_Billing_Item_ID
 	,J003.Contract_Billing_Rate_ID
-	,J002.[Description] as Billing_item
-	,J005.Description as Service_Type
+	,J002.Description 'Billing_item'
+	,J005.Description 'Service_Type'
 
- FROM [dbo].[Actual_Service_Charge_Item] J001
-Inner Join [dbo].[FB_Contract_Billing_Item] J002 on J001.Contract_Billing_Item_ID = J002.Contract_Billing_Item_ID
-Left Outer Join [dbo].[FB_Contract_Billing_Rate] J003 on J001.Contract_Billing_Rate_ID = J003.Contract_Billing_Rate_ID
-Left Outer Join [dbo].[Unit_of_Measure] J004 ON J003.[UOM_Code] = J004.[UOM_Code]
-Left outer join [dbo].[Service_Type] J005 ON (replace((substring(J001.Line_Description,1,4)),' ','')) = J005.Service_Type_Code
+ FROM dbo.Actual_Service_Charge_Item J001
+Inner Join dbo.FB_Contract_Billing_Item J002 on J001.Contract_Billing_Item_ID = J002.Contract_Billing_Item_ID
+Left Outer Join dbo.FB_Contract_Billing_Rate J003 on J001.Contract_Billing_Rate_ID = J003.Contract_Billing_Rate_ID
+Left Outer Join dbo.Unit_of_Measure J004 ON J003.UOM_Code = J004.UOM_Code
+Left outer join dbo.Service_Type J005 ON (replace((substring(J001.Line_Description,1,4)),' ','')) = J005.Service_Type_Code
 Where 
 	1=1
 	and J001.Client_ID = @Client_ID_
@@ -56,6 +56,8 @@ GROUP BY
 	,J002.Description
 	,J004.Description
 	,J003.UOM_Code
-	,J001.Contract_Billing_Item_ID
-	,J001.Contract_Billing_Rate_ID
-	*/
+	,J002.Contract_Billing_Item_ID
+	,J003.Contract_Billing_Rate_ID
+	,J002.Description
+	,J005.Description
+--	*/

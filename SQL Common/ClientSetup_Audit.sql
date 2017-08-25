@@ -71,7 +71,7 @@ select distinct
 	,Services_=STUFF((select ', ' + ST.FunderProgram from @ServiceCollection_Table ST where ST.Client_ID = T1.Client_ID For XML Path('')),1,1,'')
 	from @ServiceCollection_Table T1
 
---select * from @ServiceCollection_Table_Joined
+select * from @ServiceCollection_Table_Joined
 --*/
 
 
@@ -142,8 +142,8 @@ where
 	--and J001.Client_ID = 10069222
 	and J001.Billing_End_Date is null
 	and J008.Organisation_Name = @Org_Name
-	and IIF (J006.Description is NULL,'No Contract',J006.Description) in (@FunderContractFilt)
---	and IIF (J006.Description is NULL,'No Contract',J006.Description) in (select * from @FunderContractFilt)
+--	and IIF (J006.Description is NULL,'No Contract',J006.Description) in (@FunderContractFilt)
+	and IIF (J006.Description is NULL,'No Contract',J006.Description) in (select * from @FunderContractFilt)
 	--and J005.Organisation_Name = 'NDIA National Disability Insurance Agency'
 	--or J005.Organisation_Name is null
 

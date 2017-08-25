@@ -35,6 +35,70 @@ order by 1
 ---------------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------------
 --/*
+Declare @NoChargeTasks table (taskTypeCode varchar(16))
+insert into @NoChargeTasks values
+	('GMHMA')
+	,('GECBR')
+	,('GECRFS')
+	,('GEDA')
+	,('GEDAFS')
+	,('GEDSI')
+	,('GEGEAT')
+	,('GEGEFS')
+	,('GEHMA')
+	,('GEHMAF')
+	,('GEHMO')
+	,('GEHMOF')
+	,('GENU')
+	,('GENUFS')
+	,('GEPC')
+	,('GEPCFS')
+	,('GESIFS')
+	,('GESSI')
+	,('GETR')
+	,('GETRFS')
+	,('INNFFHCP')
+	,('INCBR')
+	,('INCRFS')
+	,('INDA')
+	,('INDAFS')
+	,('INGEAT')
+	,('INGEFS')
+	,('INHCP')
+	,('INHMA')
+	,('INHMAF')
+	,('INHMO')
+	,('INHMOF')
+	,('INNU')
+	,('INNUFS')
+	,('INPC')
+	,('INPCFS')
+	,('INSIFS')
+	,('INSSI')
+	,('INTR')
+	,('INTRFS')
+	,('REACH')
+	,('RECBR')
+	,('RECRFS')
+	,('REDA')
+	,('REDAFS')
+	,('REGEAT')
+	,('REGEFS')
+	,('RVHCP')
+	,('RCHCPF')
+	,('REHMA')
+	,('REHMAF')
+	,('REHMO')
+	,('REHMOF')
+	,('RENU')
+	,('RENUFS')
+	,('REPC')
+	,('REPCFS')
+	,('RESIFS')
+	,('RESSI')
+	,('RETR')
+	,('RETRFS')
+
 select * from
 (
 	select
@@ -49,7 +113,7 @@ select * from
 		,IIF (J011.Description is NULL,'No Contract',J011.Description) 'contract_type'
 		,J004.Description 'task_Description'
 		,J001.Client_Not_Home
-		,IIF (J002.Client_ID IS NULL, 0, 1) 'Has_Charge_Item'
+		,IIF (J002.Client_ID IS NULL, IIF(J066.taskTypeCode is null,0,5), 1) 'Has_Charge_Item'-------------------NEW
 		,convert (int ,'0') 'In_WiA_Only'
 		,J002.Line_Description 'Charge_Item_Line_Description'
 		,J002.Amount
@@ -158,6 +222,8 @@ left outer join
 	left outer join dbo.FC_Contract_Area_Product J010 ON J010.CAP_ID = J001.CAP_ID
 	left outer join dbo.FC_Funder_Contract J011 ON J011.Funder_Contract_ID = J010.Funder_Contract_ID
 
+	Left outer join @NoChargeTasks J066 on J066.taskTypeCode = J001.Task_Type_Code-------------------NEW
+
 	Where 
 		1=1
 		and @DuplicateChargeItem = 0
@@ -186,7 +252,7 @@ Union
 ---------------------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------------------
 --/*
-select * from
+select Distinct * from
 (
 	select
 		J001.Client_ID
@@ -199,7 +265,7 @@ select * from
 		,IIF (J011.Description is NULL,'No Contract',J011.Description) 'contract_type'
 		,J004.Description 'task_Description'
 		,J001.Client_Not_Home
-		,IIF (J002.Client_ID IS NULL, 0, 1) 'Has_Charge_Item'
+		,IIF (J002.Client_ID IS NULL, IIF(J066.taskTypeCode is null,0,5), 1) 'Has_Charge_Item'
 		,IIF (J001.Client_Not_Home IS NULL, 1, 0) 'In_WiA_Only'
 		,J002.Line_Description 'Charge_Item_Line_Description'
 		,J002.Amount
@@ -339,6 +405,7 @@ select * from
 	Left Outer Join dbo.FC_Contract_Area_Product J010 ON J010.CAP_ID = J001.CAP_ID
 	LEFT OUTER JOIN dbo.FC_Funder_Contract J011 ON J011.Funder_Contract_ID = J010.Funder_Contract_ID
 
+	Left outer join @NoChargeTasks J066 on J066.taskTypeCode = J001.Task_Type_Code
 	Where 
 		1=1
 		and @DuplicateChargeItem = 0
@@ -355,7 +422,7 @@ select * from
 --		AND (IIF (J011.Description is NULL,'No Contract',J011.Description) in (select * from @ContractType))
 		and (IIF (J011.Description is NULL,'No Contract',J011.Description) in (@ContractType))
 
-
+/*
 	Group by
 		J001.Client_ID
 	--	,2
@@ -372,6 +439,7 @@ select * from
 		,J002.Line_Description
 		,J002.Amount
 		,J009.Organisation_Name
+		*/
 )t2
 --*/
 

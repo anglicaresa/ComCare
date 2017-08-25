@@ -13,6 +13,8 @@ Project("{4F2E2C19-372F-40D8-9FA7-9D2138C6997A}") = "SQL HomeCare", "SQL HomeCar
 EndProject
 Project("{4F2E2C19-372F-40D8-9FA7-9D2138C6997A}") = "SQL Switching to ComCare 6.7 test", "SQL Switching to ComCare 6.7 test\SQL Switching to ComCare 6.7 test.ssmssqlproj", "{E1DC9F6D-BE9E-4D5A-AEEB-25F4939C7A55}"
 EndProject
+Project("{4F2E2C19-372F-40D8-9FA7-9D2138C6997A}") = "SQL RAC", "SQL RAC\SQL RAC.ssmssqlproj", "{9A646D0D-7335-4814-9109-01D91A7DEFFE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Default|Default = Default|Default
@@ -23,7 +25,8 @@ Global
 		{827E1E91-8DC2-4978-B74D-CEB2962BEDC5}.Default|Default.ActiveCfg = Default
 		{C8381300-F95E-4EFE-B490-6DE19E365FEC}.Default|Default.ActiveCfg = Default
 		{E1DC9F6D-BE9E-4D5A-AEEB-25F4939C7A55}.Default|Default.ActiveCfg = Default
-		{7734AEC3-31F4-446E-8EE4-BB007612D204}.Default|Default.ActiveCfg = Default
+		{7CEDCA1A-246A-4A02-B48A-011B5F020B44}.Default|Default.ActiveCfg = Default
+		{9A646D0D-7335-4814-9109-01D91A7DEFFE}.Default|Default.ActiveCfg = Default
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
