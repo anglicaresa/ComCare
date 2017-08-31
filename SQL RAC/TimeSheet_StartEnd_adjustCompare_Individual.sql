@@ -88,6 +88,7 @@ declare @Prov_ID int = 10052259 --odd case compare
 
 declare @EventBracket1 int = -1
 declare @EventBracket2 int = 13
+declare @TimezoneOffset int = DateDiff(minute, GetUTCDate(), GetDate())
 --------------------------------------------------------------
 --------------------------------------------------------------
 
@@ -227,7 +228,7 @@ insert into @RawResult
 			,Provs.ProviderName
 		--	,WI_EL_C.Content
 		--	,WI_EL_C.Directive_Type_ID
-			,cast(WI_EL_C.Device_Timestamp as datetime2)'Device_Timestamp'
+			,DateAdd(MINUTE,@TimezoneOffset ,cast(WI_EL_C.Device_Timestamp as datetime))'Device_Timestamp'
 			,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 1),'''','') as Varchar(128)) 'Edit_Type'
 			,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 2),'''','')as Varchar(128)) 'Edit_Action'
 			,cast((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 3) as int) 'Wi_Record'
