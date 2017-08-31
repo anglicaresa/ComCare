@@ -9,16 +9,19 @@ insert into @TransactionType
 	select 
 		FC_TT1.Description
 	from dbo.FC_Transaction_Type FC_TT1 
-	where 1=1
+	where 
+	1=1
+	and FC_TT1.Description = 'Administrative Overheads'
 --*/
 
 
-declare @Client_ID int = 10104433
-declare @FiltIncomeTested int = 0
+declare @Client_ID int = 10020773
+declare @FiltIncomeTested int = 1
 
 select 
 	J001.Client_ID
 	,Concat(J006.Last_Name,', ',J006.Preferred_Name)'ClientName'
+--	,J007.Description
 	,J005.*
 
 from [dbo].FC_Client_Contract J001
@@ -55,6 +58,7 @@ Left outer join
 		1=1
 )J005 on J005.FC_Account_ID = J004.FC_Account_ID
 left outer join dbo.Person J006 on J006.Person_ID = J001.Client_ID
+left outer join dbo.FC_Account_Type J007 on J007.FC_Account_Type_ID = J004.FC_Account_Type_ID
 where
 	1=1
 	and J001.Client_ID = @Client_ID
@@ -62,6 +66,8 @@ where
 	and J005.Transaction_Type in (select * from @TransactionType)
 
 	and 1 = IIF( J005.Comments like '%Income Tested%', 1, @FiltIncomeTested)
+	and J007.Description ='Operating Account'
+--	and J005.Exported_Date is not null
 
 order by
 J005.TransationDate

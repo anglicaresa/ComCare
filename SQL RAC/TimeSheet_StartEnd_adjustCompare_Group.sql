@@ -3,15 +3,15 @@
 
 use ComCareProd
 
-declare @stringDate varchar(32) = '2017-07-19'
-declare @stringDate2 varchar(32) = '2017-07-19'--'2017-07-19' ,'2017-08-03' ,'2017-08-01'
+declare @stringDate varchar(32) = '2017-08-24'
+declare @stringDate2 varchar(32) = '2017-08-24'--'2017-07-19' ,'2017-08-03' ,'2017-08-01'
 declare @Start_Date date = convert(date, @stringDate)
 declare @End_Date date = convert(date, @stringDate2)
 --declare @Centre varchar(32) = 'Dutton Court'
 --declare @Centre varchar(32) = 'Ian George Court'
---declare @Centre Varchar(32) = 'All Hallows Court'
+declare @Centre Varchar(32) = 'All Hallows Court'
 --declare @Centre Varchar(32) = 'St Laurences Court'
-declare @Centre Varchar(32) = 'Canterbury Close'
+--declare @Centre Varchar(32) = 'Canterbury Close'
 declare @ShowVacantOnly int = 1
 declare @NoBuddyShifts int = 1
 declare @hideUnAss int = 0
@@ -67,7 +67,8 @@ order by 1
 -----------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------
 --------------------------------------------------DeBug
-declare @forceProv_ID int = 0
+declare @forceProv_ID int = 1
+
 
 --declare @Prov_ID int = 10048668 --Hill, Nerissa has split shift CLEAN
 --declare @Prov_ID int = 10048524 --Norrie, Carol has split shift CLEAN
@@ -76,7 +77,8 @@ declare @forceProv_ID int = 0
 --declare @Prov_ID int = 10048181 --Kneebone, Helen Has split shift CLEAN
 --declare @Prov_ID int = 10046817 --Nelson, Margaret Has split shift **Only 1 sign off
 --declare @Prov_ID int = 10052628 --
-declare @Prov_ID int = 10046817 --Nelson, Margaret ***splitShift blerk
+--declare @Prov_ID int = 10046817 --Nelson, Margaret ***splitShift blerk
+declare @Prov_ID int = 10051295
 ------------------------------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------------------------------
 --Copy from here down
@@ -89,6 +91,7 @@ declare @Prov_ID int = 10046817 --Nelson, Margaret ***splitShift blerk
 
 declare @EventBracket1 int = -1
 declare @EventBracket2 int = 13
+declare @TimezoneOffset int = DateDiff(minute, GetUTCDate(), GetDate())
 --------------------------------------------------------------
 --------------------------------------------------------------
 
@@ -242,7 +245,7 @@ insert into @RawResult
 			,Provs.ProviderName
 		--	,WI_EL_C.Content
 		--	,WI_EL_C.Directive_Type_ID
-			,cast(WI_EL_C.Device_Timestamp as datetime2)'Device_Timestamp'
+			,DateAdd(MINUTE,@TimezoneOffset ,cast(WI_EL_C.Device_Timestamp as datetime))'Device_Timestamp'
 			,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 1),'''','') as Varchar(128)) 'Edit_Type'
 			,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 2),'''','')as Varchar(128)) 'Edit_Action'
 			,cast((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 3) as int) 'Wi_Record'
@@ -266,7 +269,7 @@ insert into @RawResult
 	Order by
 	1,2,3
 
---select * from @RawResult
+select * from @RawResult
 --/*
 
 --------------------------------------------------------------------------------------

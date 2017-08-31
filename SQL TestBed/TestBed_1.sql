@@ -1,157 +1,156 @@
 /*
-select * from dbo.FB_Contract_Billing_Item where Contract
-select * from [dbo].FC_Product where FC_Product_ID = 14
-select * from [dbo].FC_Contract_Area_Product where FC_Product_ID = 14
-select * from [dbo].FB_Contract_Billing_Rate where Contract_Billing_Rate_ID = 430
-
-select * from [dbo].Allocated_Task where Service_Prov_Position_ID = 181
-
-select * from [dbo].[Actual_Service_Charge_Item] ACSI where ACSI.Client_ID = 10014025 and cast(ACSI.Visit_Date as date) = '2017-07-28'
-
-select * from dbo.FB_Client_Contract_Bill_Item CCBI where CCBI.Contract_Billing_Item_ID = 19
-select * from dbo.FB_Contract_Billing_Item where Contract_Billing_Item_ID = 19
-select * from dbo.FB_Contract_Billing_Item_Region where Contract_Billing_Item_ID = 19
-select * from dbo.FB_Client_Contract_Bill_Item where Contract_Billing_Item_ID = 19
-
-select * from dbo.FB_Contract_Billing_Item_UOM where Contract_Billing_Item_ID = 19
-
-
-select * from dbo.FC_Contract_Area_Product where FC_Product_ID = 14
-
-select * from [dbo].[Actual_Service_Charge_Item] ACSI where ACSI.Client_ID = 10014025 and cast(ACSI.Visit_Date as date) = '2017-07-28'
-select * from dbo.FC_Client_Contract where client_id = 10014025 and End_Date_of_Claim is not null
-select * from dbo.FC_Product_Mapping where FC_Product_ID = 14
-select * from dbo.FC_Product_Mapping where task_Type_code like '%HCP%'
-
-Contract_Billing_Rate_ID
+Activity_No
+Client_ID
+Activity_Date
+Provider_ID
 Service_Prov_Position_ID
+Person_ID
+Organisation_ID
+Task_Type_Code
+Indirect_Activity_Type_Code
+Schedule_Time
+Schedule_Duration
+Activity_Duration
+Travel_Km
+Travel_Duration
+Allocated_Task_ID
+Compensible_Type_ID
+Funding_Prog_Code
+Activity_Start_Time
+Activity_End_Time
+Odometer_Reading
+Units_of_Service
+On_Flag
+Off_Flag
+Format_OK
+ComCare_Validation_OK
+Payroll_Validation_OK
+Verification_Required
+Authorisation_Date
+Authorisation_Person
+Actual_Service_Visit_No
+Indirect_Activity_No
+Classn_Shift_Centre
+Date_Extract_for_Payroll
+Date_Upload_to_ComCare
+Creation_Date
+Creator_User_Name
+Last_Modified_Date
+Last_Modified_User_Name
+Company_Vehicle
+Extracted_Funding_Prog_Code
+Shift_Start_Time
+Shift_End_Time
+PreAuthorise_Id
+Client_Casemix_Assignment_ID
+On_Call_Activity_Code
+WI_Record_ID
+Address_ID
+Schedule_Units_of_Service
+Interrupt_Duration
+Interrupted_Activity
+Registration_Number
+WI_Activity_ID
+Cancelled_Visit
+Group_Activity_ID
+Student_Allocation_ID
+Class_ID
+Internal_Task_Provider_ID
+Internal_Task_Working_Week_No
+Internal_Task_From_Date
+CAP_ID
+User_Classification_ID
+Estimated_Travel_Km
+Estimated_Travel_Time
+Client_Not_Home
+Destination_Address_ID
+Est_Intravisit_Travel_Km
+Actual_Intravisit_Travel_Km
+Scheduled_Visit_End_Time
+External_Provider
+Est_Visit_Charge
+*/
+--use ComCareProd
+--select * from ComCareProd.INFORMATION_SCHEMA.COLUMNS where TABLE_NAME =  N'Activity_Work_Table'
+
+
+--Prod
+--select * from dbo.activity_Work_Table where cast(Activity_Date as date) = '2017-08-23' and len(Classn_Shift_Centre)>17
+/*
+
+
+
+SET @offset = DateDiff(minute, GetUTCDate(), GetDate())
+select @offset/60.0 'offset', GetUTCDate()'UTC', GetDate()'Local'
+
+*/
+--select top 10 * from dbo.WI_Event_Log
+
+
+
+-- Set year in a variable
+/*
+
+
+;WITH Months 
+AS (
+   -- Create a month numbers CTE
+   SELECT 4 AS MonthNumber
+   UNION ALL SELECT 10
+)
+
+,Dates AS 
+(
+   -- Find first day of month
+	SELECT 
+		monthNumber
+		,firstDayOfMonth = DATEADD
+		(
+			month
+			,cast(monthNumber as int) - 1
+			,Cast
+			(
+				Concat(CAST(@Year as VarChar(4)),'-01-01') as datetime
+			)
+		)
+	FROM Months
+)
+,MonthRange AS 
+(
+	SELECT 
+	*
+	FROM Dates as D
+)
+
+SELECT 
+	*
+	,firstSunday = 
+	(
+		SELECT TOP 1
+			DATEADD(day, monthNumber -1, firstDayOfMonth)
+		FROM Months
+		WHERE 
+--		1=1
+			DATEPART(weekday, DATEADD(day, monthNumber -1, firstDayOfMonth)) = 1
+		--	DATEPART(weekday, DATEADD(day, monthNumber -1, firstDayOfMonth)) = 1
+	--	ORDER BY 
+		--	monthNumber
+	)
+FROM MonthRange
+
+
+
+select
+	 DATEADD
+	(
+		DD
+		,7 - Datepart(DW,Concat(CAST(@Year as VarChar(4)),'-04-01'))
+		, Concat(CAST(@Year as VarChar(4)),'-04-01')
+	)
 */
 
-use ComCareProd
---28/07/2017
-Declare @Client_ID_ as INT = 10075769
-DECLARE @StartDate AS DATETIME = '20170701 00:00:00.000'
-DECLARE @EndDate AS DATETIME = '20170730 00:00:00.000'
-Declare @DuplicateChargeItem int = 0
-
-declare @Organisation Table (Org VarChar(64))
-Insert INTO @Organisation
-select Organisation_Name from dbo.Organisation
-where 
-	1=1
-	and organisation_type_code = 1
-	and Organisation_Name like 'Home Care%'
-
-Declare @ContractType Table (ContractType varchar(64))
-Insert INTO @ContractType 
-	select 'No Contract' Description where 1=1
-union
-select
-	Description
-from dbo.FC_Funder_Contract
-where 
-	1=1
-	AND (Description like 'CHSP%' )
-order by 1
 
 
-
-
-select
-		J002.Client_ID
-		,J002.Provider_ID
-		,cast(J002.Visit_Date as datetime) 'Schedule_Visit_Time'
-		,null 'Scheduled_Duration'
-		,null 'Actual_Visit_Time'
-		,null 'Actual_Duration'
-		,J012.Description 'contract_type'
-		,'---' 'task_Description'
-		,null 'Client_Not_Home'
-		,2 'Has_Charge_Item'
-		,null 'In_WiA_Only'
-		,J002.Line_Description 'Charge_Item_Line_Description'
-		,J002.Amount
-		,IIF(J009.Organisation_Name = 'NDIA National Disability Insurance Agency', 'NDIS funded',IIF(J009.Client_ID IS NULL,'No Contract Billing','Self Managed')) 'Funding_Type'
---		,J002.RN 'ChrgDup'
-	from
-	(
-		select 
-			ACSI.Client_ID	
-			,ACSI.Visit_Date
-			,ACSI.Visit_No
-			,ACSI.Provider_ID
-			,ACSI.Service_Prov_Position_ID
-			,ACSI.Amount
-			,ACSI.Line_Description
-			,ACSI.Contract_Billing_Item_ID
-			,ACSI.FC_Product_ID
-			,row_number()over(partition by ACSI.Client_ID,ACSI.Provider_ID,ACSI.Visit_Date,ACSI.Visit_No,ACSI.Line_Description order by ACSI.Visit_Date,ACSI.Visit_No)'RN'
-		from [dbo].[Actual_Service_Charge_Item] ACSI
-
-	)J002
-	Left Outer Join dbo.Service_Delivery J005 ON J002.[Client_ID] = J005.[Client_ID]
-
-	left outer join
-	(
-		Select 
-			SD.[Client_ID]
-			,O.[Organisation_Name]
-			,SD.[Service_Type_Code]
-			,ROW_NUMBER ()
-				over 
-				(
-					Partition by SD.Client_ID Order by
-						CASE
-						WHEN O.Organisation_Name in (select * from @Organisation) THEN '1'
---						WHEN O.Organisation_Name in (@Organisation) THEN '1'
-						ELSE O.Organisation_Name END ASC
-				)'RN'
-		from [dbo].[Service_Delivery] SD
-			join [dbo].[Period_of_Residency] PR on PR.Person_ID = SD.Client_ID
-			join [dbo].[Address] A on A.Address_ID = PR.Address_ID
-			Join [dbo].[Service_Provision] SP on A.Suburb_ID = SP.Suburb_ID and SP.Service_Type_Code = SD.Service_Type_Code
-			Join [dbo].[Organisation] O on Sp.Centre_ID = O.Organisation_ID
-		Where PR.To_Date is null and PR.Display_Indicator  = 1
-	) J006 ON J006.[Client_ID] = J002.[Client_ID] AND J006.[Service_Type_Code] = J005.[Service_Type_Code]
-
-	Left outer Join
-	(
-		select
-			CCB.[Client_ID] 'Client_ID'
-			,Org.[Organisation_Name] 'Organisation_Name'
-			,CBG.[Description] 'ContractBillingGroup'
-			,ROW_NUMBER ()
-				over 
-				(
-					Partition by CCB.Client_ID Order by Org.Organisation_Name ASC
-				) 'RN'
-		from [dbo].[FB_Client_Contract_Billing] CCB
-			left outer join [dbo].[FB_Contract_Billing_Group] CBG on CBG.[Contract_Billing_Group_ID] = CCB.Contract_Billing_Group_ID
-			left outer Join [dbo].[FB_Client_Contract_Billed_To] CCBT on CCBT.[Client_CB_ID] = CCB.[Client_CB_ID]
-			left outer Join [dbo].[FB_Client_CB_Split] CCBS on CCBS.[Client_Contract_Billed_To_ID] = CCBT.[Client_Contract_Billed_To_ID]
-			left outer Join [dbo].[Organisation] Org on CCBS.[Organisation_ID] = Org.[Organisation_ID]
-			--select * from [FB_Client_Contract_Billing]Contract_Billing_Group_ID
-	)J009 on J009.[Client_ID] = J002.[Client_ID]
-
-	Left outer join
-	(
-		select distinct
-		CCBI.Contract_Billing_Item_ID
-		,FC.Description
-		,CCB.Client_ID
-		from dbo.FB_Client_Contract_Bill_Item CCBI
-		left outer join dbo.FB_Client_Contract_Billing CCB on CCB.Client_CB_ID = CCBI.Client_CB_ID 
-		left outer join dbo.FC_Funder_Contract FC on FC.Funder_Contract_ID = CCB.Funder_Contract_ID
-	)J012 on J012.Contract_Billing_Item_ID = J002.Contract_Billing_Item_ID and J012.Client_ID = J002.Client_ID
-
-	left outer join dbo.FC_Product_Mapping J013 on J013.FC_Product_ID = J002.FC_Product_ID and J013.Effective_To_Date is null-- J013.task_Type_code like '%HCP%'
-
-	where
-	J002.RN > 1
---	and J002.Client_ID = @Client_ID_
-	and J013.Task_Type_Code not like '%HCP%'
-	and (J009.RN < 2 or J009.RN is null)
-	and J002.Client_ID = 10014025
-	and convert(date, J002.Visit_Date) between @StartDate and @EndDate
-	and J006.Organisation_Name in (select * from @Organisation)
---	and J006.Organisation_Name in (@Organisation)
+Declare @offset int
+ SET @offset = DateDiff(minute, GetUTCDate(), GetDate())
+select @offset/60.0 'offset', GetUTCDate()'UTC', GetDate()'Local'

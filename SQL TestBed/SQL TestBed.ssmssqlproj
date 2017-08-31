@@ -15,6 +15,18 @@
           <ConnectionProtocol>NotSpecified</ConnectionProtocol>
           <ApplicationName>Microsoft SQL Server Management Studio - Query</ApplicationName>
         </ConnectionNode>
+        <ConnectionNode Name="appsql-3\Train:ANGLICARE-SA\abhi.ryan">
+          <Created>2017-08-28T15:20:45.5838683+09:30</Created>
+          <Type>SQL</Type>
+          <Server>appsql-3\Train</Server>
+          <UserName />
+          <Authentication>Windows Authentication</Authentication>
+          <InitialDB>ComCareTRAIN</InitialDB>
+          <LoginTimeout>15</LoginTimeout>
+          <ExecutionTimeout>0</ExecutionTimeout>
+          <ConnectionProtocol>NotSpecified</ConnectionProtocol>
+          <ApplicationName>Microsoft SQL Server Management Studio - Query</ApplicationName>
+        </ConnectionNode>
         <ConnectionNode Name="Devsql-1\UAT:ANGLICARE-SA\abhi.ryan">
           <Created>2017-08-04T14:12:57.9607418+09:30</Created>
           <Type>SQL</Type>
@@ -49,6 +61,12 @@
           <AssociatedConnUserName />
           <FullPath>DiffServ_Header.sql</FullPath>
         </FileNode>
+        <FileNode Name="DQRef.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\Train:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>appsql-3\Train</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>DQRef.sql</FullPath>
+        </FileNode>
         <FileNode Name="StoredProc.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:Devsql-1\WHOUSE:True</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>Devsql-1\WHOUSE</AssociatedConnSrvName>
@@ -68,8 +86,8 @@
           <FullPath>TestBed_1.sql</FullPath>
         </FileNode>
         <FileNode Name="TestBed_2.sql">
-          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
-          <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:Devsql-1\UAT:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>Devsql-1\UAT</AssociatedConnSrvName>
           <AssociatedConnUserName />
           <FullPath>TestBed_2.sql</FullPath>
         </FileNode>
