@@ -103,21 +103,25 @@ select * from
 (
 	select
 		J001.Client_ID
---		,1 'table id'
 		,J001.Provider_ID
---		,(Cast (J033.Schedule_Time as datetime)) 'Schedule_Visit_Time'
 		,IIF(J033.WiA_Schedule_TimeKILL = 'true', null, Cast (J033.Schedule_Time as Datetime)) 'Schedule_Visit_Time'	
 		,J033.Scheduled_Duration
 		,(Cast (cast(J001.Visit_Date as date) as Datetime) + Cast (Cast (J001.Visit_Time as Time) as Datetime)) 'Actual_Visit_Time'
 		,J001.Visit_Duration 'Actual_Duration'
+		,J001.Travel_Km 'Travel_Km'
+		,J001.Actual_Intravisit_Travel_Km 'Intravisit_Travel_Km'
+		,J001.Units_of_Service
 		,IIF (J011.Description is NULL,'No Contract',J011.Description) 'contract_type'
 		,J004.Description 'task_Description'
 		,J001.Client_Not_Home
-		,IIF (J002.Client_ID IS NULL, IIF(J066.taskTypeCode is null,0,5), 1) 'Has_Charge_Item'-------------------NEW
+		,IIF (J002.Client_ID IS NULL, IIF(J066.taskTypeCode is null,0,5), 1) 'Has_Charge_Item'
 		,convert (int ,'0') 'In_WiA_Only'
 		,J002.Line_Description 'Charge_Item_Line_Description'
+		,J002.Unit
+		,J002.UOM
+		,J002.Rate
+		,J002.Rate_Type
 		,J002.Amount
-
 		,J009.Organisation_Name 'Funding_type'
 
 	from 
@@ -128,21 +132,38 @@ select * from
 		where 
 			convert(date, A_S.Visit_Date) between @StartDate and @EndDate
 			and @DuplicateChargeItem = 0
-	) J001
+	)J001
 
 	Left outer Join
 	(
 		select 
-			ACSI.Client_ID	
-			,ACSI.Visit_Date
-			,ACSI.Visit_No
-			,ACSI.Provider_ID
-			,ACSI.Service_Prov_Position_ID
-			,ACSI.Amount
-			,ACSI.Line_Description
-	--		,ACSI.
+			ASCI.Client_ID	
+			,ASCI.Visit_Date
+			,ASCI.Visit_No
+			,ASCI.Provider_ID
+			,ASCI.Service_Prov_Position_ID
+			,ASCI.Amount
+			,ASCI.Line_Description
+			,ASCI.Rate_Type
+			,ASCI.Rate
+			,ASCI.Unit
+			,UOM.Description 'UOM'
+			,ROW_NUMBER() 
+				over 
+				(
+					partition by 
+						ASCI.Provider_ID, ASCI.Visit_Date, ASCI.Visit_No, ASCI.Client_ID, ASCI.Service_Prov_Position_ID
+					order by
+						Case
+						when ASCI.Rate_Type = 'N/A' then 'Z'
+						else ASCI.Rate_Type
+						end
+				)'RN'
 
-		from dbo.Actual_Service_Charge_Item ACSI
+		from dbo.Actual_Service_Charge_Item ASCI
+		Inner Join [dbo].[FB_Contract_Billing_Item] CBI on ASCI.Contract_Billing_Item_ID = CBI.Contract_Billing_Item_ID
+		LEFT OUTER JOIN [dbo].[FB_Contract_Billing_Rate] CBR on ASCI.Contract_Billing_Rate_ID = CBR.Contract_Billing_Rate_ID
+		LEFT OUTER JOIN [dbo].[Unit_of_Measure] UOM ON CBR.[UOM_Code] = UOM.[UOM_Code]
 
 	)J002 ON 
 			J002.Client_ID = J001.Client_ID 
@@ -187,8 +208,8 @@ left outer join
 				(
 					Partition by SD.Client_ID Order by
 						CASE
---						WHEN O.Organisation_Name in (select * from @Organisation) THEN '1'
-						WHEN O.Organisation_Name in (@Organisation) THEN '1'
+						WHEN O.Organisation_Name in (select * from @Organisation) THEN '1'
+--						WHEN O.Organisation_Name in (@Organisation) THEN '1'
 						ELSE O.Organisation_Name END ASC
 				)'RN'
 		from dbo.Service_Delivery SD
@@ -226,15 +247,16 @@ left outer join
 
 	Where 
 		1=1
+		and (J002.RN < 2 or J002.RN is null)
 		and @DuplicateChargeItem = 0
 --		and J001.Client_ID = @Client_ID_
---		and J006.Organisation_Name in (select * from @Organisation)
-		and J006.Organisation_Name in (@Organisation)
+		and J006.Organisation_Name in (select * from @Organisation)
+--		and J006.Organisation_Name in (@Organisation)
 		and (J006.RN < 2 or J006.RN is NULL)
 		and (J009.RN < 2 or J009.rn is null)
 		and convert (Date, J001.Visit_Date) between @StartDate and @EndDate
---		AND (IIF (J011.Description is NULL,'No Contract',J011.Description) in (select * from @ContractType))
-		and (IIF (J011.Description is NULL,'No Contract',J011.Description) in (@ContractType))
+		AND (IIF (J011.Description is NULL,'No Contract',J011.Description) in (select * from @ContractType))
+--		and (IIF (J011.Description is NULL,'No Contract',J011.Description) in (@ContractType))
 
 ) t1
 
@@ -262,12 +284,19 @@ select Distinct * from
 		,J001.WiA_Scheduled_Duration 'Scheduled_Duration'
 		,(Cast (J001.AcS_Activity_Start_Time as Datetime)) 'Actual_Visit_Time'
 		,J001.AcS_Visit_Duration as 'Actual_Duration'
+		,J001.Travel_Km 'Travel_Km'
+		,J001.Actual_Intravisit_Travel_Km 'Intravisit_Travel_Km'
+		,J001.Units_of_Service
 		,IIF (J011.Description is NULL,'No Contract',J011.Description) 'contract_type'
 		,J004.Description 'task_Description'
 		,J001.Client_Not_Home
 		,IIF (J002.Client_ID IS NULL, IIF(J066.taskTypeCode is null,0,5), 1) 'Has_Charge_Item'
 		,IIF (J001.Client_Not_Home IS NULL, 1, 0) 'In_WiA_Only'
 		,J002.Line_Description 'Charge_Item_Line_Description'
+		,J002.Unit
+		,J002.UOM
+		,J002.Rate
+		,J002.Rate_Type
 		,J002.Amount
 		,J009.Organisation_Name 'Funding_Type'
 
@@ -302,6 +331,9 @@ select Distinct * from
 			,IIF(Ac_S.Task_Type_Code is null,Wi_A.Schedule_Task_Type, Ac_S.Task_Type_Code) 'Task_Type_Code'
 			,Wi_A.CAP_ID 'CAP_ID'
 			,Wi_A.Absence_Code
+			,Ac_S.Travel_Km
+			,Ac_S.Actual_Intravisit_Travel_Km
+			,Ac_S.Units_of_Service
 			,ROW_NUMBER () -- sort by importance of 'covered' 'absent' and 'Un-Alocated'.
 			over 
 			(
@@ -345,17 +377,39 @@ select Distinct * from
 	Left outer Join
 	(
 		select 
-			ACSI.Client_ID	
-			,ACSI.Visit_Date
-			,ACSI.Visit_No
-			,ACSI.Provider_ID
-			,ACSI.Service_Prov_Position_ID
-			,ACSI.Amount
-			,ACSI.Line_Description
+			ASCI.Client_ID	
+			,ASCI.Visit_Date
+			,ASCI.Visit_No
+			,ASCI.Provider_ID
+			,ASCI.Service_Prov_Position_ID
+			,ASCI.Amount
+			,ASCI.Line_Description
+			,ASCI.Rate_Type
+			,ASCI.Rate
+			,ASCI.Unit
+			,UOM.Description 'UOM'
+			,ROW_NUMBER() 
+				over 
+				(
+					partition by 
+						ASCI.Provider_ID, ASCI.Visit_Date, ASCI.Visit_No, ASCI.Client_ID, ASCI.Service_Prov_Position_ID
+					order by
+						Case
+						when ASCI.Rate_Type = 'N/A' then 'Z'
+						else ASCI.Rate_Type
+						end
+				)'RN'
 
-		from dbo.Actual_Service_Charge_Item ACSI
+		from dbo.Actual_Service_Charge_Item ASCI
+		Inner Join [dbo].[FB_Contract_Billing_Item] CBI on ASCI.Contract_Billing_Item_ID = CBI.Contract_Billing_Item_ID
+		LEFT OUTER JOIN [dbo].[FB_Contract_Billing_Rate] CBR on ASCI.Contract_Billing_Rate_ID = CBR.Contract_Billing_Rate_ID
+		LEFT OUTER JOIN [dbo].[Unit_of_Measure] UOM ON CBR.[UOM_Code] = UOM.[UOM_Code]
 
-	)J002 ON J002.Client_ID = J001.Client_ID and J002.Visit_Date = J001.AcS_Visit_Date and J002.Visit_No = J001.Visit_No and J002.Service_Prov_Position_ID = J001.AcS_SPPID
+	)J002 ON 
+		J002.Client_ID = J001.Client_ID 
+		and J002.Visit_Date = J001.AcS_Visit_Date 
+		and J002.Visit_No = J001.Visit_No 
+		and J002.Service_Prov_Position_ID = J001.AcS_SPPID
 
 	Left outer Join dbo.Task_Type J004 on J004.Task_Type_Code = J001.Task_Type_Code
 	Left Outer Join dbo.Service_Delivery J005 ON J001.Client_ID = J005.Client_ID
@@ -371,8 +425,8 @@ select Distinct * from
 				(
 					Partition by SD.Client_ID Order by
 						CASE
---						WHEN O.Organisation_Name in (select * from @Organisation) THEN '1'
-						WHEN O.Organisation_Name in (@Organisation) THEN '1'
+						WHEN O.Organisation_Name in (select * from @Organisation) THEN '1'
+--						WHEN O.Organisation_Name in (@Organisation) THEN '1'
 						ELSE O.Organisation_Name END ASC
 				)'RN'
 		from dbo.Service_Delivery SD
@@ -408,38 +462,21 @@ select Distinct * from
 	Left outer join @NoChargeTasks J066 on J066.taskTypeCode = J001.Task_Type_Code
 	Where 
 		1=1
+		and (J002.RN < 2 or J002.RN is null)
 		and @DuplicateChargeItem = 0
 --		and J001.Client_ID = @Client_ID_
---		and J006.Organisation_Name in (select * from @Organisation)
-		and J006.Organisation_Name in (@Organisation)
+		and J006.Organisation_Name in (select * from @Organisation)
+--		and J006.Organisation_Name in (@Organisation)
 		and 1 = iif(J001.RN > 1 and J001.WiA_Provider_ID = 0, 0, 1)
 		and (J006.RN < 2 or J006.RN is null)
 		and (J009.RN < 2 or J009.RN is null)
-		and convert(datetime, J001.WiA_Schedule_Time) between @StartDate and (DATEADD(s, 84599, @EndDate))
---		and (J009.ContractBillingGroup <> 'DCSI' or J009.ContractBillingGroup is null)
+--		and convert(datetime, J001.WiA_Schedule_Time) between @StartDate and (DATEADD(s, 84599, @EndDate))
+		and (J009.ContractBillingGroup <> 'DCSI' or J009.ContractBillingGroup is null)
 		and J001.Client_ID IS NOT NULL
 
---		AND (IIF (J011.Description is NULL,'No Contract',J011.Description) in (select * from @ContractType))
-		and (IIF (J011.Description is NULL,'No Contract',J011.Description) in (@ContractType))
+		AND (IIF (J011.Description is NULL,'No Contract',J011.Description) in (select * from @ContractType))
+--		and (IIF (J011.Description is NULL,'No Contract',J011.Description) in (@ContractType))
 
-/*
-	Group by
-		J001.Client_ID
-	--	,2
-		,J001.WiA_Provider_ID
-		,IIF(J001.WiA_Schedule_TimeKILL = 'true', null, Cast (J001.WiA_Schedule_Time as Datetime))
-		,J001.WiA_Scheduled_Duration
-		,(Cast (J001.AcS_Activity_Start_Time as Datetime))
-		,J001.AcS_Visit_Duration
-		,IIF (J011.Description is NULL,'No Contract',J011.Description)
-		,J004.Description
-		,J001.Client_Not_Home
-		,IIF (J002.Client_ID IS NULL, 0, 1)
-		,IIF (J001.Client_Not_Home IS NULL, 1, 0)
-		,J002.Line_Description
-		,J002.Amount
-		,J009.Organisation_Name
-		*/
 )t2
 --*/
 
@@ -449,35 +486,49 @@ Union
 select * from
 (
 	select
-		J002.Client_ID
-		,J002.Provider_ID
-		,cast(J002.Visit_Date as datetime) 'Schedule_Visit_Time'
-		,null 'Scheduled_Duration'
-		,null 'Actual_Visit_Time'
-		,null 'Actual_Duration'
-		,J012.Description 'contract_type'
-		,'---' 'task_Description'
-		,null 'Client_Not_Home'
-		,2 'Has_Charge_Item'
-		,null 'In_WiA_Only'
-		,J002.Line_Description 'Charge_Item_Line_Description'
-		,J002.Amount
-		,IIF(J009.Organisation_Name = 'NDIA National Disability Insurance Agency', 'NDIS funded',IIF(J009.Client_ID IS NULL,'No Contract Billing','Self Managed')) 'Funding_Type'
+		J002.Client_ID --1
+		,J002.Provider_ID --2
+		,cast(J002.Visit_Date as datetime) 'Schedule_Visit_Time' --3
+		,null 'Scheduled_Duration' --4
+		,null 'Actual_Visit_Time' --5
+		,null 'Actual_Duration' --6
+		,null 'Travel_Km' --7
+		,null 'Intravisit_Travel_Km' --8
+		,null 'Units_of_Service'
+		,J012.Description 'contract_type' --9
+		,'---' 'task_Description' --10
+		,null 'Client_Not_Home' --11
+		,2 'Has_Charge_Item' --12
+		,null 'In_WiA_Only' --13
+		,J002.Line_Description 'Charge_Item_Line_Description' --14
+		,J002.Unit --15
+		,J002.UOM --16
+		,J002.Rate --17
+		,J002.Rate_Type --18
+		,J002.Amount --19
+		,IIF(J009.Organisation_Name = 'NDIA National Disability Insurance Agency', 'NDIS funded',IIF(J009.Client_ID IS NULL,'No Contract Billing','Self Managed')) 'Funding_Type' --20
 --		,J002.RN 'ChrgDup'
 	from
 	(
 		select 
-			ACSI.Client_ID	
-			,ACSI.Visit_Date
-			,ACSI.Visit_No
-			,ACSI.Provider_ID
-			,ACSI.Service_Prov_Position_ID
-			,ACSI.Amount
-			,ACSI.Line_Description
-			,ACSI.Contract_Billing_Item_ID
-			,ACSI.FC_Product_ID
-			,row_number()over(partition by ACSI.Client_ID,ACSI.Provider_ID,ACSI.Visit_Date,ACSI.Visit_No,ACSI.Line_Description order by ACSI.Visit_Date,ACSI.Visit_No)'RN'
-		from dbo.Actual_Service_Charge_Item ACSI
+			ASCI.Client_ID	
+			,ASCI.Visit_Date
+			,ASCI.Visit_No
+			,ASCI.Provider_ID
+			,ASCI.Service_Prov_Position_ID
+			,ASCI.Amount
+			,ASCI.Line_Description
+			,ASCI.Rate_Type
+			,ASCI.Rate
+			,ASCI.Unit
+			,UOM.Description 'UOM'
+			,ASCI.FC_Product_ID
+			,ASCI.Contract_Billing_Item_ID
+			,row_number()over(partition by ASCI.Client_ID,ASCI.Provider_ID,ASCI.Visit_Date,ASCI.Visit_No,ASCI.Line_Description order by ASCI.Visit_Date,ASCI.Visit_No)'RN'
+		from dbo.Actual_Service_Charge_Item ASCI
+		Inner Join [dbo].[FB_Contract_Billing_Item] CBI on ASCI.Contract_Billing_Item_ID = CBI.Contract_Billing_Item_ID
+		LEFT OUTER JOIN [dbo].[FB_Contract_Billing_Rate] CBR on ASCI.Contract_Billing_Rate_ID = CBR.Contract_Billing_Rate_ID
+		LEFT OUTER JOIN [dbo].[Unit_of_Measure] UOM ON CBR.[UOM_Code] = UOM.[UOM_Code]
 
 	)J002
 	Left Outer Join dbo.Service_Delivery J005 ON J002.Client_ID = J005.Client_ID
@@ -493,8 +544,8 @@ select * from
 				(
 					Partition by SD.Client_ID Order by
 						CASE
---						WHEN O.Organisation_Name in (select * from @Organisation) THEN '1'
-						WHEN O.Organisation_Name in (@Organisation) THEN '1'
+						WHEN O.Organisation_Name in (select * from @Organisation) THEN '1'
+--						WHEN O.Organisation_Name in (@Organisation) THEN '1'
 						ELSE O.Organisation_Name END ASC
 				)'RN'
 		from dbo.Service_Delivery SD
@@ -544,13 +595,13 @@ select * from
 --	and J002.Client_ID = @Client_ID_
 	and (J009.RN < 2 or J009.RN is null)
 	and convert(date, J002.Visit_Date) between @StartDate and @EndDate
---	and J006.Organisation_Name in (select * from @Organisation)
-	and J006.Organisation_Name in (@Organisation)
---	AND (IIF (J012.Description is NULL,'No Contract',J012.Description) in (select * from @ContractType))
-	and (IIF (J012.Description is NULL,'No Contract',J012.Description) in (@ContractType))
+	and J006.Organisation_Name in (select * from @Organisation)
+--	and J006.Organisation_Name in (@Organisation)
+	AND (IIF (J012.Description is NULL,'No Contract',J012.Description) in (select * from @ContractType))
+--	and (IIF (J012.Description is NULL,'No Contract',J012.Description) in (@ContractType))
 	and J013.Task_Type_Code not like '%HCP%'
 )t3
 
 --*/
 order by
-1,3,5,8,2,12
+1,3,5,9,2,14
