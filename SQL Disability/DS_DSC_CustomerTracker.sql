@@ -65,6 +65,7 @@ Declare @ClientTable table
 	,HasGOC int
 	,Diagnosis VarChar(max)
 	,ServiceDelivery_StartDate VarChar(256)
+	,ServiceDelivery_DischargeDate VarChar(256)
 )
 insert into @ClientTable
 select * from
@@ -180,12 +181,12 @@ from @ClientTable J001
 left outer join
 (
 	Select
-		PC.[Person_ID]
-		,PC.[Contact_ID]
-		,PCT.[Description]
+		PC.Person_ID
+		,PC.Contact_ID
+		,PCT.Description
 		,ROW_NUMBER() Over
 		(
-			Partition BY PC.[Person_ID] Order By
+			Partition BY PC.Person_ID Order By
 				Case
 					WHEN PCT.Description = 'Mother' then '1'
 					WHEN PCT.Description = 'Father' then '2'

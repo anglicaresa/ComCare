@@ -3,10 +3,8 @@
 
 use ComCareProd
 
-declare @stringDate varchar(32) = '2017-08-24'
-declare @stringDate2 varchar(32) = '2017-08-24'--'2017-07-19' ,'2017-08-03' ,'2017-08-01'
-declare @Start_Date date = convert(date, @stringDate)
-declare @End_Date date = convert(date, @stringDate2)
+declare @Start_Date date = '2017-08-24'
+declare @End_Date date = '2017-08-24'--'2017-07-19' ,'2017-08-03' ,'2017-08-01'
 --declare @Centre varchar(32) = 'Dutton Court'
 --declare @Centre varchar(32) = 'Ian George Court'
 declare @Centre Varchar(32) = 'All Hallows Court'
@@ -86,12 +84,19 @@ declare @Prov_ID int = 10051295
 ------------------------------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------------------------------
 
-
-
+--Time Zone Code with Daylight savings time switch set for first sunday of aprial and October @ 3am.
+SET DATEFIRST 1
+Declare @Year VarChar(4) = DatePart(Year,@Start_Date)
+Declare @PrePros_DareApr datetime = dateadd(hour, 3,cast(DATEFROMPARTS(@Year,'4','1')as datetime))
+Declare @PrePros_DateOct datetime = dateadd(hour, 3,cast(DATEFROMPARTS(@Year,'10','1')as datetime))
+Declare @DareApr datetime = Dateadd(Day,7-DATEPART(weekday,@PrePros_DareApr),@PrePros_DareApr)
+Declare @DateOct datetime = Dateadd(Day,7-DATEPART(weekday,@PrePros_DateOct),@PrePros_DateOct)
+Set DateFirst 7
 
 declare @EventBracket1 int = -1
 declare @EventBracket2 int = 13
-declare @TimezoneOffset int = DateDiff(minute, GetUTCDate(), GetDate())
+--declare @TimezoneOffset int = DateDiff(minute, GetUTCDate(), GetDate())
+
 --------------------------------------------------------------
 --------------------------------------------------------------
 
@@ -245,7 +250,8 @@ insert into @RawResult
 			,Provs.ProviderName
 		--	,WI_EL_C.Content
 		--	,WI_EL_C.Directive_Type_ID
-			,DateAdd(MINUTE,@TimezoneOffset ,cast(WI_EL_C.Device_Timestamp as datetime))'Device_Timestamp'
+		--	,DateAdd(MINUTE,@TimezoneOffset ,cast(WI_EL_C.Device_Timestamp as datetime))'Device_Timestamp'
+			,iif(cast(WI_EL_C.Device_Timestamp as datetime)between @DareApr and @DateOct,DateAdd(MINUTE,570 ,cast(WI_EL_C.Device_Timestamp as datetime)) ,DateAdd(MINUTE,630 ,cast(WI_EL_C.Device_Timestamp as datetime))) 'Device_Timestamp'
 			,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 1),'''','') as Varchar(128)) 'Edit_Type'
 			,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 2),'''','')as Varchar(128)) 'Edit_Action'
 			,cast((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 3) as int) 'Wi_Record'
