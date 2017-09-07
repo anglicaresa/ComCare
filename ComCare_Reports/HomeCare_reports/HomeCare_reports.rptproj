@@ -34,6 +34,10 @@
       <FullPath>CHSP_TransactionAudit_02.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
+      <Name>ComCareBookingReport.rdl</Name>
+      <FullPath>ComCareBookingReport.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
       <Name>HCP_Admin_Discharge.rdl</Name>
       <FullPath>HCP_Admin_Discharge.rdl</FullPath>
     </ProjectItem>
@@ -90,6 +94,10 @@
       <FullPath>HCP_ProviderSchedule.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
+      <Name>HCP_Rates.rdl</Name>
+      <FullPath>HCP_Rates.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
       <Name>HCP_ServiceAdvisorCaseLoad.rdl</Name>
       <FullPath>HCP_ServiceAdvisorCaseLoad.rdl</FullPath>
     </ProjectItem>
@@ -108,14 +116,6 @@
     <ProjectItem>
       <Name>HCP_VisitTime_V_PackageStartTime.rdl</Name>
       <FullPath>HCP_VisitTime_V_PackageStartTime.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>HCP_Rates.rdl</Name>
-      <FullPath>HCP_Rates.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>ComCareBookingReport.rdl</Name>
-      <FullPath>ComCareBookingReport.rdl</FullPath>
     </ProjectItem>
   </Reports>
   <Configurations>

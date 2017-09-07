@@ -42,6 +42,10 @@
       <FullPath>DA_DC_BulkUpload.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
+      <Name>DA_DC_ClientContactDetails.rdl</Name>
+      <FullPath>DA_DC_ClientContactDetails.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
       <Name>DA_DC_IndirctActivity_Report.rdl</Name>
       <FullPath>DA_DC_IndirctActivity_Report.rdl</FullPath>
     </ProjectItem>
@@ -98,8 +102,8 @@
       <FullPath>DC_TimeSheet_Vs_Schedule.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>DA_DC_ClientContactDetails.rdl</Name>
-      <FullPath>DA_DC_ClientContactDetails.rdl</FullPath>
+      <Name>DA_DC_TransactionAudit_03.rdl</Name>
+      <FullPath>DA_DC_TransactionAudit_03.rdl</FullPath>
     </ProjectItem>
   </Reports>
   <Configurations>

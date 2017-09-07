@@ -36,8 +36,18 @@
             <Value>=Parameters!Prov_ID.Value</Value>
           </QueryParameter>
         </QueryParameters>
-        <CommandText>declare @EventBracket1 int = -1
+        <CommandText>SET DATEFIRST 1
+Declare @Year VarChar(4) = DatePart(Year,@Start_Date)
+Declare @PrePros_DareApr datetime = dateadd(hour, 3,cast(DATEFROMPARTS(@Year,'4','1')as datetime))
+Declare @PrePros_DateOct datetime = dateadd(hour, 3,cast(DATEFROMPARTS(@Year,'10','1')as datetime))
+Declare @DareApr datetime = Dateadd(Day,7-DATEPART(weekday,@PrePros_DareApr),@PrePros_DareApr)
+Declare @DateOct datetime = Dateadd(Day,7-DATEPART(weekday,@PrePros_DateOct),@PrePros_DateOct)
+Set DateFirst 7
+
+
+declare @EventBracket1 int = -1
 declare @EventBracket2 int = 13
+--declare @TimezoneOffset int = DateDiff(minute, GetUTCDate(), GetDate())
 --------------------------------------------------------------
 --------------------------------------------------------------
 
@@ -191,7 +201,8 @@ insert into @RawResult
 			,Provs.ProviderName
 		--	,WI_EL_C.Content
 		--	,WI_EL_C.Directive_Type_ID
-			,cast(WI_EL_C.Device_Timestamp as datetime2)'Device_Timestamp'
+		--	,DateAdd(MINUTE,@TimezoneOffset ,cast(WI_EL_C.Device_Timestamp as datetime))'Device_Timestamp'
+			,iif(cast(WI_EL_C.Device_Timestamp as datetime)between @DareApr and @DateOct,DateAdd(MINUTE,570 ,cast(WI_EL_C.Device_Timestamp as datetime)) ,DateAdd(MINUTE,630 ,cast(WI_EL_C.Device_Timestamp as datetime))) 'Device_Timestamp'
 			,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 1),'''','') as Varchar(128)) 'Edit_Type'
 			,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 2),'''','')as Varchar(128)) 'Edit_Action'
 			,cast((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 3) as int) 'Wi_Record'
@@ -775,8 +786,17 @@ Order by
             <Value>=Parameters!Prov_ID.Value</Value>
           </QueryParameter>
         </QueryParameters>
-        <CommandText>declare @EventBracket1 int = -1
+        <CommandText>SET DATEFIRST 1
+Declare @Year VarChar(4) = DatePart(Year,@Start_Date)
+Declare @PrePros_DareApr datetime = dateadd(hour, 3,cast(DATEFROMPARTS(@Year,'4','1')as datetime))
+Declare @PrePros_DateOct datetime = dateadd(hour, 3,cast(DATEFROMPARTS(@Year,'10','1')as datetime))
+Declare @DareApr datetime = Dateadd(Day,7-DATEPART(weekday,@PrePros_DareApr),@PrePros_DareApr)
+Declare @DateOct datetime = Dateadd(Day,7-DATEPART(weekday,@PrePros_DateOct),@PrePros_DateOct)
+Set DateFirst 7
+
+declare @EventBracket1 int = -1
 declare @EventBracket2 int = 13
+--declare @TimezoneOffset int = DateDiff(minute, GetUTCDate(), GetDate())
 --------------------------------------------------------------
 --------------------------------------------------------------
 
@@ -916,7 +936,8 @@ insert into @RawResult
 			,Provs.ProviderName
 		--	,WI_EL_C.Content
 		--	,WI_EL_C.Directive_Type_ID
-			,cast(WI_EL_C.Device_Timestamp as datetime2)'Device_Timestamp'
+		--	,DateAdd(MINUTE,@TimezoneOffset ,cast(WI_EL_C.Device_Timestamp as datetime))'Device_Timestamp'
+			,iif(cast(WI_EL_C.Device_Timestamp as datetime)between @DareApr and @DateOct,DateAdd(MINUTE,570 ,cast(WI_EL_C.Device_Timestamp as datetime)) ,DateAdd(MINUTE,630 ,cast(WI_EL_C.Device_Timestamp as datetime))) 'Device_Timestamp'
 			,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 1),'''','') as Varchar(128)) 'Edit_Type'
 			,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 2),'''','')as Varchar(128)) 'Edit_Action'
 			,cast((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 3) as int) 'Wi_Record'
@@ -2951,6 +2972,23 @@ iif
                       <Value> within the last 35 days. The Default Start Date is set to the maximum past date as a guide.</Value>
                       <Style>
                         <FontWeight>Normal</FontWeight>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style />
+                </Paragraph>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>ALSO Daylight savings time offset is calculated on the day the report is run for the </Value>
+                      <Style>
+                        <FontWeight>Normal</FontWeight>
+                      </Style>
+                    </TextRun>
+                    <TextRun>
+                      <Value>device time stamps.</Value>
+                      <Style>
+                        <FontWeight>Bold</FontWeight>
                       </Style>
                     </TextRun>
                   </TextRuns>

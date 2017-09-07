@@ -26,6 +26,10 @@
   <DataSets />
   <Reports>
     <ProjectItem>
+      <Name>ComCare_ClientTransactionOperatingAccount.rdl</Name>
+      <FullPath>ComCare_ClientTransactionOperatingAccount.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
       <Name>ComCare_Mobile.rdl</Name>
       <FullPath>ComCare_Mobile.rdl</FullPath>
     </ProjectItem>
@@ -50,8 +54,8 @@
       <FullPath>VisitTime_Vs_ContractDates.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>ComCare_ClientTransactionOperatingAccount.rdl</Name>
-      <FullPath>ComCare_ClientTransactionOperatingAccount.rdl</FullPath>
+      <Name>ComCare_PayRoll_CostCodeMapping.rdl</Name>
+      <FullPath>ComCare_PayRoll_CostCodeMapping.rdl</FullPath>
     </ProjectItem>
   </Reports>
   <Configurations>
