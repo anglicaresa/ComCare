@@ -139,6 +139,12 @@
           <AssociatedConnUserName />
           <FullPath>DS_DSC_Transaciton_Audit_UNION.sql</FullPath>
         </FileNode>
+        <FileNode Name="DS_DSC_Transaciton_Audit_UNION_FinanceCut.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>DS_DSC_Transaciton_Audit_UNION_FinanceCut.sql</FullPath>
+        </FileNode>
         <FileNode Name="DS_DSC_Transaction_Audit.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>

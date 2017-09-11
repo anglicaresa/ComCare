@@ -8,7 +8,8 @@ select * from dbo.GST_Type
 select * from dbo.FB_Client_CB_Bill_Adjustment
 
 
-
+select top 1 * from dbo.FB_Client_CB_Bill_Adjustment
+select Top 1 * from dbo.FB_Client_CB_Transaction
 
 */
 
@@ -16,9 +17,10 @@ select * from dbo.FB_Client_CB_Bill_Adjustment
 Declare @Client_ID_ as INT
 set @Client_ID_ = 10076603
 
-DECLARE @StartDate AS DATETIME = '20161201 00:00:00.000'
-DECLARE @EndDate AS DATETIME = getdate()
+DECLARE @StartDate AS Date = '2017-05-01'
+DECLARE @EndDate AS Date = '2017-05-01'
 declare @Organisation varchar(64) = 'Disabilities Children'
+declare @FiltType int = 1
 --declare @Organisation varchar(64) = 'Disabilities Adults'
 
 declare @ContractFilt table (contract varchar(128))
@@ -44,7 +46,7 @@ where
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------
-select
+select distinct
 	J001.Client_ID
 	,Format(J010.Effective_From_Date, 'yyyy-MM-dd') 'Activity_Date'
 	,J010.Comments 'Charge_Item_Line_Description'
@@ -52,8 +54,8 @@ select
 	,J014.Description 'GST_Type'
 	,J012.Description 'Funder_Contract'
 	,IIF(J009.Organisation_Name = 'NDIA National Disability Insurance Agency', 'NDIS funded',IIF(J009.Client_ID IS NULL,'No Contract Billing','Self Managed')) 'Funding_type'
-	,iif(J011.Description like '%eduction%',0,1)'AdjustmentType'
-
+	,iif(J011.Description like '%eduction%',-1,1)'AdjustmentType'
+	,J015.Processing_Date
 from
 (
 	select
@@ -130,40 +132,30 @@ LEFT OUTER JOIN
 --LEFT OUTER JOIN dbo.Card_Holder J007 ON J007.Person_ID = J001.Client_ID
 --LEFT OUTER JOIN dbo.Card_Type J008 ON J008.Card_Type_ID = J007.Card_Type_ID
 
-
 LEFT OUTER JOIN dbo.FB_Client_CB_Bill_Adjustment J010 ON J010.Client_CB_ID = J009.Client_CB_ID
 LEFT OUTER JOIN dbo.FB_Adjustment_Type J011 ON J011.Adjustment_Type_Code = J010.Adjustment_Type_Code
-
 left outer join dbo.FC_Funder_Contract J012 ON J012.Funder_Contract_ID = J009.Funder_Contract_ID
-
 left outer join dbo.GST_Type J014 on J014.GST_Type_Code = J010.GST_Type_Code
+left outer join dbo.FB_Client_CB_Transaction J015 on J015.Client_CB_ID = J010.Client_CB_ID and J015.Client_CB_Adj_ID = J010.Client_CB_Adj_ID
 
 Where 
 	1=1
 	and J006.Organisation_Name = @Organisation
 	and (J006.RN < 2 or J006.RN is null)
 --	and (J009.RN < 2 or J009.RN is null)
-	and J010.Effective_to_Date between @StartDate and @EndDate
+
+	and 1 = Case 
+			when @FiltType = 0 and cast(J010.Effective_From_Date AS date) between @StartDate and @EndDate then 1
+			When @FiltType = 1 and cast(J015.Processing_Date as date) between  @StartDate and @EndDate then 1
+			else 0
+			end
 	and (J009.ContractBillingGroup <> 'DCSI' or J009.ContractBillingGroup is null)
 	and (J012.Description in (select * from @ContractFilt) or J012.Description is null)
 --	and J012.Description in (@ContractFilt)
 
---	and J001.Client_ID = 10071595
+--	and J001.Client_ID = 10072626
+--	and J015.Processing_Date between '2017-08-22 09:21:37.000' and '2017-08-24 09:21:37.000'
 --*/
-group by
-	J001.Client_ID
-	,Format(J010.Effective_From_Date, 'yyyy-MM-dd')
-	,J010.Comments
-	,Format(J010.Adjustment_Amount, '#######0.#0')
-	,J014.Description
-	,J012.Description
-	,IIF(J009.Organisation_Name = 'NDIA National Disability Insurance Agency', 'NDIS funded',IIF(J009.Client_ID IS NULL,'No Contract Billing','Self Managed'))
-	,J009.RN
-	,iif(J011.Description like '%eduction%',0,1)
---	,J009.ContractBillingGroup
---	,J009.Organisation_Name
---	,J009.Client_Contract_Billed_To_ID
---	,J009.Client_CB_ID
 
 Order by
 2,1

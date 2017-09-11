@@ -36,7 +36,8 @@ Serv_Del_Outcome_Code
 
 
 --debug
-Declare @Client_ID int = 10073115 --has DQ
+--Declare @Client_ID int = 10073115 --has DQ
+Declare @Client_ID int = 10072693
 --Declare @Client_ID int = 10080247
 
 Declare @UseSingleID int = 1
@@ -58,14 +59,16 @@ Declare @ClientTable table
 	,Deceased_Date Date
 	,Building_name Varchar(128)
 	,Location Varchar(128)
-	,dwelling_number VarChar(64)
-	,Street Varchar(128)
-	,suburb Varchar(128)
+	,dwelling_number VarChar(128)
+	,Street Varchar(255)
+	,suburb Varchar(255)
 	,Post_Code int
-	,HasGOC int
+	,HasGOC VarChar(255)
 	,Diagnosis VarChar(max)
-	,ServiceDelivery_StartDate VarChar(256)
-	,ServiceDelivery_DischargeDate VarChar(256)
+	,ServiceDelivery_StartDate VarChar(Max)
+	,ServiceDelivery_EndDate VarChar(Max)
+	,ServiceDelivery_DischargeDate VarChar(Max)
+	,NDIS_Number bigint
 )
 insert into @ClientTable
 select * from
@@ -87,8 +90,7 @@ select distinct
 	(
 		(
 			select distinct
-				'~ '
-				+ DC.Description 
+				'~ '+ DC.Description 
 			from dbo.Diagnosis D 
 			left outer join dbo.Diagnosis_Category DC ON DC.Diagnosis_Category_Code = D.Diagnosis_Category_Code 
 			where D.Client_ID = J003.Client_ID
@@ -99,11 +101,28 @@ select distinct
 	(
 		(
 			select distinct
-				'~ '
-				+ Concat(ST.Description,' - ',Format(SD.From_Date,'dd-MM-yyyy')) 
-			from dbo.Service_Delivery SD 
+				'~ '+ Concat(ST.Description,' - ',Format(SD.From_Date,'dd-MM-yyyy')) 
+			from 
+			(
+				select
+				SD_inner.*
+				,ROW_NUMBER()
+				Over
+				(
+					Partition by SD_Inner.Client_ID, SD_Inner.Service_Type_Code 
+					Order By Case 
+						When SD_Inner.To_Date is null then 'zzz'
+						else cast(SD_Inner.To_Date as varchar(64))
+						end Desc
+				)'RN'
+				From dbo.Service_Delivery SD_inner 
+			) SD 
 			left outer join dbo.Service_Type ST ON ST.Service_Type_Code = SD.Service_Type_Code 
-			where SD.Client_ID = J003.Client_ID
+			where 
+				1=1
+			--	and SD.Client_ID = 10073115
+				and SD.Client_ID = J003.Client_ID
+				and (RN is null or RN =1)
 			for XML path ('')  
 		),1,2,''--stuff args to remove first comma
 	)'ServiceDelivery_StartDate'
@@ -112,13 +131,60 @@ select distinct
 		(
 			select distinct
 				'~ '
-				+ Concat(ST.Description,' - ',iif(SD.To_Date is null,'-No Discharg Date-' ,Format(SD.To_Date,'dd-MM-yyyy'))) 
-			from dbo.Service_Delivery SD 
+				+ Concat(ST.Description,' - ',iif(SD.To_Date is null,'No End Date' ,Format(SD.To_Date,'dd-MM-yyyy'))) 
+			from 
+			(
+				select
+				SD_inner.*
+				,ROW_NUMBER()
+				Over
+				(
+					Partition by SD_Inner.Client_ID, SD_Inner.Service_Type_Code 
+					Order By Case 
+						When SD_Inner.To_Date is null then 'zzz'
+						else cast(SD_Inner.To_Date as varchar(64))
+						end Desc
+				)'RN'
+				From dbo.Service_Delivery SD_inner 
+			) SD
 			left outer join dbo.Service_Type ST ON ST.Service_Type_Code = SD.Service_Type_Code 
-			where SD.Client_ID = J003.Client_ID
+			
+			where 
+				SD.Client_ID = J003.Client_ID
+				and (RN is null or RN =1)
+			for XML path ('')  
+		),1,2,''--stuff args to remove first comma
+	)'ServiceDelivery_EndDate'
+		,STUFF
+	(
+		(
+			select distinct
+				'~ '
+				+ Concat(ST.Description,' - ',iif(SD.To_Date is null and SD.Serv_Del_Outcome_Code Is null,'No End Date' ,Concat(Format(SD.To_Date,'dd-MM-yyyy'),' - ',SDO.Description))) 
+			from 
+			(
+				select
+				SD_inner.*
+				,ROW_NUMBER()
+				Over
+				(
+					Partition by SD_Inner.Client_ID, SD_Inner.Service_Type_Code 
+					Order By Case 
+						When SD_Inner.To_Date is null then 'zzz'
+						else cast(SD_Inner.To_Date as varchar(64))
+						end Desc
+				)'RN'
+				From dbo.Service_Delivery SD_inner 
+			) SD
+			left outer join dbo.Service_Type ST ON ST.Service_Type_Code = SD.Service_Type_Code 
+			left outer join dbo.Service_Delivery_Outcome SDO on SDO.Serv_Del_Outcome_Code = SD.Serv_Del_Outcome_Code
+			where 
+				SD.Client_ID = J003.Client_ID
+				and (RN is null or RN =1)
 			for XML path ('')  
 		),1,2,''--stuff args to remove first comma
 	)'ServiceDelivery_DischargeDate'
+	,J007.Card_No 'NDIS_Number'
 From 
 (
 	select 
@@ -129,7 +195,7 @@ From
 		FCM.Description = @OrgName
 )J001
 Left outer Join dbo.FC_Funder_Contract J002 on J001.Funding_Care_Model_ID = J002.Funding_Care_Model_ID
-Left outer join dbo.FC_Client_Contract J003 on J002.funder_Contract_ID = J003.funder_Contract_ID and J003.Effective_To_Date is null
+Left outer join dbo.FC_Client_Contract J003 on J002.funder_Contract_ID = J003.funder_Contract_ID and (J003.Effective_To_Date is null or J003.Effective_To_Date > GETDATE())
 inner join dbo.Person J004 on J004.Person_ID = J003.Client_ID
 
 LEFT OUTER JOIN dbo.Person_Current_Address_Phone J005 ON J005.Person_id = J003.Client_ID
@@ -137,7 +203,7 @@ Left outer join
 (
 	select distinct
 	CC.Client_ID
-	,iif(GOC.Client_Contract_ID is not null, 1,0)'HasGOC'
+	,iif(GOC.Client_Contract_ID is not null, 'Yes','No')'HasGOC'
 	From dbo.FC_Client_Contract CC
 	LEFT OUTER JOIN 
 	(
@@ -146,6 +212,9 @@ Left outer join
 		from dbo.FC_Client_Goal_of_Care GOC
 	)GOC on GOC.Client_Contract_ID = CC.Client_Contract_ID
 )J006 on J006.Client_ID = J003.Client_ID
+
+LEFT OUTER JOIN dbo.Card_Holder J007 ON J007.Person_ID = J003.Client_ID and J007.Card_Type_ID = 15
+
 
 where
 	1=1
@@ -159,7 +228,7 @@ Order by
 select * from @ClientTable
 --------------------------------------------------------------
 --------------------------------------------------------------
---/*
+/*
 declare @ClientContact Table 
 (
 	Client_ID int
@@ -245,7 +314,7 @@ J001.Client_ID
 --select * from @ClientContact
 --------------------------------------------------------------
 --------------------------------------------------------------
---/*
+/*
 Declare @ClientContact_Formated table
 (
 	Client_ID int
@@ -298,9 +367,9 @@ From @ClientContact J001
 --------------------------------------------------------------
 --------------------------------------------------------------
 
---/*
+/*
 --get DQ_answers for client, make into sub query
---------------------------------------------------------------------------------------
+
 Declare @DQ_Name VarChar(128) = 'DA Service Quote'
 
 Declare @DQ_Results Table
@@ -314,6 +383,7 @@ Declare @DQ_Results Table
 	,ServAgreeSigned Varchar(8)
 	,SetUpInCC varchar(8)
 	,KMsPerServ Dec(10,2)
+	,DQ_Date Date
 )
 insert into @DQ_Results
 select-- distinct
@@ -326,7 +396,7 @@ select-- distinct
 	,A006.Answer_Selection 'ServAgreeSigned'
 	,A007.Answer_Selection 'SetUpInCC'
 	,A008.KMsPerServ
-
+	,J001.Questionnaire_Date
 from @ClientTable J101
 
 Left outer join
@@ -334,6 +404,7 @@ Left outer join
 	select distinct
 		DQ_E_Q.Respondent_ID
 		,DQ_E_Q.Entity_Questionnaire_ID
+		,DQ_E_Q.Questionnaire_Date
 	from dbo.DQ_Questionnaire DQ_Q
 	inner join dbo.DQ_Entity_Questionnaire DQ_E_Q on DQ_E_Q.Questionnaire_Code = DQ_Q.Questionnaire_Code
 	where 
@@ -423,16 +494,17 @@ Left outer join
 )A008 on A008.Entity_Questionnaire_ID = J001.Entity_Questionnaire_ID
 
 
---*/
+
 where
 	1=1 
 	and J001.Respondent_ID is not null
+--*/
 --------------------------------------------------------------
 --------------------------------------------------------------
 --select * from @DQ_Results
 --------------------------------------------------------------
 --------------------------------------------------------------
---*/
+/*
 
 --ServiceDelivery INFO collection
 Declare @ServDeliv_collected table
@@ -440,25 +512,32 @@ Declare @ServDeliv_collected table
 	Client_ID int
 	,Service varchar(256)
 	,ToDate Varchar(64)
+	,FundingProg VarChar(128)
 )
 insert into @ServDeliv_collected
 select
 	J001.Client_ID
 	,J002.Description 'Service'
 	,iif(J001.To_Date is null, '-none-',cast(cast(J001.To_Date as datetime) as varchar(64)))'To_Date'
+	,J003.Description 'FundingProg'
 From @ClientTable J101
 Left outer join dbo.Service_Delivery J001 on J001.Client_ID = J101.Client_ID
 Left outer join dbo.Service_Type J002 on J002.Service_Type_Code = J001.Service_Type_Code and J002.Effective_To_Date is null
+Left outer join dbo.Funding_Program J003 on J003.Funding_Prog_Code = J001.Funding_Prog_Code
+
+--*/
 --------------------------------------------------------------
 --------------------------------------------------------------
 --select * from @ServDeliv_collected
 --------------------------------------------------------------
 --------------------------------------------------------------
+/*
 Declare @ServDeliv_Formated table
 (
 	Client_ID int
 	,Service varchar(max)
-	,ToDate Varchar(256)
+	,ToDate Varchar(255)
+	,FundingProg VarChar(255)
 )
 insert into @ServDeliv_Formated
 select distinct
@@ -485,13 +564,25 @@ J001.Client_ID
 			for XML path ('')  
 		),1,1,''
 	)'ToDate'
+	,STUFF
+	(
+		(
+			select --distinct
+				'~ '
+				+ SD_C.FundingProg
+			from @ServDeliv_collected SD_C  
+			where SD_C.Client_ID = J001.Client_ID-- and SD_C.RN = J001.RN
+			for XML path ('')  
+		),1,1,''
+	)'FundingProg'
 from @ServDeliv_collected J001
+--*/
 --------------------------------------------------------------
 --------------------------------------------------------------
 --select * from @ServDeliv_Formated
 --------------------------------------------------------------
 --------------------------------------------------------------
-
+/*
 Declare @BillingGroup table
 (
 	Client_ID int
@@ -507,12 +598,13 @@ J001.Client_ID
 From @ClientTable J001
 LEFT outer join dbo.FB_Client_Contract_Billing J002 on J002.Client_ID = J001.Client_ID
 LEFT OUTER JOIN dbo.FB_Contract_Billing_Group J003 on J003.Contract_Billing_Group_ID = J002.Contract_Billing_Group_ID
-
+--*/
 --------------------------------------------------------------
 --------------------------------------------------------------
 --select * from @BillingGroup
 --------------------------------------------------------------
 --------------------------------------------------------------
+/*
 declare @BillingGroup_Formated table
 (
 	Client_ID int
@@ -541,13 +633,156 @@ J001.Client_ID
 				+ BG.Billing_End_Date
 			from @BillingGroup BG  
 			where BG.Client_ID = J001.Client_ID-- and SD_C.RN = J001.RN
-			for XML path ('')  
+			for XML path ('')
 		),1,1,''
 	)'Billing_End_Date'
 from @BillingGroup J001
-
+--*/
 --------------------------------------------------------------
 --------------------------------------------------------------
 --select * from @BillingGroup_Formated
 --------------------------------------------------------------
 --------------------------------------------------------------
+/*
+--Client Refferal
+Declare @ClientReferral Table
+(
+	Client_ID int
+	,Referral_Date VarChar(255)
+	,Referral_Source VarChar(255)
+	,Referral_Comments VarChar(max)
+	,Referral_ServRequested VarChar(255)
+	,FirstBookedVisit Date
+)
+
+insert into @ClientReferral
+select Distinct
+J001.Client_ID 
+,STUFF
+	( 
+		(
+		select-- distinct
+			'~ '+ Cast(cast(Rf.Referral_Date as date) as varchar(64))
+			from dbo.Referral Rf
+			where Rf.Client_ID = J001.Client_ID
+		for XML path ('') 
+		) ,1,2,''
+	)'Referral_Date'
+,STUFF
+	( 
+		(
+			select-- distinct
+				'~ '+ iif (Org.Organisation_Name Like 'NDIA %','NDIA','Other')
+			from dbo.Referral Rf
+			Left outer join dbo.Referral_Source_Category RS on RS.Ref_Source_Category_Code = Rf.Ref_Source_Category_Code
+			Left outer join dbo.Organisation org on org.Organisation_ID = Rf.Organisation_ID
+			where Rf.Client_ID = J001.Client_ID
+			for XML path ('') 
+		) ,1,2,''
+	)'Referral_Source'
+,STUFF
+	( 
+		(
+			select
+				'~ '+ iif(Rf.Referral_Comments is null,'None',Rf.Referral_Comments)
+			from dbo.Referral Rf
+			where Rf.Client_ID = J001.Client_ID
+			for XML path ('') 
+		) ,1,2,''
+	)'Referral_Comments'
+,Stuff
+	( 
+		(
+			select
+				'~ '+ iif(ST.Description is null,'None',ST.Description)
+			from dbo.Referral Rf
+			Left outer join dbo.Service_Requested SR on SR.Client_ID = Rf.Client_ID and SR.Referral_No = Rf.Referral_No
+			Left outer join dbo.Service_Type ST on ST.Service_Type_Code = SR.Service_Type_Code
+			where Rf.Client_ID = J001.Client_ID
+			for XML path ('') 
+		) ,1,2,''
+	)'Referral_ServRequested'
+,J002.Activity_Date 'FirstBookedVisit'
+from @ClientTable J001
+Left Outer Join
+(
+	Select
+	wia.Client_ID
+	,cast(wia.Activity_Date as date)'Activity_Date'
+	,ROW_NUMBER()over(Partition by wia.Client_ID Order by wia.Activity_Date)'RN'
+	from dbo.WI_Activity wia
+	inner Join @ClientTable CT on CT.Client_ID = wia.Client_ID and wia.Event_Type = 15
+)J002 on J002.Client_ID = J001.Client_ID and J002.RN = 1
+
+--*/
+--------------------------------------------------------------
+--------------------------------------------------------------
+--select * from @ClientReferral
+--------------------------------------------------------------
+--------------------------------------------------------------
+
+
+--Client Funding model
+Declare @Client_FundingModel table
+(
+	Client_ID int
+	,FunderPrograms VarChar(128)
+)
+insert into @Client_FundingModel
+select distinct
+	J001.Client_ID
+	,STUFF
+	(
+		(
+			Select distinct
+			'& '+ 
+			Case 
+			when FP.Description like '%NDIS%' then 'NDIS '
+			when FP.Description like '%DCSI%' then 'DCSI '
+			else 'Fee For Service '
+			end
+				
+			From dbo.Service_Delivery SD
+			Left outer Join dbo.Funding_Program FP on FP.Funding_Prog_Code = SD.Funding_Prog_Code
+			where SD.Client_ID = J001.Client_ID and (SD.To_Date > GETDATE() or SD.To_Date is null)
+		)
+		,1,2,''
+	)'FunderPrograms'
+	--,JX002.From_Date
+From @ClientTable J001
+--------------------------------------------------------------
+--------------------------------------------------------------
+--select * from @Client_FundingModel
+--------------------------------------------------------------
+--------------------------------------------------------------
+
+Declare @Client_SelfManaged_1 Table
+(
+	Client_ID int
+	,Contract_Billing_Group VarChar(128)
+	,SelfManaged VarChar (16)
+)
+
+insert into @Client_SelfManaged_1
+
+Select distinct
+	J101.Client_ID
+	,iif(J002.Description is null, 'No Billing Contract',J002.Description)'Contract_Billing_Group'
+	,Case
+		When J004.Organisation_ID is not null then 'No'
+		When J004.Organisation_ID Is null and J002.Description Is not null and J002.Description not Like '%DCSI%' then 'Yes'
+		when J002.Description Like '%DCSI%' then 'No'
+		When J002.Description is null then 'Not Defined'
+		end 'SelfManaged'
+From @ClientTable J101
+Left outer Join dbo.FB_Client_Contract_Billing J001 on J001.Client_ID = J101.Client_ID
+LEFT OUTER JOIN dbo.FB_Contract_Billing_Group J002 on J002.Contract_Billing_Group_ID = J001.Contract_Billing_Group_ID
+LEFT OUTER JOIN dbo.FB_Client_Contract_Billed_To J003 on J003.Client_CB_ID = J001.Client_CB_ID
+Left outer join dbo.FB_Client_CB_Split J004 on J004.Client_Contract_Billed_To_ID = J003.Client_Contract_Billed_To_ID
+
+--------------------------------------------------------------
+--------------------------------------------------------------
+select * from @Client_SelfManaged_1
+--------------------------------------------------------------
+--------------------------------------------------------------
+--TO DO GOC on @ClientTable currently can generate multiple entries for a client due to multiple services.<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

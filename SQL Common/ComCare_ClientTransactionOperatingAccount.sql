@@ -15,14 +15,32 @@ insert into @TransactionType
 --*/
 
 
-declare @Client_ID int = 10020773
+declare @Client_ID int = 10001600
 declare @FiltIncomeTested int = 1
 
-select 
+
+Declare @FunderContract_ID Table 
+(
+	Description Varchar(128)
+	,Funder_Contract_ID int
+)
+insert into @FunderContract_ID
+select
+	J002.Description
+	,J002.Funder_Contract_ID
+from [dbo].FC_Client_Contract J001
+Left outer Join [dbo].FC_Funder_Contract J002	on J002.funder_Contract_ID = J001.funder_Contract_ID
+where J001.Client_ID = @Client_ID
+
+select * from @FunderContract_ID
+
+--------------<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<here down
+select --distinct
 	J001.Client_ID
 	,Concat(J006.Last_Name,', ',J006.Preferred_Name)'ClientName'
---	,J007.Description
 	,J005.*
+	
+	
 
 from [dbo].FC_Client_Contract J001
 Left outer Join [dbo].FC_Funder_Contract J002	on J002.funder_Contract_ID = J001.funder_Contract_ID
@@ -43,6 +61,7 @@ Left outer join
 		,FC_T.Exported_Date
 		,FC_T.Creation_Date 'TransationDate'
 		,FCP.Period_Start_Date
+--		,SUM(FC_T.Actual_Amount)'TotalAmountSum'
 		,case
 			 when FC_T.Activity_Type = 'A' then 'Added'
 			 when FC_T.Activity_Type = 'C' then 'Changed'
@@ -63,14 +82,17 @@ where
 	1=1
 	and J001.Client_ID = @Client_ID
 	--and J005.Transaction_Type in (@TransactionType)
-	and J005.Transaction_Type in (select * from @TransactionType)
+--	and J005.Transaction_Type in (select * from @TransactionType)
 
 	and 1 = IIF( J005.Comments like '%Income Tested%', 1, @FiltIncomeTested)
 	and J007.Description ='Operating Account'
+	and J002.Funder_Contract_ID in (@FunderContract_ID)
+--	and J002.Funder_Contract_ID in (select Funder_Contract_ID from @FunderContract_ID)
 --	and J005.Exported_Date is not null
 
+--	
+--/*
 order by
 J005.TransationDate
 ,J005.Activity_Date
-
-
+--*/
