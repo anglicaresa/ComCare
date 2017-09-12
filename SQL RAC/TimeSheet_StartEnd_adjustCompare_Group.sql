@@ -1,22 +1,18 @@
 
---select * from dbo.Organisation where Organisation_Type_Code = 1
-
 use ComCareProd
 
-declare @Start_Date date = '2017-08-24'
-declare @End_Date date = '2017-08-24'--'2017-07-19' ,'2017-08-03' ,'2017-08-01'
+declare @Start_Date date = '2017-09-09'
+declare @End_Date date = '2017-09-10'--'2017-07-19' ,'2017-08-03' ,'2017-08-01'
 --declare @Centre varchar(32) = 'Dutton Court'
 --declare @Centre varchar(32) = 'Ian George Court'
 declare @Centre Varchar(32) = 'All Hallows Court'
 --declare @Centre Varchar(32) = 'St Laurences Court'
 --declare @Centre Varchar(32) = 'Canterbury Close'
-declare @ShowVacantOnly int = 1
-declare @NoBuddyShifts int = 1
-declare @hideUnAss int = 0
 
 
 
------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------
 --populate @ClassCodeFilter for dev purposes
 declare @ClassCodeFilter Table (Provider_Class_Code VarChar(128),Description VarChar(128))
 insert into @ClassCodeFilter
@@ -40,7 +36,7 @@ Group by
 
 Order by
 	J104.Description
------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------
 declare @TeamFilt table (description varchar(128))
 insert into @TeamFilt
 select 
@@ -50,7 +46,6 @@ from [dbo].[Organisation] J001
 
 inner join [dbo].[Service_Delivery_Work_Team] J002 on J002.[Centre_ID] = J001.[Organisation_ID]
 left outer join [dbo].[Service_Provision_Position] J003 on J003.[Centre_ID] = J002.[Centre_ID] and J003.Team_No = J002.Team_No
---inner join [dbo].[Provider_Classification] J004 on J004.Provider_Class_Code = J003.Provider_Class_Code
 
 where
 	1=1
@@ -61,9 +56,9 @@ where
 group by J002.Description
 order by 1
 
------------------------------------------------------------------------------------------------
------------------------------------------------------------------------------------------------
------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
 --------------------------------------------------DeBug
 declare @forceProv_ID int = 1
 
@@ -76,13 +71,23 @@ declare @forceProv_ID int = 1
 --declare @Prov_ID int = 10046817 --Nelson, Margaret Has split shift **Only 1 sign off
 --declare @Prov_ID int = 10052628 --
 --declare @Prov_ID int = 10046817 --Nelson, Margaret ***splitShift blerk
-declare @Prov_ID int = 10051295
-------------------------------------------------------------------------------------------------------------------------------------------------------
-------------------------------------------------------------------------------------------------------------------------------------------------------
---Copy from here down
-------------------------------------------------------------------------------------------------------------------------------------------------------
-------------------------------------------------------------------------------------------------------------------------------------------------------
-------------------------------------------------------------------------------------------------------------------------------------------------------
+--declare @Prov_ID int = 10051295
+--declare @Prov_ID int = 10054203
+--declare @Prov_ID int = 10051362
+--declare @Prov_ID int = 10052484
+--declare @Prov_ID int = 10051849
+--declare @Prov_ID int = 10051468
+declare @Prov_ID int = 10052762
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+
+
+--Copy from here down<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
 
 --Time Zone Code with Daylight savings time switch set for first sunday of aprial and October @ 3am.
 SET DATEFIRST 1
@@ -95,7 +100,6 @@ Set DateFirst 7
 
 declare @EventBracket1 int = -1
 declare @EventBracket2 int = 13
---declare @TimezoneOffset int = DateDiff(minute, GetUTCDate(), GetDate())
 
 --------------------------------------------------------------
 --------------------------------------------------------------
@@ -105,17 +109,30 @@ declare @date_Start date = @Start_Date
 declare @date_End date = iif(@End_Date < @Start_Date, @Start_Date, @End_Date)
 
 ---------------------------------------------------------------
---Pre assemble Provider list for performance reasons
+--Pre assemble Provider list and Schedule for performance reasons
 ---------------------------------------------------------------
-declare @Provs Table
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+declare @Provs_Roster Table
 (
 	Provider_ID int
 	,ProviderName varChar(128)
+	,Activity_Date Date
+	,Schedule_StartTime DateTime
+	,Schedule_EndTime DateTime
+	,Schedule_Duration int
 )
-insert into @Provs
-	Select
+
+insert into @Provs_Roster
+	Select Distinct
 		X001.Provider_ID
 		,(X002.Last_Name + ', ' + X002.Preferred_Name) 'ProviderName'
+		,X001.Activity_Date
+		,X001.Schedule_StartTime
+		,X001.Schedule_EndTime
+		,X001.Schedule_Duration
+
 	From 
 	(
 		Select
@@ -147,8 +164,28 @@ insert into @Provs
 	Inner join dbo.Organisation X005 on X005.Organisation_ID = X004.Centre_ID
 	Left outer join dbo.Service_Provision_Allocation X006 on X006.Service_Prov_Position_ID = X003.Service_Prov_Position_ID
 	Left outer join dbo.Provider_Classification X007 on X007.Provider_Class_Code = X003.Provider_Class_Code
+	Left outer join
+	(
+		select
+		PC.Provider_ID
+		--PC.*
+		,ROW_NUMBER()over(Partition by PC.Provider_ID Order by Case
+			When PC.Provider_contract_Type_code = 1 and PC.Effective_Date_To is null then '1'
+			When PC.Provider_contract_Type_code = 1 and PC.Effective_Date_To > @date_Start then '2'
+			when PC.Provider_contract_Type_code = 1 and PC.Effective_Date_From < @date_End then '3'
+			else '4'
+			end
+			)'RN'
+		from dbo.Provider_Contract PC
+		where
+			1=1
+--			and cast(PC.Effective_Date_To as date) < @date_End 
+--			and cast(PC.Effective_Date_From as date) < @date_End
+			and PC.Provider_Contract_Type_Code = 1
+	)X008 on X008.Provider_ID = X001.Provider_ID and X008.RN < 2
 		where
 		1=1
+		and X001.Absence_Code is null
 		and X001.RN < 2
 			and X001.Schedule_Duration is not null
 			and cast(X001.Activity_Date as date) between @date_Start and @date_End
@@ -176,15 +213,24 @@ insert into @Provs
 			)
 		)
 
-		
-	Group by
-		X001.Provider_ID
-		,(X002.Last_Name + ', ' + X002.Preferred_Name)
 	order by
-		1
---select * from @Provs
-	
+		1,3,4	
 
+Select * from @Provs_Roster
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+declare @Provs Table
+(
+	Provider_ID int
+)
+
+insert into @Provs
+select Distinct
+J001.Provider_ID
+From @Provs_Roster J001
+
+--select * from @Provs
 
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
@@ -196,10 +242,8 @@ insert into @Provs
 declare @RawResult Table
 (
 	Provider_ID int
-	,ProviderName varChar(128)
 	,Device_Timestamp DateTime
 	,Edit_Action varChar(512)
---	,Edit_Action_2 varChar(255)
 	,Activity_Date DateTime
 	,Start_Time DateTime
 	,End_Time DateTime
@@ -215,10 +259,7 @@ declare @RawResult Table
 insert into @RawResult
 	Select
 		SJ001.Provider_ID
-		,SJ001.ProviderName
 		,SJ001.Device_Timestamp
---		,SJ001.Edit_Action
---		/*
 		,Edit_Action = 
 		(	
 			case SJ001.Edit_Action
@@ -242,15 +283,11 @@ insert into @RawResult
 		,MIN(SJ001.Device_Timestamp) over (partition by SJ001.Provider_ID,SJ001.Activity_Date )'FirstTimeStamp'
 		,Max(SJ001.Device_Timestamp) over (partition by SJ001.Provider_ID,SJ001.Activity_Date )'LastTimeStamp'
 		,Count(SJ001.Provider_ID)over (partition by null )'Row_Count'
-		,Row_Number() over(Partition by null order by SJ001.Provider_ID, SJ001.ProviderName, SJ001.Device_Timestamp)'RowNumber'
+		,Row_Number() over(Partition by null order by SJ001.Provider_ID, SJ001.Device_Timestamp)'RowNumber'
 	From
 	(
 		select
 			WI_EL_C.Provider_ID
-			,Provs.ProviderName
-		--	,WI_EL_C.Content
-		--	,WI_EL_C.Directive_Type_ID
-		--	,DateAdd(MINUTE,@TimezoneOffset ,cast(WI_EL_C.Device_Timestamp as datetime))'Device_Timestamp'
 			,iif(cast(WI_EL_C.Device_Timestamp as datetime)between @DareApr and @DateOct,DateAdd(MINUTE,570 ,cast(WI_EL_C.Device_Timestamp as datetime)) ,DateAdd(MINUTE,630 ,cast(WI_EL_C.Device_Timestamp as datetime))) 'Device_Timestamp'
 			,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 1),'''','') as Varchar(128)) 'Edit_Type'
 			,cast(Replace((select Text from dbo.Split(WI_EL_C.Content, ',') where Record_Number = 2),'''','')as Varchar(128)) 'Edit_Action'
@@ -275,8 +312,8 @@ insert into @RawResult
 	Order by
 	1,2,3
 
-select * from @RawResult
---/*
+--select * from @RawResult
+
 
 --------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------
@@ -322,11 +359,10 @@ begin
 	set  @i_BaseCount = @i_Temp + 1
 	set @i_Temp = @i_RowNum
 	 --Cycle mechanic
---	print @i_RowNum
 
-	-----------------------------------------------------------------------------------------------------------
+	----------------------------------------------------------------------------
 	--end base setup
-	-----------------------------------------------------------------------------------------------------------
+	----------------------------------------------------------------------------
 	if --Check to see if the provider ID has changed or the task has changed
 	(@i_PID <> (select RR.Provider_ID from @RawResult RR where RR.RowNumber = @i_RowNum+1)) 
 	or (@t_ActivityDate <> (select RR.Activity_Date from @RawResult RR where RR.RowNumber = @i_RowNum+1)) 
@@ -344,20 +380,17 @@ begin
 	end
 	set @i_RowNum = @i_Temp + 1
 end
---*/
+
 --select * from @JoinedEdit_Actions
 --select * from @RawResult
 
---/*
-
---------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
 --PrimaryProssessing
 Declare @Results table
 (
 	Provider_ID int
-	,ProviderName varchar(128)
 	,Activity_Date date
 	,StartTime_Raw DateTime
 	,StartTime_Alt DateTime
@@ -369,7 +402,6 @@ Declare @Results table
 	,editActions VarChar(255)
 	,Wi_Record int
 	,OldRN int
---	,RemoveFlag int
 	,TotalCount int
 	,RowNum int
 )
@@ -381,7 +413,6 @@ from
 (
 	Select
 		J001.Provider_ID
-		,J001.ProviderName
 		,J001.Activity_Date
 		,J001.FirstTimeStamp 'StartTime_Raw'
 		,J001.Start_Time 'StartTime_Alt'
@@ -393,14 +424,12 @@ from
 		,J002.Joined_Edit_Action 'editActions'
 		,J001.Wi_Record
 		,J001.RowNumber 'OldRN'
-	--	,J001.RN 'RemoveFlag'
 		,Count(J001.Provider_ID) over (partition by null )'TotalCount'
 	
 	From 
 	(
 		select
 			RR.Provider_ID
-			,RR.ProviderName
 			,RR.Activity_Date
 			,RR.FirstTimeStamp
 			,RR.Start_Time
@@ -420,15 +449,10 @@ from
 
 	where
 		1=1
-		--and 1 = iif(Count(J001.Provider_ID) over (partition by null ) > 2 and J001.End_Time is not null,1,0)
 		and 1= iif(J001.RN < 2 or J001.RN Is null,1,0)
---/*
 )TT
---/*
---/*
 Group by
 	TT.Provider_ID
-	,TT.ProviderName
 	,TT.Activity_Date
 	,TT.StartTime_Raw
 	,TT.StartTime_Alt
@@ -440,21 +464,19 @@ Group by
 	,TT.editActions
 	,TT.Wi_Record
 	,TT.OldRN
---	,TT.RemoveFlag
 	,TT.TotalCount
---*/
 order by
 	TT.Provider_ID
 	,TT.OldRN
---*/
+
 --select * from @Results
 
---/*
+
 --this next section is to handle split shifts as they show up with a void end time that has to be removed and the count + rowNumber re calculated.
 Declare @Results_Filtered table
 (
 	Provider_ID int
-	,ProviderName varchar(128)
+
 	,Activity_Date date
 	,StartTime_Raw DateTime
 	,StartTime_Alt DateTime
@@ -466,14 +488,12 @@ Declare @Results_Filtered table
 	,editActions VarChar(255)
 	,Wi_Record int
 	,OldRN int
---	,RemoveFlag int
 	,TotalCount int
 	,RowNum int
 )
 insert into @Results_Filtered
 select
 	RF.Provider_ID
-	,RF.ProviderName
 	,RF.Activity_Date
 	,RF.StartTime_Raw
 	,RF.StartTime_Alt
@@ -485,8 +505,6 @@ select
 	,RF.editActions
 	,RF.Wi_Record
 	,RF.OldRN
-	--,OT.TotalCount
-	--,OT.RowNum
 	,count(RF.Provider_ID)over(partition by null)'TotalCount'
 	,ROW_NUMBER()Over(partition by null order by RF.RowNum)'RowNum'
 From
@@ -504,13 +522,10 @@ From
 )RF --Results Filtered
 
 --select * from @Results_Filtered
---*/
 
-
---/*
---------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
 --POST PROCESSING
 --Process @RawResult
 --	Identify SplitShifts and process
@@ -528,7 +543,6 @@ Declare @dt_ForceStart DateTime = null
 Declare @dt_ForceEnd DateTime = null
 --packValues
 set @i_PID = null
-Declare @vc_ProviderName varchar(128)
 Declare @dt_ActivityDate date = null
 Declare @dt_StartTime_Raw DateTime = null
 Declare @dt_StartTime_Alt DateTime = null
@@ -543,8 +557,7 @@ declare @Wi_Record int = null
 declare @vc_Comment varchar(128) = null
 
 Declare @PostProcessed table (
-	Provider_ID int--
-	,ProviderName varchar(128)--
+	Provider_ID int
 	,Activity_Date date
 	,StartTime_Raw DateTime
 	,StartTime_Alt DateTime
@@ -556,16 +569,14 @@ Declare @PostProcessed table (
 	,Diff int
 	,editActions VarChar(255)
 	,Wi_Record int
---	,Comment VarChar(128)
 )
---------------------------------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
 while @i_RowNum <= @i_MaxRow
 begin
 	------------------------
 	--Pack Current Row Values
 	set @i_PID = (select R.Provider_ID from @Results_Filtered R where R.RowNum = @i_RowNum)--baseValue setup
-	set @vc_ProviderName = (select R.ProviderName from @Results_Filtered R where R.RowNum = @i_RowNum)
 	Set @dt_ActivityDate = (select R.Activity_Date from @Results_Filtered R where R.RowNum = @i_RowNum)
 	Set @dt_StartTime_Raw = (select R.StartTime_Raw from @Results_Filtered R where R.RowNum = @i_RowNum)
 	Set @dt_StartTime_Alt = (select R.StartTime_Alt from @Results_Filtered R where R.RowNum = @i_RowNum)
@@ -577,31 +588,28 @@ begin
 	Set @i_Diff = (select R.Diff from @Results_Filtered R where R.RowNum = @i_RowNum)
 	Set @vc_Edit_Actions = (select R.editActions from @Results_Filtered R where R.RowNum = @i_RowNum)
 	Set @Wi_Record = (select R.Wi_Record from @Results_Filtered R where R.RowNum = @i_RowNum)
-	-----------------------------------------------------------------------------------------------------------
+	----------------------------------------------------------------------------
 	
 	if @Wi_Record is null
 	begin
 	Set @Wi_Record = 0
 	end
-	-----------------------------------------------------------------------------------------------------------
-	-----------------------------------------------------------------------------------------------------------
+	----------------------------------------------------------------------------
+	----------------------------------------------------------------------------
 	--Process Removeflag
 	if @i_NextRemoveFlag = 1 --skip next for split shift detected and processed
 	begin
 
 		set @i_NextRemoveFlag = 0
 	end
-	else
-	begin
-		set @i_RemoveFlag = 1
-	end
-	-----------------------------------------------------------------------------------------------------------
+
+	----------------------------------------------------------------------------
 	--Process 
-	-----------------------------------------------------------------------------------------------------------
+	----------------------------------------------------------------------------
 	if --prossess Split shift
-		@i_PID = (select R.Provider_ID from @Results_Filtered R where R.RowNum = @i_RowNum+1)
-		and @Wi_Record <> (select R.Wi_Record from @Results_Filtered R where R.RowNum = @i_RowNum+1)
-		and @dt_ActivityDate = (select R.Activity_Date from @Results_Filtered R where R.RowNum = @i_RowNum+1)
+		@i_PID = (select R.Provider_ID from @Results_Filtered R where R.RowNum = @i_RowNum+1) --Same
+		and @Wi_Record <> (select R.Wi_Record from @Results_Filtered R where R.RowNum = @i_RowNum+1) --Difffernt
+		and @dt_ActivityDate = (select R.Activity_Date from @Results_Filtered R where R.RowNum = @i_RowNum+1) --Same
 		begin
 			set @dt_EndTime_Alt = (select R.EndTime_Alt from @Results_Filtered R where R.RowNum = @i_RowNum+1)
 			set @i_LogDuration_Alt = DateDiff(Minute,@dt_StartTime_Alt,@dt_EndTime_Alt)
@@ -609,26 +617,24 @@ begin
 			set @i_NextRemoveFlag = 1
 			set @Wi_Record = (select R.Wi_Record from @Results_Filtered R where R.RowNum = @i_RowNum+1)
 		end
-	-----------------------------------------------------------------------------------------------------------
+	----------------------------------------------------------------------------
 	--Process output
-	-----------------------------------------------------------------------------------------------------------
+	----------------------------------------------------------------------------
 	if --Check Flags and conditions for Pack results
-		--(@i_PID <> (select R.Provider_ID from @@Results_Filtered R where R.RowNum = @i_RowNum+1)) 
-		(@dt_ActivityDate <> (select R.Activity_Date from @Results_Filtered R where R.RowNum = @i_RowNum+1)) 
+		((@dt_ActivityDate <> (select R.Activity_Date from @Results_Filtered R where R.RowNum = @i_RowNum+1)) and @i_RemoveFlag < 2)
 		or (@i_RowNum = @i_MaxRow and @i_RemoveFlag < 2)
 		or @i_RemoveFlag < 2
 	begin
 		set @i_TriggerFirstTaskEntry = 1
 	end
-
-	--------------------------------------------------------------------------------------------------------------------------
+	
+	----------------------------------------------------------------------------
 	--Pack results
 	if @i_TriggerFirstTaskEntry = 1 
 	begin
 		insert into @PostProcessed Values 
 		( 
 			@i_PID
-			,@vc_ProviderName
 			,@dt_ActivityDate
 			,@dt_StartTime_Raw
 			,@dt_StartTime_Alt
@@ -640,27 +646,60 @@ begin
 			,@i_Diff
 			,@vc_Edit_Actions
 			,@Wi_Record
---			,@vc_Comment
 		)
 		set @i_TriggerFirstTaskEntry = 0
 		set @vc_Comment = null
 	end --End Pack results
 
-	--------------------------------------------------------------------------------------------------------------------------
-	--------------------------------------------------------------------------------------------------------------------------
+	----------------------------------------------------------------------------
+	----------------------------------------------------------------------------
 	if @i_NextRemoveFlag = 1 --skip next for split shift detected and processed
 	begin
 		set @i_RemoveFlag = 2
 	end
-	--------------------------------------------------------------------------------------------------------------------------
+	else
+	begin
+		set @i_RemoveFlag = 1
+	end
+	----------------------------------------------------------------------------
 	--Trip next row processing
 	set @i_Temp = @i_RowNum
 	set @i_RowNum = @i_Temp + 1
-	--------------------------------------------------------------------------------------------------------------------------
-	--------------------------------------------------------------------------------------------------------------------------
+	----------------------------------------------------------------------------
+	----------------------------------------------------------------------------
 end--end process
----------------------------------------------------------------------
+----------------------------------------------------------------------------
 
-select * from @PostProcessed
---*/
+--select distinct  * from @PostProcessed
 
+select Distinct
+	J001.Provider_ID
+	,J001.ProviderName
+	,J001.Activity_Date
+	,REPLACE(STUFF
+	(
+		(
+			Select
+			'~ '+Format(PR.Schedule_StartTime, 'h:mm tt ')+'- '+Format(PR.Schedule_EndTime,'h:mm tt ')
+			From @Provs_Roster PR Where PR.Provider_ID = J001.Provider_ID and PR.Activity_Date = J001.Activity_Date
+			For XML path ('')
+		)
+		,1,2,''
+	),'~','&')'ScheduleTimes'
+	,J002.StartTime_Raw
+	,J002.StartTime_Alt
+	,J002.EndTime_Raw
+	,J002.EndTime_Alt
+	,J002.StartTime_Diff
+	,J002.LogDuration_Raw
+	,J002.LogDuration_Alt
+	,J002.Diff
+	,J002.editActions
+	,J002.Wi_Record
+From @Provs_Roster J001
+Left outer join 
+(
+	Select Distinct 
+	* 
+	From @PostProcessed
+) J002 on J002.Provider_ID = J001.Provider_ID and Cast(J002.Activity_Date as date) = Cast(J001.Activity_Date as date)

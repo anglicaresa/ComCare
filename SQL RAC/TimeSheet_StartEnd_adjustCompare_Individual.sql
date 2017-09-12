@@ -1,8 +1,8 @@
 
 use ComCareProd
 
-declare @stringDate varchar(32) = '2017-08-03'
-declare @stringDate2 varchar(32) = '2017-08-03'--'2017-01-20'
+declare @stringDate varchar(32) = '2017-09-10'
+declare @stringDate2 varchar(32) = '2017-09-11'--'2017-01-20'
 declare @Start_Date date = convert(date, @stringDate)
 declare @End_Date date = convert(date, @stringDate2)
 --declare @Centre varchar(32) = 'Dutton Court'
