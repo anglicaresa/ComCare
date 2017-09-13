@@ -66,6 +66,10 @@
       <FullPath>DA_DC_TransactionAudit_02.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
+      <Name>DA_DC_TransactionAudit_03.rdl</Name>
+      <FullPath>DA_DC_TransactionAudit_03.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
       <Name>DA_DC_VacantShift.rdl</Name>
       <FullPath>DA_DC_VacantShift.rdl</FullPath>
     </ProjectItem>
@@ -102,8 +106,8 @@
       <FullPath>DC_TimeSheet_Vs_Schedule.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>DA_DC_TransactionAudit_03.rdl</Name>
-      <FullPath>DA_DC_TransactionAudit_03.rdl</FullPath>
+      <Name>DA_DC_Adjustments_02.rdl</Name>
+      <FullPath>DA_DC_Adjustments_02.rdl</FullPath>
     </ProjectItem>
   </Reports>
   <Configurations>

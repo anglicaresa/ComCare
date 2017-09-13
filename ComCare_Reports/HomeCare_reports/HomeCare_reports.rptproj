@@ -117,6 +117,10 @@
       <Name>HCP_VisitTime_V_PackageStartTime.rdl</Name>
       <FullPath>HCP_VisitTime_V_PackageStartTime.rdl</FullPath>
     </ProjectItem>
+    <ProjectItem>
+      <Name>HCP_ClaimSum.rdl</Name>
+      <FullPath>HCP_ClaimSum.rdl</FullPath>
+    </ProjectItem>
   </Reports>
   <Configurations>
     <Configuration>
