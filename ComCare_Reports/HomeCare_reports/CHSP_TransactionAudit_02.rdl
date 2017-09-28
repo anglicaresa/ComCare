@@ -287,7 +287,7 @@ select Distinct * from
 		,J004.Description 'task_Description'
 		,J001.Client_Not_Home
 		,IIF (J002.Client_ID IS NULL, IIF(J066.taskTypeCode is null,0,5), 1) 'Has_Charge_Item'
-		,IIF (J001.Client_Not_Home IS NULL, 1, 0) 'In_WiA_Only'
+		,IIF (J001.Client_ID IS NULL, 1, 0) 'In_WiA_Only'
 		,J002.Line_Description 'Charge_Item_Line_Description'
 		,J002.Unit
 		,J002.UOM

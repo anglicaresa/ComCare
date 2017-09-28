@@ -34,6 +34,10 @@
       <FullPath>DA_DC_Adjustments.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
+      <Name>DA_DC_Adjustments_02.rdl</Name>
+      <FullPath>DA_DC_Adjustments_02.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
       <Name>DA_DC_Allocation.rdl</Name>
       <FullPath>DA_DC_Allocation.rdl</FullPath>
     </ProjectItem>
@@ -106,8 +110,8 @@
       <FullPath>DC_TimeSheet_Vs_Schedule.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>DA_DC_Adjustments_02.rdl</Name>
-      <FullPath>DA_DC_Adjustments_02.rdl</FullPath>
+      <Name>DC_CustomerTracker.rdl</Name>
+      <FullPath>DC_CustomerTracker.rdl</FullPath>
     </ProjectItem>
   </Reports>
   <Configurations>
