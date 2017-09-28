@@ -242,7 +242,7 @@ select * from
 		,J004.Description 'task_Description'
 		,cast(J001.Client_Not_Home as int) 'Client_Not_Home'
 		,IIF (J002.Client_ID IS NULL, 0, 1) 'Has_Charge_Item'
-		,IIF (J001.Client_Not_Home IS NULL, 1, 0) 'In_WiA_Only'
+		,IIF (J001.Client_ID IS NULL, 1, 0) 'In_WiA_Only'
 		,J002.Line_Description 'Charge_Item_Line_Description'
 		,J002.Amount 'Amount'
 		,J088.funderContract 'funderContract'

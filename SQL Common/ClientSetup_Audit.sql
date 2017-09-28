@@ -3,7 +3,7 @@
 select top 1 * from dbo.FB_Client_CB_Split
 select * from dbo.FC_Funder_Contract
 Select * from dbo.FB_Contract_Billing_Group
-Select * from dbo.FB_Client_Contract_Billing where client_ID = 10069222
+Select * from dbo.FB_Client_Contract_Billing where client_ID = 10019215
 Select * from dbo.FC_Client_Contract where client_ID = 10014025
 
 select O.Organisation_Name from dbo.Organisation O where O.Organisation_Type_Code = 1

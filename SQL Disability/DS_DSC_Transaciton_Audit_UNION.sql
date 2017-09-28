@@ -1,9 +1,9 @@
 --use ComCareProd
 --use ComCareUAT
 use ComCareProd
-Declare @Client_ID_ as INT = 10072283
-DECLARE @StartDate AS DATETIME = '20170104 00:00:00.000'
-DECLARE @EndDate AS DATETIME = '20170504 00:00:00.000'
+Declare @Client_ID_ as INT = 10072602
+DECLARE @StartDate AS DATETIME = '20170828 00:00:00.000'
+DECLARE @EndDate AS DATETIME = '20170910 00:00:00.000'
 declare @Organisation VarChar(64) = 'Disabilities Children'
 declare @DuplicateChargeItem as int = 0
 
@@ -20,7 +20,8 @@ where
 
 ---------------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------------
-
+select distinct * from
+(
 select * from
 (
 	select
@@ -173,7 +174,7 @@ left outer join
 ---------------------------------------------------------------------------------------------------------------------------------
 --*/
 --/*---------All below this
-Union
+Union-- all
 
 ---------------------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------------------
@@ -195,7 +196,7 @@ select * from
 		,J004.Description 'task_Description'
 		,J001.Client_Not_Home
 		,IIF (J002.Client_ID IS NULL, 0, 1) 'Has_Charge_Item'
-		,IIF (J001.Client_Not_Home IS NULL, 1, 0) 'In_WiA_Only'
+		,IIF (J001.Client_ID IS NULL, 1, 0) 'In_WiA_Only'
 		,J002.Line_Description 'Charge_Item_Line_Description'
 		,J002.Amount
 		,IIF(J009.Organisation_Name = 'NDIA National Disability Insurance Agency', 'NDIS funded',IIF(J009.Client_ID IS NULL,'No Contract Billing','Self Managed')) 'Funding_Type'
@@ -359,7 +360,7 @@ select * from
 --		,J002.RN
 )t2
 
-Union
+Union-- all
 
 select * from
 (
@@ -447,8 +448,9 @@ select * from
 	and J006.Organisation_Name = @Organisation
 	and (J009.ContractBillingGroup <> 'DCSI' or J009.ContractBillingGroup is null)
 )t3
-
+)A1
 --*/
+--/*
 order by
 1,3,5,8,2,12
 --1,2,12

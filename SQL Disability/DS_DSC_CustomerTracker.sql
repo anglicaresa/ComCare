@@ -37,8 +37,14 @@ Serv_Del_Outcome_Code
 
 --debug
 --Declare @Client_ID int = 10073115 --has DQ
-Declare @Client_ID int = 10072693
+--Declare @Client_ID int = 10072693
 --Declare @Client_ID int = 10080247
+--Declare @Client_ID int = 10071624
+--Declare @Client_ID int = 10072283
+
+--with DQ 
+Declare @Client_ID int = 10073115
+--Declare @Client_ID int = 10072734
 
 Declare @UseSingleID int = 1
 --select * from dbo.Person_Current_Address_Phone where Person_id = @Client_ID
@@ -68,7 +74,7 @@ Declare @ClientTable table
 	,ServiceDelivery_StartDate VarChar(Max)
 	,ServiceDelivery_EndDate VarChar(Max)
 	,ServiceDelivery_DischargeDate VarChar(Max)
-	,NDIS_Number bigint
+	,NDIS_Number varchar(64)
 )
 insert into @ClientTable
 select * from
@@ -90,18 +96,18 @@ select distinct
 	(
 		(
 			select distinct
-				'~ '+ DC.Description 
+				'~br^ '+ DC.Description 
 			from dbo.Diagnosis D 
 			left outer join dbo.Diagnosis_Category DC ON DC.Diagnosis_Category_Code = D.Diagnosis_Category_Code 
 			where D.Client_ID = J003.Client_ID
 			for XML path ('')  
-		),1,2,''--stuff args to remove first comma
+		),1,5,''--stuff args to remove first comma
 	)'Diagnosis'
 	,STUFF
 	(
 		(
 			select distinct
-				'~ '+ Concat(ST.Description,' - ',Format(SD.From_Date,'dd-MM-yyyy')) 
+				'~br^ '+ Concat(ST.Description,' - ',Format(SD.From_Date,'dd/MM/yyyy')) 
 			from 
 			(
 				select
@@ -124,14 +130,14 @@ select distinct
 				and SD.Client_ID = J003.Client_ID
 				and (RN is null or RN =1)
 			for XML path ('')  
-		),1,2,''--stuff args to remove first comma
+		),1,5,''--stuff args to remove first comma
 	)'ServiceDelivery_StartDate'
 	,STUFF
 	(
 		(
 			select distinct
-				'~ '
-				+ Concat(ST.Description,' - ',iif(SD.To_Date is null,'No End Date' ,Format(SD.To_Date,'dd-MM-yyyy'))) 
+				'~br^ '
+				+ Concat(ST.Description,' - ',iif(SD.To_Date is null,'No End Date' ,Format(SD.To_Date,'dd/MM/yyyy'))) 
 			from 
 			(
 				select
@@ -153,14 +159,14 @@ select distinct
 				SD.Client_ID = J003.Client_ID
 				and (RN is null or RN =1)
 			for XML path ('')  
-		),1,2,''--stuff args to remove first comma
+		),1,5,''--stuff args to remove first comma
 	)'ServiceDelivery_EndDate'
 		,STUFF
 	(
 		(
 			select distinct
-				'~ '
-				+ Concat(ST.Description,' - ',iif(SD.To_Date is null and SD.Serv_Del_Outcome_Code Is null,'No End Date' ,Concat(Format(SD.To_Date,'dd-MM-yyyy'),' - ',SDO.Description))) 
+				'~br^ '
+				+ Concat(ST.Description,' - ',iif(SD.To_Date is null and SD.Serv_Del_Outcome_Code Is null,'No End Date' ,Concat(Format(SD.To_Date,'dd/MM/yyyy'),' - ',SDO.Description))) 
 			from 
 			(
 				select
@@ -182,9 +188,9 @@ select distinct
 				SD.Client_ID = J003.Client_ID
 				and (RN is null or RN =1)
 			for XML path ('')  
-		),1,2,''--stuff args to remove first comma
+		),1,5,''--stuff args to remove first comma
 	)'ServiceDelivery_DischargeDate'
-	,J007.Card_No 'NDIS_Number'
+	,iif(J007.Status = 1 ,Cast( J007.Card_No AS varchar(64)),Cast( J007.Card_No AS varchar(64))+' [Expired]') 'NDIS_Number'
 From 
 (
 	select 
@@ -204,16 +210,34 @@ Left outer join
 	select distinct
 	CC.Client_ID
 	,iif(GOC.Client_Contract_ID is not null, 'Yes','No')'HasGOC'
+	,ROW_NUMBER()Over
+	(
+		partition by CC.Client_ID Order By case 
+			when GOC.Client_Contract_ID is not null then '1'
+			Else '2'
+			end
+	)'RN'
 	From dbo.FC_Client_Contract CC
-	LEFT OUTER JOIN 
+	LEFT OUTER JOIN
 	(
 		select distinct
 		GOC.Client_Contract_ID
 		from dbo.FC_Client_Goal_of_Care GOC
 	)GOC on GOC.Client_Contract_ID = CC.Client_Contract_ID
-)J006 on J006.Client_ID = J003.Client_ID
+)J006 on J006.Client_ID = J003.Client_ID and (J006.RN < 2 or J006.RN is null)
 
-LEFT OUTER JOIN dbo.Card_Holder J007 ON J007.Person_ID = J003.Client_ID and J007.Card_Type_ID = 15
+LEFT OUTER JOIN 
+(
+	Select
+	CH.Card_Type_ID
+	,CH.Person_ID
+	,CH.Valid_From_Date
+	,CH.Expiry_Date
+	,CH.Card_No
+	,iif (GetDate() Between CH.Valid_From_Date and CH.Expiry_Date,1,0)'Status'
+	,ROW_NUMBER()over(Partition by CH.Person_ID,CH.Card_Type_ID order by CH.Valid_From_Date Desc)RN
+	From dbo.Card_Holder CH
+)J007 ON J007.Person_ID = J003.Client_ID and J007.Card_Type_ID = 15 and J007.RN = 1
 
 
 where
@@ -225,10 +249,10 @@ Order by
 	3,2,1
 --------------------------------------------------------------
 --------------------------------------------------------------
-select * from @ClientTable
+--select * from @ClientTable
 --------------------------------------------------------------
 --------------------------------------------------------------
-/*
+--/*
 declare @ClientContact Table 
 (
 	Client_ID int
@@ -314,7 +338,7 @@ J001.Client_ID
 --select * from @ClientContact
 --------------------------------------------------------------
 --------------------------------------------------------------
-/*
+--/*
 Declare @ClientContact_Formated table
 (
 	Client_ID int
@@ -329,34 +353,34 @@ select distinct
 	(
 		(
 			select distinct
-				'~ '
+				'~br^ '
 				+ CC.ContactName
 			from @ClientContact CC  
 			where CC.Client_ID = J001.Client_ID
 			for XML path ('')  
-		),1,1,''
+		),1,5,''
 	)'ContactName'
 	,STUFF
 	(
 		(
 			select distinct
-				'~ '
+				'~br^ '
 				+ CC.Contact_Phone
 			from @ClientContact CC  
 			where CC.Client_ID = J001.Client_ID
 			for XML path ('')  
-		),1,1,''
+		),1,5,''
 	)'Contact_Phone'
 	,STUFF
 	(
 		(
 			select distinct
-				'~ '
+				'~br^ '
 				+ CC.Contact_Email
 			from @ClientContact CC  
 			where CC.Client_ID = J001.Client_ID
 			for XML path ('')  
-		),1,1,''
+		),1,5,''
 	)'Contact_Email'
 
 From @ClientContact J001
@@ -367,14 +391,15 @@ From @ClientContact J001
 --------------------------------------------------------------
 --------------------------------------------------------------
 
-/*
+--/*
 --get DQ_answers for client, make into sub query
 
-Declare @DQ_Name VarChar(128) = 'DA Service Quote'
+Declare @DQ_Name VarChar(128) = 'DC Service Quote'
 
 Declare @DQ_Results Table
 (
 	Client_ID int
+	,DQ_Group int
 	,Sessions int
 	,HoursPerSession Dec(10,2)
 	,QuoteContractAmount Dec (10,2)
@@ -384,127 +409,292 @@ Declare @DQ_Results Table
 	,SetUpInCC varchar(8)
 	,KMsPerServ Dec(10,2)
 	,DQ_Date Date
+	,Quote_StartDate date
+	,Quote_EndDate date
 )
 insert into @DQ_Results
 select-- distinct
 	J101.Client_ID 'Client_ID'
+	,A001.Group_1
 	,cast(A001.Sessions as int)'Sessions'
 	,A002.HoursPerSession
 	,A003.QuoteContractAmount
-	,A004.Answer_Selection 'QuoteCode'
-	,A005.Answer_Selection 'PortalServBookingDone'
-	,A006.Answer_Selection 'ServAgreeSigned'
-	,A007.Answer_Selection 'SetUpInCC'
+	,A004.QuoteCode
+	,A005.PortalServBookingDone
+	,A006.ServAgreeSigned
+	,A007.SetUpInCC
 	,A008.KMsPerServ
 	,J001.Questionnaire_Date
+	,A009.Quote_StartDate
+	,A010.Quote_EndDate
 from @ClientTable J101
 
 Left outer join
 (
 	select distinct
 		DQ_E_Q.Respondent_ID
+		,DQ_Q.Questionnaire_Code
+		,DQ_Q.Description
 		,DQ_E_Q.Entity_Questionnaire_ID
 		,DQ_E_Q.Questionnaire_Date
+		,ROW_NUMBER()Over(Partition by DQ_Q.Description,DQ_E_Q.Respondent_ID order by DQ_E_Q.Questionnaire_Date Desc)'RN'
 	from dbo.DQ_Questionnaire DQ_Q
-	inner join dbo.DQ_Entity_Questionnaire DQ_E_Q on DQ_E_Q.Questionnaire_Code = DQ_Q.Questionnaire_Code
+	left outer join dbo.DQ_Entity_Questionnaire DQ_E_Q on DQ_E_Q.Questionnaire_Code = DQ_Q.Questionnaire_Code
 	where 
 	1=1
 	and DQ_Q.Description = @DQ_Name
-	and DQ_Q.Effective_To_Date is null
-)J001 on J001.Respondent_ID = J101.Client_ID
+--	and DQ_Q.Effective_To_Date is null
+)J001 on J001.Respondent_ID = J101.Client_ID and J001.RN = 1
 
 Left outer join
 (
-	Select distinct
+	Select --distinct
 		DQ_Answer.Entity_Questionnaire_ID
+		,DQ_Quest.Questionnaire_Code
 		,DQ_Answer.Numeric_Value 'Sessions'
-	From dbo.DQ_Entity_Questionnaire_Answer DQ_Answer
-	where DQ_Answer.Question_No = 1
-)A001 on A001.Entity_Questionnaire_ID = J001.Entity_Questionnaire_ID
+		,Format(Cast(Replace(DQ_Quest.Question_Group_Code ,DQ_Quest.Questionnaire_Code+'_G' , '') as int),'0#')'Group_1'
+	From dbo.DQ_Questionnaire_Question DQ_Quest
+	left outer join dbo.DQ_Entity_Questionnaire_Answer DQ_Answer on DQ_Answer.Question_No = DQ_Quest.Question_No and DQ_Answer.Questionnaire_Code = DQ_Quest.Questionnaire_Code
+	where DQ_Quest.Description = 'Number of Sessions'
+)A001 on A001.Entity_Questionnaire_ID = J001.Entity_Questionnaire_ID and A001.Questionnaire_Code = J001.Questionnaire_Code
 
 Left outer join
 (
-	Select distinct
+	Select --distinct
 		DQ_Answer.Entity_Questionnaire_ID
+		,DQ_Quest.Questionnaire_Code
 		,DQ_Answer.Numeric_Value 'HoursPerSession'
-	From dbo.DQ_Entity_Questionnaire_Answer DQ_Answer
-	where DQ_Answer.Question_No = 2
-)A002 on A002.Entity_Questionnaire_ID = J001.Entity_Questionnaire_ID
+		,Format(Cast(Replace(DQ_Quest.Question_Group_Code ,DQ_Quest.Questionnaire_Code+'_G' , '') as int),'0#')'Group_1'
+	From dbo.DQ_Questionnaire_Question DQ_Quest
+	left outer join dbo.DQ_Entity_Questionnaire_Answer DQ_Answer on DQ_Answer.Question_No = DQ_Quest.Question_No and DQ_Answer.Questionnaire_Code = DQ_Quest.Questionnaire_Code
+	where DQ_Quest.Description = 'Number of Hours'
+)A002 on A002.Entity_Questionnaire_ID = A001.Entity_Questionnaire_ID and A002.Questionnaire_Code = A001.Questionnaire_Code and A002.Group_1 = A001.Group_1
 
 Left outer join
 (
 	Select distinct
 		DQ_Answer.Entity_Questionnaire_ID
+		,DQ_Quest.Questionnaire_Code
 		,DQ_Answer.Numeric_Value 'QuoteContractAmount'
-	From dbo.DQ_Entity_Questionnaire_Answer DQ_Answer
-	where DQ_Answer.Question_No = 6
-)A003 on A003.Entity_Questionnaire_ID = J001.Entity_Questionnaire_ID
+		,Format(Cast(Replace(DQ_Quest.Question_Group_Code ,DQ_Quest.Questionnaire_Code+'_G' , '') as int),'0#')'Group_1'
+	From dbo.DQ_Questionnaire_Question DQ_Quest
+	left outer join dbo.DQ_Entity_Questionnaire_Answer DQ_Answer on DQ_Answer.Question_No = DQ_Quest.Question_No and DQ_Answer.Questionnaire_Code = DQ_Quest.Questionnaire_Code
+	where DQ_Quest.Description = 'Line Total'
+)A003 on A003.Entity_Questionnaire_ID = J001.Entity_Questionnaire_ID and A003.Questionnaire_Code = J001.Questionnaire_Code and A001.Group_1 = A003.Group_1
 
 Left outer join
 (
 	Select distinct
 		DQ_Answer.Entity_Questionnaire_ID
-		,DQ_QSL.Description 'Answer_Selection'
-	From dbo.DQ_Entity_Questionnaire_Answer DQ_Answer
-	Left outer join dbo.DQ_Entity_Questionnaire_Answer_List DQ_EQA on DQ_EQA.Questionnaire_Code = DQ_Answer.Questionnaire_Code and DQ_EQA.Entity_Questionnaire_Answer_ID = DQ_Answer.Entity_Questionnaire_Answer_ID
-	Left outer join dbo.DQ_Question_Selection_List DQ_QSL on DQ_QSL.Questionnaire_Code = DQ_Answer.Questionnaire_Code and DQ_QSL.Question_No = 4 and DQ_EQA.Question_Selection_List_No = DQ_QSL.Question_Selection_List_No
-	where DQ_Answer.Question_No = 4
-)A004 on A004.Entity_Questionnaire_ID = J001.Entity_Questionnaire_ID
+		,DQ_Quest.Questionnaire_Code
+		,DQ_Answer.Text_Value 'QuoteCode'
+		,Format(Cast(Replace(DQ_Quest.Question_Group_Code ,DQ_Quest.Questionnaire_Code+'_G' , '') as int),'0#')'Group_1'
+	From dbo.DQ_Questionnaire_Question DQ_Quest
+	left outer join dbo.DQ_Entity_Questionnaire_Answer DQ_Answer on DQ_Answer.Question_No = DQ_Quest.Question_No and DQ_Answer.Questionnaire_Code = DQ_Quest.Questionnaire_Code
+	where DQ_Quest.Description = 'NDIA Item Code'
+)A004 on A004.Entity_Questionnaire_ID = J001.Entity_Questionnaire_ID and A004.Questionnaire_Code = J001.Questionnaire_Code and A001.Group_1 = A004.Group_1
 
 Left outer join
 (
 	Select distinct
 		DQ_Answer.Entity_Questionnaire_ID
-		,DQ_QSL.Description 'Answer_Selection'
-	From dbo.DQ_Entity_Questionnaire_Answer DQ_Answer
+		,DQ_Quest.Questionnaire_Code
+		,DQ_QSL.Description 'PortalServBookingDone'
+		,Format(Cast(Replace(DQ_Quest.Question_Group_Code ,DQ_Quest.Questionnaire_Code+'_G' , '') as int),'0#')'Group_1'
+	From dbo.DQ_Questionnaire_Question DQ_Quest
+	left outer join dbo.DQ_Entity_Questionnaire_Answer DQ_Answer on DQ_Answer.Question_No = DQ_Quest.Question_No and DQ_Answer.Questionnaire_Code = DQ_Quest.Questionnaire_Code
 	Left outer join dbo.DQ_Entity_Questionnaire_Answer_List DQ_EQA on DQ_EQA.Questionnaire_Code = DQ_Answer.Questionnaire_Code and DQ_EQA.Entity_Questionnaire_Answer_ID = DQ_Answer.Entity_Questionnaire_Answer_ID
 	Left outer join dbo.DQ_Question_Selection_List DQ_QSL on DQ_QSL.Questionnaire_Code = DQ_Answer.Questionnaire_Code and DQ_QSL.Question_No = 7 and DQ_EQA.Question_Selection_List_No = DQ_QSL.Question_Selection_List_No
-	where DQ_Answer.Question_No = 7
-)A005 on A005.Entity_Questionnaire_ID = J001.Entity_Questionnaire_ID
+	where DQ_Quest.Description = 'Is the Portal Service Booking complete?'
+)A005 on A005.Entity_Questionnaire_ID = J001.Entity_Questionnaire_ID and A005.Questionnaire_Code = J001.Questionnaire_Code and A001.Group_1 = A005.Group_1
 
 Left outer join
 (
 	Select distinct
 		DQ_Answer.Entity_Questionnaire_ID
-		,DQ_QSL.Description 'Answer_Selection'
-	From dbo.DQ_Entity_Questionnaire_Answer DQ_Answer
+		,DQ_Quest.Questionnaire_Code
+		,DQ_QSL.Description 'ServAgreeSigned'
+		,Format(Cast(Replace(DQ_Quest.Question_Group_Code ,DQ_Quest.Questionnaire_Code+'_G' , '') as int),'0#')'Group_1'
+	From dbo.DQ_Questionnaire_Question DQ_Quest
+	left outer join dbo.DQ_Entity_Questionnaire_Answer DQ_Answer on DQ_Answer.Question_No = DQ_Quest.Question_No and DQ_Answer.Questionnaire_Code = DQ_Quest.Questionnaire_Code
 	Left outer join dbo.DQ_Entity_Questionnaire_Answer_List DQ_EQA on DQ_EQA.Questionnaire_Code = DQ_Answer.Questionnaire_Code and DQ_EQA.Entity_Questionnaire_Answer_ID = DQ_Answer.Entity_Questionnaire_Answer_ID
 	Left outer join dbo.DQ_Question_Selection_List DQ_QSL on DQ_QSL.Questionnaire_Code = DQ_Answer.Questionnaire_Code and DQ_QSL.Question_No = 8 and DQ_EQA.Question_Selection_List_No = DQ_QSL.Question_Selection_List_No
-	where DQ_Answer.Question_No = 8
-)A006 on A006.Entity_Questionnaire_ID = J001.Entity_Questionnaire_ID
+	where DQ_Quest.Description = 'Is the Service Agreement signed and on file?'
+)A006 on A006.Entity_Questionnaire_ID = J001.Entity_Questionnaire_ID and A006.Questionnaire_Code = J001.Questionnaire_Code and A001.Group_1 = A006.Group_1
 
 Left outer join
 (
 	Select distinct
 		DQ_Answer.Entity_Questionnaire_ID
-		,DQ_QSL.Description 'Answer_Selection'
-	From dbo.DQ_Entity_Questionnaire_Answer DQ_Answer
+		,DQ_Quest.Questionnaire_Code
+		,DQ_QSL.Description 'SetUpInCC'
+		,Format(Cast(Replace(DQ_Quest.Question_Group_Code ,DQ_Quest.Questionnaire_Code+'_G' , '') as int),'0#')'Group_1'
+	From dbo.DQ_Questionnaire_Question DQ_Quest
+	left outer join dbo.DQ_Entity_Questionnaire_Answer DQ_Answer on DQ_Answer.Question_No = DQ_Quest.Question_No and DQ_Answer.Questionnaire_Code = DQ_Quest.Questionnaire_Code
 	Left outer join dbo.DQ_Entity_Questionnaire_Answer_List DQ_EQA on DQ_EQA.Questionnaire_Code = DQ_Answer.Questionnaire_Code and DQ_EQA.Entity_Questionnaire_Answer_ID = DQ_Answer.Entity_Questionnaire_Answer_ID
 	Left outer join dbo.DQ_Question_Selection_List DQ_QSL on DQ_QSL.Questionnaire_Code = DQ_Answer.Questionnaire_Code and DQ_QSL.Question_No = 9 and DQ_EQA.Question_Selection_List_No = DQ_QSL.Question_Selection_List_No
-	where DQ_Answer.Question_No = 9
-)A007 on A007.Entity_Questionnaire_ID = J001.Entity_Questionnaire_ID
+	where DQ_Quest.Description = 'Is this service entered into ComCare?'
+)A007 on A007.Entity_Questionnaire_ID = J001.Entity_Questionnaire_ID and A007.Questionnaire_Code = J001.Questionnaire_Code and A001.Group_1 = A007.Group_1
 
 Left outer join
 (
 	Select distinct
 		DQ_Answer.Entity_Questionnaire_ID
+		,DQ_Quest.Questionnaire_Code
 		,DQ_Answer.Numeric_Value 'KMsPerServ'
-	From dbo.DQ_Entity_Questionnaire_Answer DQ_Answer
-	where DQ_Answer.Question_No = 10
-)A008 on A008.Entity_Questionnaire_ID = J001.Entity_Questionnaire_ID
+		,Format(Cast(Replace(DQ_Quest.Question_Group_Code ,DQ_Quest.Questionnaire_Code+'_G' , '') as int),'0#')'Group_1'
+	From dbo.DQ_Questionnaire_Question DQ_Quest
+	left outer join dbo.DQ_Entity_Questionnaire_Answer DQ_Answer on DQ_Answer.Question_No = DQ_Quest.Question_No and DQ_Answer.Questionnaire_Code = DQ_Quest.Questionnaire_Code
+	Left outer join dbo.DQ_Entity_Questionnaire_Answer_List DQ_EQA on DQ_EQA.Questionnaire_Code = DQ_Answer.Questionnaire_Code and DQ_EQA.Entity_Questionnaire_Answer_ID = DQ_Answer.Entity_Questionnaire_Answer_ID
+	where DQ_Quest.Description like 'Total KLM%s quoted per service.'
+)A008 on A008.Entity_Questionnaire_ID = J001.Entity_Questionnaire_ID and A008.Questionnaire_Code = J001.Questionnaire_Code and A001.Group_1 = A008.Group_1
 
+Left outer join
+(
+	Select distinct
+		DQ_Answer.Entity_Questionnaire_ID
+		,DQ_Quest.Questionnaire_Code
+		,DQ_Answer.Date_Value 'Quote_StartDate'
+		,Format(Cast(Replace(DQ_Quest.Question_Group_Code ,DQ_Quest.Questionnaire_Code+'_G' , '') as int),'0#')'Group_1'
+	From dbo.DQ_Questionnaire_Question DQ_Quest
+	left outer join dbo.DQ_Entity_Questionnaire_Answer DQ_Answer on DQ_Answer.Question_No = DQ_Quest.Question_No and DQ_Answer.Questionnaire_Code = DQ_Quest.Questionnaire_Code
+	where DQ_Quest.Description = 'Service Quote Start Date'
+)A009 on A009.Entity_Questionnaire_ID = J001.Entity_Questionnaire_ID and A009.Questionnaire_Code = J001.Questionnaire_Code and A009.Group_1 = 01
 
+Left outer join
+(
+	Select distinct
+		DQ_Answer.Entity_Questionnaire_ID
+		,DQ_Quest.Questionnaire_Code
+		,DQ_Answer.Date_Value 'Quote_EndDate'
+		,Format(Cast(Replace(DQ_Quest.Question_Group_Code ,DQ_Quest.Questionnaire_Code+'_G' , '') as int),'0#')'Group_1'
+	From dbo.DQ_Questionnaire_Question DQ_Quest
+	left outer join dbo.DQ_Entity_Questionnaire_Answer DQ_Answer on DQ_Answer.Question_No = DQ_Quest.Question_No and DQ_Answer.Questionnaire_Code = DQ_Quest.Questionnaire_Code
+	where DQ_Quest.Description = 'Service Quote Expiration Date'
+)A010 on A010.Entity_Questionnaire_ID = J001.Entity_Questionnaire_ID and A010.Questionnaire_Code = J001.Questionnaire_Code and A010.Group_1 = 01
 
 where
 	1=1 
 	and J001.Respondent_ID is not null
+	and A004.QuoteCode is not null
+order by
+1,2
 --*/
 --------------------------------------------------------------
 --------------------------------------------------------------
 --select * from @DQ_Results
 --------------------------------------------------------------
 --------------------------------------------------------------
-/*
+--/*
+Declare @DQ_Results_Formated Table
+(
+	Client_ID int
+	,Sessions VarChar(128)
+	,HoursPerSession VarChar(128)
+	,QuoteContractAmount VarChar(128)
+	,QuoteCode varchar(max)
+	,PortalServBookingDone varchar(128)
+	,ServAgreeSigned Varchar(128)
+	,SetUpInCC varchar(128)
+	,KMsPerServ VarChar(128)
+	,DQ_Date Date
+	,Quote_StartDate Date
+	,Quote_EndDate Date
+)
+insert into @DQ_Results_Formated
+select distinct
+	J001.Client_ID
+	,STUFF
+	(
+		(
+			Select
+			'~br^ '+ cast(iif(DQR.Sessions is null,'---',DQR.Sessions) as varchar(128))
+			From @DQ_Results DQR where DQR.Client_ID = J001.Client_ID
+			For XML path ('')
+		)
+		,1,5,''
+	) 'Sessions'
+	,STUFF
+	(
+		(
+			Select
+			'~br^ '+ cast(iif(DQR.HoursPerSession is null,'---',DQR.HoursPerSession) as varchar(128))
+			From @DQ_Results DQR where DQR.Client_ID = J001.Client_ID
+			For XML path ('')
+		)
+		,1,5,''
+	) 'HoursPerSession'
+	,STUFF
+	(
+		(
+			Select
+			'~br^ '+ cast(iif(DQR.QuoteContractAmount is null,'---',DQR.QuoteContractAmount) as varchar(128))
+			From @DQ_Results DQR where DQR.Client_ID = J001.Client_ID
+			For XML path ('')
+		)
+		,1,5,''
+	) 'QuoteContractAmount'
+	,STUFF
+	(
+		(
+			Select
+			'~br^ '+ DQR.QuoteCode
+			From @DQ_Results DQR where DQR.Client_ID = J001.Client_ID
+			For XML path ('')
+		)
+		,1,5,''
+	) 'QuoteCode'
+	,STUFF
+	(
+		(
+			Select
+			'~br^ '+ iif(DQR.PortalServBookingDone is null,'No',DQR.PortalServBookingDone)
+			From @DQ_Results DQR where DQR.Client_ID = J001.Client_ID
+			For XML path ('')
+		)
+		,1,5,''
+	) 'PortalServBookingDone'
+	,STUFF
+	(
+		(
+			Select
+			'~br^ '+ iif(DQR.ServAgreeSigned is null,'No',DQR.ServAgreeSigned)
+			From @DQ_Results DQR where DQR.Client_ID = J001.Client_ID
+			For XML path ('')
+		)
+		,1,5,''
+	) 'ServAgreeSigned'
+	,STUFF
+	(
+		(
+			Select
+			'~br^ '+ iif(DQR.SetUpInCC is null,'No',DQR.SetUpInCC)
+			From @DQ_Results DQR where DQR.Client_ID = J001.Client_ID
+			For XML path ('')
+		)
+		,1,5,''
+	) 'SetUpInCC'
+	,STUFF
+	(
+		(
+			Select
+			'~br^ '+ Cast(DQR.KMsPerServ as varchar(16))
+			From @DQ_Results DQR where DQR.Client_ID = J001.Client_ID
+			For XML path ('')
+		)
+		,1,5,''
+	) 'KMsPerServ'
+	,J001.DQ_Date
+	,J001.Quote_StartDate
+	,J001.Quote_EndDate
+from @DQ_Results J001
+--*/
+--------------------------------------------------------------
+--------------------------------------------------------------
+--select * from @DQ_Results_Formated
+--------------------------------------------------------------
+--------------------------------------------------------------
+--/*
 
 --ServiceDelivery INFO collection
 Declare @ServDeliv_collected table
@@ -518,7 +708,7 @@ insert into @ServDeliv_collected
 select
 	J001.Client_ID
 	,J002.Description 'Service'
-	,iif(J001.To_Date is null, '-none-',cast(cast(J001.To_Date as datetime) as varchar(64)))'To_Date'
+	,iif(J001.To_Date is null, '-none-',Format(J001.To_Date, 'dd/MM/yyyy'))'To_Date'
 	,J003.Description 'FundingProg'
 From @ClientTable J101
 Left outer join dbo.Service_Delivery J001 on J001.Client_ID = J101.Client_ID
@@ -531,7 +721,7 @@ Left outer join dbo.Funding_Program J003 on J003.Funding_Prog_Code = J001.Fundin
 --select * from @ServDeliv_collected
 --------------------------------------------------------------
 --------------------------------------------------------------
-/*
+--/*
 Declare @ServDeliv_Formated table
 (
 	Client_ID int
@@ -546,34 +736,34 @@ J001.Client_ID
 	(
 		(
 			select-- distinct
-				'~ '
+				'~br^ '
 				+ SD_C.Service
 			from @ServDeliv_collected SD_C  
 			where SD_C.Client_ID = J001.Client_ID-- and SD_C.RN = J001.RN
 			for XML path ('')  
-		),1,1,''
+		),1,5,''
 	)'Service'
 	,STUFF
 	(
 		(
 			select --distinct
-				'~ '
+				'~br^ '
 				+ SD_C.ToDate
 			from @ServDeliv_collected SD_C  
 			where SD_C.Client_ID = J001.Client_ID-- and SD_C.RN = J001.RN
 			for XML path ('')  
-		),1,1,''
+		),1,5,''
 	)'ToDate'
 	,STUFF
 	(
 		(
 			select --distinct
-				'~ '
+				'~br^ '
 				+ SD_C.FundingProg
 			from @ServDeliv_collected SD_C  
 			where SD_C.Client_ID = J001.Client_ID-- and SD_C.RN = J001.RN
 			for XML path ('')  
-		),1,1,''
+		),1,5,''
 	)'FundingProg'
 from @ServDeliv_collected J001
 --*/
@@ -582,7 +772,7 @@ from @ServDeliv_collected J001
 --select * from @ServDeliv_Formated
 --------------------------------------------------------------
 --------------------------------------------------------------
-/*
+--/*
 Declare @BillingGroup table
 (
 	Client_ID int
@@ -593,7 +783,7 @@ insert into @BillingGroup
 select
 J001.Client_ID
 ,J003.Description 'BillingGroup'
-,iif(J002.Billing_End_Date is null,'-none-',Cast(Cast(J002.Billing_End_Date as datetime) as varChar(64)))'Billing_End_Date'
+,iif(J002.Billing_End_Date is null,'-none-',Format(J002.Billing_End_Date, 'dd/MM/yyyy'))'Billing_End_Date'
 
 From @ClientTable J001
 LEFT outer join dbo.FB_Client_Contract_Billing J002 on J002.Client_ID = J001.Client_ID
@@ -604,7 +794,7 @@ LEFT OUTER JOIN dbo.FB_Contract_Billing_Group J003 on J003.Contract_Billing_Grou
 --select * from @BillingGroup
 --------------------------------------------------------------
 --------------------------------------------------------------
-/*
+--/*
 declare @BillingGroup_Formated table
 (
 	Client_ID int
@@ -618,23 +808,23 @@ J001.Client_ID
 	(
 		(
 			select-- distinct
-				'~ '
+				'~br^ '
 				+ BG.BillingGroup
 			from @BillingGroup BG  
 			where BG.Client_ID = J001.Client_ID-- and SD_C.RN = J001.RN
 			for XML path ('')  
-		),1,1,''
+		),1,5,''
 	)'BillingGroup'
 	,STUFF
 	(
 		(
 			select --distinct
-				'~ '
+				'~br^ '
 				+ BG.Billing_End_Date
 			from @BillingGroup BG  
 			where BG.Client_ID = J001.Client_ID-- and SD_C.RN = J001.RN
 			for XML path ('')
-		),1,1,''
+		),1,5,''
 	)'Billing_End_Date'
 from @BillingGroup J001
 --*/
@@ -643,14 +833,14 @@ from @BillingGroup J001
 --select * from @BillingGroup_Formated
 --------------------------------------------------------------
 --------------------------------------------------------------
-/*
+--/*
 --Client Refferal
 Declare @ClientReferral Table
 (
 	Client_ID int
 	,Referral_Date VarChar(255)
 	,Referral_Source VarChar(255)
-	,Referral_Comments VarChar(max)
+	,Referral_Comments VarChar(Max)
 	,Referral_ServRequested VarChar(255)
 	,FirstBookedVisit Date
 )
@@ -658,50 +848,52 @@ Declare @ClientReferral Table
 insert into @ClientReferral
 select Distinct
 J001.Client_ID 
-,STUFF
+,Cast(STUFF
 	( 
 		(
 		select-- distinct
-			'~ '+ Cast(cast(Rf.Referral_Date as date) as varchar(64))
+			'~br^ '+ Format(Rf.Referral_Date, 'dd/MM/yyyy')
 			from dbo.Referral Rf
 			where Rf.Client_ID = J001.Client_ID
 		for XML path ('') 
-		) ,1,2,''
-	)'Referral_Date'
-,STUFF
+		) ,1,5,''
+	) as VarChar(255))'Referral_Date'
+,Cast(STUFF
 	( 
 		(
 			select-- distinct
-				'~ '+ iif (Org.Organisation_Name Like 'NDIA %','NDIA','Other')
+				'~br^ '+ Format(Rf.Referral_Date, 'dd/MM/yyyy - ')+iif (Org.Organisation_Name Like 'NDIA %','~B^ NDIA~/B^ ','~B^ Other~/B^ ')
 			from dbo.Referral Rf
 			Left outer join dbo.Referral_Source_Category RS on RS.Ref_Source_Category_Code = Rf.Ref_Source_Category_Code
 			Left outer join dbo.Organisation org on org.Organisation_ID = Rf.Organisation_ID
 			where Rf.Client_ID = J001.Client_ID
 			for XML path ('') 
-		) ,1,2,''
-	)'Referral_Source'
-,STUFF
+		) ,1,5,''
+	)as varchar(255))'Referral_Source'
+,Cast(STUFF
 	( 
 		(
 			select
-				'~ '+ iif(Rf.Referral_Comments is null,'None',Rf.Referral_Comments)
+				'~br^ '+iif (Org.Organisation_Name Like 'NDIA %','~B^ NDIA~/B^  - ','~B^ Other~/B^  - ')+ iif(Rf.Referral_Comments is null,'No Comments',Rf.Referral_Comments)
 			from dbo.Referral Rf
+			Left outer join dbo.Referral_Source_Category RS on RS.Ref_Source_Category_Code = Rf.Ref_Source_Category_Code
+			Left outer join dbo.Organisation org on org.Organisation_ID = Rf.Organisation_ID
 			where Rf.Client_ID = J001.Client_ID
 			for XML path ('') 
-		) ,1,2,''
-	)'Referral_Comments'
-,Stuff
+		) ,1,5,''
+	)as VarChar(Max))'Referral_Comments'
+,Cast(Stuff
 	( 
 		(
 			select
-				'~ '+ iif(ST.Description is null,'None',ST.Description)
+				'~br^ '+ iif(ST.Description is null,'None',ST.Description)
 			from dbo.Referral Rf
 			Left outer join dbo.Service_Requested SR on SR.Client_ID = Rf.Client_ID and SR.Referral_No = Rf.Referral_No
 			Left outer join dbo.Service_Type ST on ST.Service_Type_Code = SR.Service_Type_Code
 			where Rf.Client_ID = J001.Client_ID
 			for XML path ('') 
-		) ,1,2,''
-	)'Referral_ServRequested'
+		) ,1,5,''
+	) as VarChar(255))'Referral_ServRequested'
 ,J002.Activity_Date 'FirstBookedVisit'
 from @ClientTable J001
 Left Outer Join
@@ -735,7 +927,7 @@ select distinct
 	(
 		(
 			Select distinct
-			'& '+ 
+			'~br^ '+ 
 			Case 
 			when FP.Description like '%NDIS%' then 'NDIS '
 			when FP.Description like '%DCSI%' then 'DCSI '
@@ -745,8 +937,9 @@ select distinct
 			From dbo.Service_Delivery SD
 			Left outer Join dbo.Funding_Program FP on FP.Funding_Prog_Code = SD.Funding_Prog_Code
 			where SD.Client_ID = J001.Client_ID and (SD.To_Date > GETDATE() or SD.To_Date is null)
+			for XML path ('') 
 		)
-		,1,2,''
+		,1,5,''
 	)'FunderPrograms'
 	--,JX002.From_Date
 From @ClientTable J001
@@ -760,7 +953,7 @@ Declare @Client_SelfManaged_1 Table
 (
 	Client_ID int
 	,Contract_Billing_Group VarChar(128)
-	,SelfManaged VarChar (16)
+	,SelfManaged VarChar (8)
 )
 
 insert into @Client_SelfManaged_1
@@ -782,7 +975,215 @@ Left outer join dbo.FB_Client_CB_Split J004 on J004.Client_Contract_Billed_To_ID
 
 --------------------------------------------------------------
 --------------------------------------------------------------
-select * from @Client_SelfManaged_1
+--select * from @Client_SelfManaged_1
 --------------------------------------------------------------
 --------------------------------------------------------------
---TO DO GOC on @ClientTable currently can generate multiple entries for a client due to multiple services.<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+--/*
+Declare @Client_SelfManaged_2 Table
+(
+	Client_ID int
+	,Contract_Billing_Group VarChar(256)
+	,SelfManaged VarChar (32)
+)
+insert into @Client_SelfManaged_2
+select Distinct
+J001.Client_ID
+,STUFF
+(
+	(
+		Select
+		'~br^ ' + CSM.Contract_Billing_Group
+		From @Client_SelfManaged_1 CSM where CSM.Client_ID = J001.Client_ID
+		for XML path ('') 
+	)
+	,1,5,''
+)'Contract_Billing_Group'
+,STUFF
+(
+	(
+		Select
+		'~br^ ' + CSM.SelfManaged
+		From @Client_SelfManaged_1 CSM where CSM.Client_ID = J001.Client_ID
+		for XML path ('') 
+	)
+	,1,5,''
+)'SelfManaged'
+From @Client_SelfManaged_1 J001
+--*/
+--------------------------------------------------------------
+--------------------------------------------------------------
+--select * from @Client_SelfManaged_2
+--------------------------------------------------------------
+--------------------------------------------------------------
+--Rolling total against quote
+Declare @ActualVsQuote_01 Table
+(
+	Client_ID int
+	,DQ_Group int
+	,QuoteCode VarChar(255)
+	,BillingItem VarChar (255)
+	,QuoteContractAmount dec(10,2)
+	,RollingTotal dec(10,2)
+	,RemainingOnQuote dec(10,2)
+)
+insert into @ActualVsQuote_01
+Select
+T1.Client_ID
+,T1.DQ_Group
+,T1.QuoteCode
+,T1.BillingItem
+,T1.QuoteContractAmount
+,T1.RollingTotal
+,T1.QuoteContractAmount - T1.RollingTotal 'RemainingOnQuote'
+From
+(
+	select distinct
+	J001.Client_ID
+	,J001.DQ_Group
+	,J001.QuoteCode
+	,Replace(J003.Description,' '+J001.QuoteCode,'')'BillingItem'
+	,J001.QuoteContractAmount
+	,SUM(iif(J002.Amount is null,0.0,J002.Amount))over(Partition by J001.Client_ID,J001.QuoteCode)'RollingTotal'
+	From @DQ_Results J001
+	left outer join dbo.Actual_Service_Charge_Item J002 on 
+		J002.Client_ID = J001.Client_ID 
+		and J002.Visit_Date between J001.Quote_StartDate and J001.Quote_EndDate
+		and J002.Line_Description like '%'+J001.QuoteCode+'%'
+	left outer join dbo.FB_Contract_Billing_Item J003 on J003.Description like '%'+J001.QuoteCode+'%' and J003.Effective_To_Date is null
+)T1
+order by
+1,2
+--------------------------------------------------------------
+--------------------------------------------------------------
+--select * from @ActualVsQuote_01
+--------------------------------------------------------------
+--------------------------------------------------------------
+
+Declare @ActualVsQuote_02 Table
+(
+	Client_ID int
+	,QuoteCode VarChar(255)
+	,BillingItem VarChar(MAX)
+	,QuoteContractAmount VarChar(255)
+	,RollingTotal VarChar(255)
+	,RemainingOnQuote VarChar(255)
+)
+insert into @ActualVsQuote_02
+select Distinct
+J001.Client_ID
+,STUFF
+(
+	(
+		Select
+		'~br^ '+AvQ.QuoteCode
+		From @ActualVsQuote_01 AvQ where AvQ.Client_ID = J001.Client_ID
+		For XML path ('')
+	)
+	,1,5,''
+)'QuoteCode'
+,STUFF
+(
+	(
+		Select
+		'~br^ '+AvQ.BillingItem
+		From @ActualVsQuote_01 AvQ where AvQ.Client_ID = J001.Client_ID
+		For XML path ('')
+	)
+	,1,5,''
+)'BillingItem'
+,STUFF
+(
+	(
+		Select
+		'~br^ '+Cast(AvQ.QuoteContractAmount as varchar(16))
+		From @ActualVsQuote_01 AvQ where AvQ.Client_ID = J001.Client_ID
+		For XML path ('')
+	)
+	,1,5,''
+)'QuoteContractAmount'
+,STUFF
+(
+	(
+		Select
+		'~br^ '+Cast(AvQ.RollingTotal as varchar(16))
+		From @ActualVsQuote_01 AvQ where AvQ.Client_ID = J001.Client_ID
+		For XML path ('')
+	)
+	,1,5,''
+)'RollingTotal'
+,STUFF
+(
+	(
+		Select
+		'~br^ '+Cast(AvQ.RemainingOnQuote as varchar(16))
+		From @ActualVsQuote_01 AvQ where AvQ.Client_ID = J001.Client_ID
+		For XML path ('')
+	)
+	,1,5,''
+)'RemainingOnQuote'
+From @ActualVsQuote_01 J001
+-----------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------
+--<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><
+--BUILD FINAL LINES FROM HEAR DOWN
+-----------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------
+Select
+	J001.Client_ID
+	,J001.Preferred_Name 'Client_Preferred_Name'
+	,J001.Last_Name 'Client_Last_Name'
+	,J001.Birth_Date 'Client_Birth_Date'
+	,J001.Deceased_Date 'Client_Deceased_Date'
+	,J001.Building_name 'ClntAdr_Building_name'
+	,J001.Location 'ClntAdr_Location'
+	,J001.dwelling_number 'ClntAdr_dwelling_number'
+	,J001.Street 'ClntAdr_Street'
+	,J001.suburb 'ClntAdr_suburb'
+	,J001.Post_Code 'ClntAdr_Post_Code'
+	,J001.HasGOC
+	,Replace(Replace(J001.Diagnosis,'~',' <'),'^ ','>')'Diagnosis'
+	,Replace(Replace(J001.ServiceDelivery_StartDate,'~',' <'),'^ ','>') 'ServiceDelivery_StartDate'
+	,Replace(Replace(J001.ServiceDelivery_EndDate,'~',' <'),'^ ','>') 'ServiceDelivery_EndDate'
+	,Replace(Replace(J001.ServiceDelivery_DischargeDate,'~',' <'),'^ ','>') 'ServiceDelivery_DischargeDate'
+	,J001.NDIS_Number
+	,Replace(Replace(J002.ContactName,'~',' <'),'^ ','>')'ContactName'
+	,Replace(Replace(J002.Contact_Phone,'~',' <'),'^ ','>')'Contact_Phone'
+	,Replace(Replace(J002.Contact_Email,'~',' <'),'^ ','>')'Contact_Email'
+	,Replace(Replace(J003.BillingGroup,'~',' <'),'^ ','>')'BillingGroup'
+	,Replace(Replace(J003.Billing_End_Date,'~',' <'),'^ ','>')'Billing_End_Date'
+	,Replace(Replace(J004.Referral_Date,'~',' <'),'^ ','>')'Referral_Date'
+	,Replace(Replace(J004.Referral_Source,'~',' <'),'^ ','>')'Referral_Source'
+	,Replace(Replace(J004.Referral_Comments,'~',' <'),'^ ','>')'Referral_Comments'
+	,Replace(Replace(J004.Referral_ServRequested,'~',' <'),'^ ','>')'Referral_ServRequested'
+	,J004.FirstBookedVisit 'Referral_FirstBookedVisit'
+	,Replace(Replace(J005.Service,'~',' <'),'^ ','>') 'ServDeliv_Service'
+	,Replace(Replace(J005.ToDate,'~',' <'),'^ ','>') 'ServDeliv_ToDate'
+	,Replace(Replace(J005.FundingProg,'~',' <'),'^ ','>') 'ServDeliv_FundProg'
+	,Replace(Replace(J007.FunderPrograms,'~',' <'),'^ ','>') 'FundProg'
+	,Replace(Replace(J006.Contract_Billing_Group,'~',' <'),'^ ','>')'Contract_Billing_Group'
+	,Replace(Replace(J006.SelfManaged,'~',' <'),'^ ','>')'Contract_Billing_SelfManaged'
+	,Replace(Replace(J008.Sessions,'~',' <'),'^ ','>')'Sessions'
+	,Replace(Replace(J008.HoursPerSession,'~',' <'),'^ ','>')'HoursPerSession'
+	,Replace(Replace(J008.QuoteContractAmount,'~',' <'),'^ ','>')'QuoteContractAmount'
+	,Replace(Replace(J008.QuoteCode,'~',' <'),'^ ','>')'QuoteCode'
+	,Replace(Replace(J008.PortalServBookingDone,'~',' <'),'^ ','>')'PortalServBookingDone'
+	,Replace(Replace(J008.ServAgreeSigned,'~',' <'),'^ ','>')'ServAgreeSigned'
+	,Replace(Replace(J008.SetUpInCC,'~',' <'),'^ ','>')'SetUpInCC'
+	,Replace(Replace(J008.KMsPerServ,'~',' <'),'^ ','>')'KMsPerServ'
+	,J008.DQ_Date
+	,J008.Quote_StartDate
+	,J008.Quote_EndDate
+	,Replace(Replace(J009.BillingItem,'~',' <'),'^ ','>')'BillingItem'
+	,Replace(Replace(J009.RollingTotal,'~',' <'),'^ ','>')'RollingTotal'
+	,Replace(Replace(J009.RemainingOnQuote,'~',' <'),'^ ','>')'RemainingOnQuote'
+From @ClientTable J001
+Left outer Join @ClientContact_Formated J002 on J002.Client_ID = J001.Client_ID
+Left outer Join @BillingGroup_Formated J003 on J003.Client_ID  = J001.Client_ID
+Left outer join @ClientReferral J004 on J004.Client_ID = J001.Client_ID
+Left outer join @ServDeliv_Formated J005 on J005.Client_ID = J001.Client_ID
+Left outer join @Client_SelfManaged_2 J006 on J006.Client_ID = J001.Client_ID
+Left outer join @Client_FundingModel J007 on J007.Client_ID = J001.Client_ID
+Left outer join @DQ_Results_Formated J008 on J008.Client_ID = J001.Client_ID
+Left outer join @ActualVsQuote_02 J009 on J009.Client_ID = J001.Client_ID

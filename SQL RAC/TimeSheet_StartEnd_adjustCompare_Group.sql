@@ -1,13 +1,17 @@
 
 use ComCareProd
-
+/*
 declare @Start_Date date = '2017-09-09'
-declare @End_Date date = '2017-09-10'--'2017-07-19' ,'2017-08-03' ,'2017-08-01'
+declare @End_Date date = '2017-09-12'--'2017-07-19' ,'2017-08-03' ,'2017-08-01'
+*/
+declare @Start_Date date = getdate()
+declare @End_Date date = getdate()
 --declare @Centre varchar(32) = 'Dutton Court'
 --declare @Centre varchar(32) = 'Ian George Court'
 declare @Centre Varchar(32) = 'All Hallows Court'
 --declare @Centre Varchar(32) = 'St Laurences Court'
 --declare @Centre Varchar(32) = 'Canterbury Close'
+--declare @Centre Varchar(32) = 'Grandview Court'
 
 
 
@@ -60,7 +64,7 @@ order by 1
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 --------------------------------------------------DeBug
-declare @forceProv_ID int = 1
+declare @forceProv_ID int = 0
 
 
 --declare @Prov_ID int = 10048668 --Hill, Nerissa has split shift CLEAN
@@ -77,7 +81,7 @@ declare @forceProv_ID int = 1
 --declare @Prov_ID int = 10052484
 --declare @Prov_ID int = 10051849
 --declare @Prov_ID int = 10051468
-declare @Prov_ID int = 10052762
+declare @Prov_ID int = 10052050
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 
@@ -168,7 +172,7 @@ insert into @Provs_Roster
 	(
 		select
 		PC.Provider_ID
-		--PC.*
+		,PC.Provider_Contract_Type_Code
 		,ROW_NUMBER()over(Partition by PC.Provider_ID Order by Case
 			When PC.Provider_contract_Type_code = 1 and PC.Effective_Date_To is null then '1'
 			When PC.Provider_contract_Type_code = 1 and PC.Effective_Date_To > @date_Start then '2'
@@ -181,14 +185,15 @@ insert into @Provs_Roster
 			1=1
 --			and cast(PC.Effective_Date_To as date) < @date_End 
 --			and cast(PC.Effective_Date_From as date) < @date_End
-			and PC.Provider_Contract_Type_Code = 1
+			
 	)X008 on X008.Provider_ID = X001.Provider_ID and X008.RN < 2
 		where
 		1=1
 		and X001.Absence_Code is null
 		and X001.RN < 2
-			and X001.Schedule_Duration is not null
-			and cast(X001.Activity_Date as date) between @date_Start and @date_End
+		and X001.Schedule_Duration is not null
+		and cast(X001.Activity_Date as date) between @date_Start and @date_End
+		and X008.Provider_Contract_Type_Code = 1
 		and 
 		(
 			1 = IIF
@@ -216,7 +221,7 @@ insert into @Provs_Roster
 	order by
 		1,3,4	
 
-Select * from @Provs_Roster
+--Select * from @Provs_Roster
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
