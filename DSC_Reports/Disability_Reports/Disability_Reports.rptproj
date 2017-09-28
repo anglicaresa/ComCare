@@ -23,48 +23,67 @@
       <FullPath>ComCareUAT Reports.rds</FullPath>
     </ProjectItem>
   </DataSources>
-  <DataSets>
-    <ProjectItem>
-      <Name>DataSet1.rsd</Name>
-      <FullPath>DataSet1.rsd</FullPath>
-    </ProjectItem>
-  </DataSets>
+  <DataSets />
   <Reports>
     <ProjectItem>
-      <Name>ComCare_ClientTransactionOperatingAccount.rdl</Name>
-      <FullPath>ComCare_ClientTransactionOperatingAccount.rdl</FullPath>
+      <Name>DA_DC_ActualService_Vs_ChargeItem.rdl</Name>
+      <FullPath>DA_DC_ActualService_Vs_ChargeItem.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>ComCare_Mobile.rdl</Name>
-      <FullPath>ComCare_Mobile.rdl</FullPath>
+      <Name>DA_DC_Adjustments.rdl</Name>
+      <FullPath>DA_DC_Adjustments.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>ComCare_PayRoll_CostCodeMapping.rdl</Name>
-      <FullPath>ComCare_PayRoll_CostCodeMapping.rdl</FullPath>
+      <Name>DA_DC_Allocation.rdl</Name>
+      <FullPath>DA_DC_Allocation.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>ComCare_ProviderMissingRoundCode.rdl</Name>
-      <FullPath>ComCare_ProviderMissingRoundCode.rdl</FullPath>
+      <Name>DA_DC_BulkUpload.rdl</Name>
+      <FullPath>DA_DC_BulkUpload.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>DataValidation_Actual_Service_Charge_Item.rdl</Name>
-      <FullPath>DataValidation_Actual_Service_Charge_Item.rdl</FullPath>
+      <Name>DA_DC_IndirctActivity_Report.rdl</Name>
+      <FullPath>DA_DC_IndirctActivity_Report.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>DataValidation_FC_Transaction.rdl</Name>
-      <FullPath>DataValidation_FC_Transaction.rdl</FullPath>
+      <Name>DA_DC_Roster.rdl</Name>
+      <FullPath>DA_DC_Roster.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>TimeSheet_PerProviderPerDay_Vs_T1.rdl</Name>
-      <FullPath>TimeSheet_PerProviderPerDay_Vs_T1.rdl</FullPath>
+      <Name>DA_DC_Schedule_Vs_ServiceDelivery.rdl</Name>
+      <FullPath>DA_DC_Schedule_Vs_ServiceDelivery.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>TimeSheet_PerProviderPerPeriod_Vs_T1.rdl</Name>
-      <FullPath>TimeSheet_PerProviderPerPeriod_Vs_T1.rdl</FullPath>
+      <Name>DA_DC_TransactionAudit_02.rdl</Name>
+      <FullPath>DA_DC_TransactionAudit_02.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>VisitTime_Vs_ContractDates.rdl</Name>
-      <FullPath>VisitTime_Vs_ContractDates.rdl</FullPath>
+      <Name>DA_DC_VacantShift.rdl</Name>
+      <FullPath>DA_DC_VacantShift.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
+      <Name>DA_DC_WaitingList.rdl</Name>
+      <FullPath>DA_DC_WaitingList.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
+      <Name>DA_Statistics.rdl</Name>
+      <FullPath>DA_Statistics.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
+      <Name>DC_MonthlyServiceStatement.rdl</Name>
+      <FullPath>DC_MonthlyServiceStatement.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
+      <Name>DC_NDIS_ServicePlan.rdl</Name>
+      <FullPath>DC_NDIS_ServicePlan.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
+      <Name>DC_Statistics.rdl</Name>
+      <FullPath>DC_Statistics.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
+      <Name>DC_TimeSheet_Vs_Schedule.rdl</Name>
+      <FullPath>DC_TimeSheet_Vs_Schedule.rdl</FullPath>
     </ProjectItem>
   </Reports>
   <Configurations>
@@ -86,9 +105,9 @@
       <Platform>Win32</Platform>
       <Options>
         <OutputPath>bin\DebugLocal</OutputPath>
-        <TargetServerVersion>SSRS2008R2</TargetServerVersion>
+        <TargetServerVersion>SSRS2016</TargetServerVersion>
         <TargetServerURL>http://localhost/reportserver</TargetServerURL>
-        <TargetFolder>Common_Reports</TargetFolder>
+        <TargetFolder>Disability_Reports</TargetFolder>
         <TargetDataSourceFolder>Data Sources</TargetDataSourceFolder>
         <TargetDatasetFolder>Datasets</TargetDatasetFolder>
         <TargetReportPartFolder>Report Parts</TargetReportPartFolder>
@@ -101,7 +120,7 @@
         <OutputPath>bin\Release</OutputPath>
         <TargetServerVersion>SSRS2016</TargetServerVersion>
         <TargetServerURL>http://localhost/reportserver</TargetServerURL>
-        <TargetFolder>Common_Reports</TargetFolder>
+        <TargetFolder>Disability_Reports</TargetFolder>
         <TargetDataSourceFolder>Data Sources</TargetDataSourceFolder>
         <TargetDatasetFolder>Datasets</TargetDatasetFolder>
         <TargetReportPartFolder>Report Parts</TargetReportPartFolder>
@@ -113,10 +132,10 @@
         <OutputPath>bin</OutputPath>
         <TargetServerVersion>SSRS2008R2</TargetServerVersion>
         <TargetServerURL>http://devsql-1/reportserver_WHouse</TargetServerURL>
-        <TargetFolder>/ComCare/DeploymentMain</TargetFolder>
+        <TargetFolder>/ComCare/DeploymentMain/DisabilityChildrens</TargetFolder>
         <TargetDataSourceFolder>/</TargetDataSourceFolder>
         <TargetDatasetFolder>/</TargetDatasetFolder>
-        <TargetReportPartFolder>/ComCare/DeploymentMain</TargetReportPartFolder>
+        <TargetReportPartFolder>/ComCare/DeploymentMain/DisabilityChildrens</TargetReportPartFolder>
       </Options>
     </Configuration>
     <Configuration>
@@ -125,10 +144,10 @@
         <OutputPath>bin</OutputPath>
         <TargetServerVersion>SSRS2008R2</TargetServerVersion>
         <TargetServerURL>http://devsql-1/reportserver_WHouse</TargetServerURL>
-        <TargetFolder>/ComCare/DeploymentMain/ComCareUAT</TargetFolder>
+        <TargetFolder>/ComCare/DeploymentMain/ComCareUAT/DisabilityChildrens</TargetFolder>
         <TargetDataSourceFolder>/</TargetDataSourceFolder>
         <TargetDatasetFolder>/</TargetDatasetFolder>
-        <TargetReportPartFolder>/ComCare/DeploymentMain/ComCareUAT</TargetReportPartFolder>
+        <TargetReportPartFolder>/ComCare/DeploymentMain/ComCareUAT/DisabilityChildrens</TargetReportPartFolder>
       </Options>
     </Configuration>
     <Configuration>
@@ -137,10 +156,10 @@
         <OutputPath>bin</OutputPath>
         <TargetServerVersion>SSRS2008R2</TargetServerVersion>
         <TargetServerURL>http://devsql-1/reportserver_WHouse</TargetServerURL>
-        <TargetFolder>/ComCare/DeploymentMain/ComCareTrain</TargetFolder>
+        <TargetFolder>/ComCare/DeploymentMain/ComCareTrain/DisabilityChildrens</TargetFolder>
         <TargetDataSourceFolder>/</TargetDataSourceFolder>
         <TargetDatasetFolder>/</TargetDatasetFolder>
-        <TargetReportPartFolder>/ComCare/DeploymentMain/ComCareTrain</TargetReportPartFolder>
+        <TargetReportPartFolder>/ComCare/DeploymentMain/ComCareTrain/DisabilityChildrens</TargetReportPartFolder>
       </Options>
     </Configuration>
     <Configuration>
@@ -149,10 +168,10 @@
         <OutputPath>bin</OutputPath>
         <TargetServerVersion>SSRS2008R2</TargetServerVersion>
         <TargetServerURL>http://devsql-1/reportserver_WHouse</TargetServerURL>
-        <TargetFolder>/ComCare/DeploymentMain/ComCareDEV</TargetFolder>
+        <TargetFolder>/ComCare/DeploymentMain/ComCareDEV/DisabilityChildrens</TargetFolder>
         <TargetDataSourceFolder>/</TargetDataSourceFolder>
         <TargetDatasetFolder>/</TargetDatasetFolder>
-        <TargetReportPartFolder>/ComCare/DeploymentMain/ComCareDEV</TargetReportPartFolder>
+        <TargetReportPartFolder>/ComCare/DeploymentMain/ComCareDEV/DisabilityChildrens</TargetReportPartFolder>
       </Options>
     </Configuration>
   </Configurations>

@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RptDataSource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Name="ComCareDEV">
+  <ConnectionProperties>
+    <Extension>SQL</Extension>
+    <ConnectString>data source = Devsql-1\DEV; initial catalog = comcaredev</ConnectString>
+    <IntegratedSecurity>true</IntegratedSecurity>
+  </ConnectionProperties>
+  <DataSourceID>8c832f69-c9ff-4d7b-9139-72e9d63ae908</DataSourceID>
+</RptDataSource>

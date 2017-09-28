@@ -23,48 +23,15 @@
       <FullPath>ComCareUAT Reports.rds</FullPath>
     </ProjectItem>
   </DataSources>
-  <DataSets>
-    <ProjectItem>
-      <Name>DataSet1.rsd</Name>
-      <FullPath>DataSet1.rsd</FullPath>
-    </ProjectItem>
-  </DataSets>
+  <DataSets />
   <Reports>
     <ProjectItem>
-      <Name>ComCare_ClientTransactionOperatingAccount.rdl</Name>
-      <FullPath>ComCare_ClientTransactionOperatingAccount.rdl</FullPath>
+      <Name>TEST_RAC_Allocation.rdl</Name>
+      <FullPath>TEST_RAC_Allocation.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>ComCare_Mobile.rdl</Name>
-      <FullPath>ComCare_Mobile.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>ComCare_PayRoll_CostCodeMapping.rdl</Name>
-      <FullPath>ComCare_PayRoll_CostCodeMapping.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>ComCare_ProviderMissingRoundCode.rdl</Name>
-      <FullPath>ComCare_ProviderMissingRoundCode.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>DataValidation_Actual_Service_Charge_Item.rdl</Name>
-      <FullPath>DataValidation_Actual_Service_Charge_Item.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>DataValidation_FC_Transaction.rdl</Name>
-      <FullPath>DataValidation_FC_Transaction.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>TimeSheet_PerProviderPerDay_Vs_T1.rdl</Name>
-      <FullPath>TimeSheet_PerProviderPerDay_Vs_T1.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>TimeSheet_PerProviderPerPeriod_Vs_T1.rdl</Name>
-      <FullPath>TimeSheet_PerProviderPerPeriod_Vs_T1.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>VisitTime_Vs_ContractDates.rdl</Name>
-      <FullPath>VisitTime_Vs_ContractDates.rdl</FullPath>
+      <Name>z-Allocation Report.rdl</Name>
+      <FullPath>z-Allocation Report.rdl</FullPath>
     </ProjectItem>
   </Reports>
   <Configurations>
@@ -73,12 +40,12 @@
       <Platform>Win32</Platform>
       <Options>
         <OutputPath>bin\Debug</OutputPath>
-        <TargetServerVersion>SSRS2008R2</TargetServerVersion>
-        <TargetServerURL>http://devsql-1/reportserver_WHouse</TargetServerURL>
-        <TargetFolder>/ComCare/DeploymentTest</TargetFolder>
-        <TargetDataSourceFolder>/</TargetDataSourceFolder>
-        <TargetDatasetFolder>/</TargetDatasetFolder>
-        <TargetReportPartFolder>/ComCare/DeploymentTest</TargetReportPartFolder>
+        <TargetServerVersion>SSRS2016</TargetServerVersion>
+        <TargetServerURL>http://localhost/reportserver</TargetServerURL>
+        <TargetFolder>Report Project1</TargetFolder>
+        <TargetDataSourceFolder>Data Sources</TargetDataSourceFolder>
+        <TargetDatasetFolder>Datasets</TargetDatasetFolder>
+        <TargetReportPartFolder>Report Parts</TargetReportPartFolder>
       </Options>
     </Configuration>
     <Configuration>
@@ -86,9 +53,9 @@
       <Platform>Win32</Platform>
       <Options>
         <OutputPath>bin\DebugLocal</OutputPath>
-        <TargetServerVersion>SSRS2008R2</TargetServerVersion>
+        <TargetServerVersion>SSRS2016</TargetServerVersion>
         <TargetServerURL>http://localhost/reportserver</TargetServerURL>
-        <TargetFolder>Common_Reports</TargetFolder>
+        <TargetFolder>Report Project1</TargetFolder>
         <TargetDataSourceFolder>Data Sources</TargetDataSourceFolder>
         <TargetDatasetFolder>Datasets</TargetDatasetFolder>
         <TargetReportPartFolder>Report Parts</TargetReportPartFolder>
@@ -101,7 +68,7 @@
         <OutputPath>bin\Release</OutputPath>
         <TargetServerVersion>SSRS2016</TargetServerVersion>
         <TargetServerURL>http://localhost/reportserver</TargetServerURL>
-        <TargetFolder>Common_Reports</TargetFolder>
+        <TargetFolder>Report Project1</TargetFolder>
         <TargetDataSourceFolder>Data Sources</TargetDataSourceFolder>
         <TargetDatasetFolder>Datasets</TargetDatasetFolder>
         <TargetReportPartFolder>Report Parts</TargetReportPartFolder>
@@ -111,48 +78,48 @@
       <Name>ComCareProd</Name>
       <Options>
         <OutputPath>bin</OutputPath>
-        <TargetServerVersion>SSRS2008R2</TargetServerVersion>
-        <TargetServerURL>http://devsql-1/reportserver_WHouse</TargetServerURL>
-        <TargetFolder>/ComCare/DeploymentMain</TargetFolder>
-        <TargetDataSourceFolder>/</TargetDataSourceFolder>
-        <TargetDatasetFolder>/</TargetDatasetFolder>
-        <TargetReportPartFolder>/ComCare/DeploymentMain</TargetReportPartFolder>
+        <TargetServerVersion>SSRS2016</TargetServerVersion>
+        <TargetServerURL>http://localhost/reportserver</TargetServerURL>
+        <TargetFolder>Report Project1</TargetFolder>
+        <TargetDataSourceFolder>Data Sources</TargetDataSourceFolder>
+        <TargetDatasetFolder>Datasets</TargetDatasetFolder>
+        <TargetReportPartFolder>Report Parts</TargetReportPartFolder>
       </Options>
     </Configuration>
     <Configuration>
       <Name>ComCareUAT</Name>
       <Options>
         <OutputPath>bin</OutputPath>
-        <TargetServerVersion>SSRS2008R2</TargetServerVersion>
-        <TargetServerURL>http://devsql-1/reportserver_WHouse</TargetServerURL>
-        <TargetFolder>/ComCare/DeploymentMain/ComCareUAT</TargetFolder>
-        <TargetDataSourceFolder>/</TargetDataSourceFolder>
-        <TargetDatasetFolder>/</TargetDatasetFolder>
-        <TargetReportPartFolder>/ComCare/DeploymentMain/ComCareUAT</TargetReportPartFolder>
+        <TargetServerVersion>SSRS2016</TargetServerVersion>
+        <TargetServerURL>http://localhost/reportserver</TargetServerURL>
+        <TargetFolder>Report Project1</TargetFolder>
+        <TargetDataSourceFolder>Data Sources</TargetDataSourceFolder>
+        <TargetDatasetFolder>Datasets</TargetDatasetFolder>
+        <TargetReportPartFolder>Report Parts</TargetReportPartFolder>
       </Options>
     </Configuration>
     <Configuration>
       <Name>ComCareTrain</Name>
       <Options>
         <OutputPath>bin</OutputPath>
-        <TargetServerVersion>SSRS2008R2</TargetServerVersion>
-        <TargetServerURL>http://devsql-1/reportserver_WHouse</TargetServerURL>
-        <TargetFolder>/ComCare/DeploymentMain/ComCareTrain</TargetFolder>
-        <TargetDataSourceFolder>/</TargetDataSourceFolder>
-        <TargetDatasetFolder>/</TargetDatasetFolder>
-        <TargetReportPartFolder>/ComCare/DeploymentMain/ComCareTrain</TargetReportPartFolder>
+        <TargetServerVersion>SSRS2016</TargetServerVersion>
+        <TargetServerURL>http://localhost/reportserver</TargetServerURL>
+        <TargetFolder>Report Project1</TargetFolder>
+        <TargetDataSourceFolder>Data Sources</TargetDataSourceFolder>
+        <TargetDatasetFolder>Datasets</TargetDatasetFolder>
+        <TargetReportPartFolder>Report Parts</TargetReportPartFolder>
       </Options>
     </Configuration>
     <Configuration>
       <Name>ComCareDEV</Name>
       <Options>
         <OutputPath>bin</OutputPath>
-        <TargetServerVersion>SSRS2008R2</TargetServerVersion>
-        <TargetServerURL>http://devsql-1/reportserver_WHouse</TargetServerURL>
-        <TargetFolder>/ComCare/DeploymentMain/ComCareDEV</TargetFolder>
-        <TargetDataSourceFolder>/</TargetDataSourceFolder>
-        <TargetDatasetFolder>/</TargetDatasetFolder>
-        <TargetReportPartFolder>/ComCare/DeploymentMain/ComCareDEV</TargetReportPartFolder>
+        <TargetServerVersion>SSRS2016</TargetServerVersion>
+        <TargetServerURL>http://localhost/reportserver</TargetServerURL>
+        <TargetFolder>Report Project1</TargetFolder>
+        <TargetDataSourceFolder>Data Sources</TargetDataSourceFolder>
+        <TargetDatasetFolder>Datasets</TargetDatasetFolder>
+        <TargetReportPartFolder>Report Parts</TargetReportPartFolder>
       </Options>
     </Configuration>
   </Configurations>

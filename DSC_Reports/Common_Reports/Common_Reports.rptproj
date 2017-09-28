@@ -23,44 +23,11 @@
       <FullPath>ComCareUAT Reports.rds</FullPath>
     </ProjectItem>
   </DataSources>
-  <DataSets>
-    <ProjectItem>
-      <Name>DataSet1.rsd</Name>
-      <FullPath>DataSet1.rsd</FullPath>
-    </ProjectItem>
-  </DataSets>
+  <DataSets />
   <Reports>
-    <ProjectItem>
-      <Name>ComCare_ClientTransactionOperatingAccount.rdl</Name>
-      <FullPath>ComCare_ClientTransactionOperatingAccount.rdl</FullPath>
-    </ProjectItem>
     <ProjectItem>
       <Name>ComCare_Mobile.rdl</Name>
       <FullPath>ComCare_Mobile.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>ComCare_PayRoll_CostCodeMapping.rdl</Name>
-      <FullPath>ComCare_PayRoll_CostCodeMapping.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>ComCare_ProviderMissingRoundCode.rdl</Name>
-      <FullPath>ComCare_ProviderMissingRoundCode.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>DataValidation_Actual_Service_Charge_Item.rdl</Name>
-      <FullPath>DataValidation_Actual_Service_Charge_Item.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>DataValidation_FC_Transaction.rdl</Name>
-      <FullPath>DataValidation_FC_Transaction.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>TimeSheet_PerProviderPerDay_Vs_T1.rdl</Name>
-      <FullPath>TimeSheet_PerProviderPerDay_Vs_T1.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>TimeSheet_PerProviderPerPeriod_Vs_T1.rdl</Name>
-      <FullPath>TimeSheet_PerProviderPerPeriod_Vs_T1.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
       <Name>VisitTime_Vs_ContractDates.rdl</Name>

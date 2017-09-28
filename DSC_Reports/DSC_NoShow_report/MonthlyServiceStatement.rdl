@@ -3,284 +3,532 @@
   <df:DefaultFontFamily>Segoe UI</df:DefaultFontFamily>
   <AutoRefresh>0</AutoRefresh>
   <DataSources>
-    <DataSource Name="DataSource1">
-      <DataSourceReference>ComCareProd Reports</DataSourceReference>
+    <DataSource Name="Ref_ASADWH">
+      <DataSourceReference>ComCareProd</DataSourceReference>
       <rd:SecurityType>None</rd:SecurityType>
-      <rd:DataSourceID>cb3ab88f-891c-492d-aac5-c3f28f759767</rd:DataSourceID>
+      <rd:DataSourceID>4740f02c-13be-4c82-9b6a-5e2ff91014c0</rd:DataSourceID>
     </DataSource>
   </DataSources>
   <DataSets>
-    <DataSet Name="DataSet2">
+    <DataSet Name="REF_DataSet_SingleClientDetails">
       <Query>
-        <DataSourceName>DataSource1</DataSourceName>
-        <CommandText>Select Organisation_Name from dbo.Organisation 
-	where 
-	Organisation_Type_Code = 1
-	and
-	(
-		Organisation_Name like 'Home Care%'
-		or Organisation_Name like 'Disabilities %'
-		or Organisation_ID between 49 and 54
-	)
-Order by
-Case 
-	when Organisation_Name like 'Home Care%' then '1_'+ Organisation_Name
-	when Organisation_Name like 'Disabilities %' then '2_'+ Organisation_Name
-	when Organisation_ID between 49 and 54 then '3_'+ Organisation_Name
-end</CommandText>
+        <DataSourceName>Ref_ASADWH</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@Client_ID_">
+            <Value>=Parameters!Client_ID_.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>SELECT Top 1
+J002.[Client_ID] AS 'Client_ID'
+,J002.[Title] AS 'Client_Title'
+,J002.[Last_Name] AS 'Client_LastName'
+,J002.[Preferred_Name] AS 'Client_PreferredName'
+,J004.[Description] AS 'Contact_Type'
+,J007.[Title] AS 'Contact_Title'
+,J007.[Last_Name] AS 'Contact_LastName'
+,J007.[Preferred_Name] AS 'Contact_PreferredName'
+,J008.[Building_name] AS 'Contact_BuildingName'
+,J008.[Location] AS 'Contact_Location'
+,J008.[dwelling_number] AS 'Contact_DwellingNumber'
+,J008.[Street] AS 'Contact_Street'
+,J008.[suburb] AS 'Contact_Suburb'
+,J008.[Post_Code] AS 'Contact_PostCode'
+,J006.[Description] AS 'Client_CardType'
+,J005.[Card_No] AS 'Client_CardNo'
+
+FROM [dbo].[WI_Activity] J001
+INNER JOIN 
+(
+	Select
+		CL.Client_ID
+		,P.Last_Name
+		,P.Preferred_Name
+		,T.Description as 'Title'
+	from [dbo].Client CL WITH(NOLOCK)
+		Inner Join [dbo].Person P WITH(NOLOCK) on Cl.Client_ID = P.Person_ID
+		Inner Join [dbo].Title T on P.Title_Code = T.Title_Code
+)
+
+J002 ON J002.[Client_ID] = J001.[Client_ID]
+
+LEFT OUTER JOIN [dbo].[Personal_Contact] J003 ON J003.[Person_ID] = J002.[Client_ID]
+LEFT OUTER JOIN [dbo].[Personal_Contact_Type] J004 ON J004.[Personal_Contact_Type_Code] = J003.[Personal_Contact_Type_Code]
+LEFT OUTER JOIN [dbo].[Card_Holder] J005 ON J005.[Person_ID] = J002.[Client_ID]
+LEFT OUTER JOIN [dbo].[Card_Type] J006 ON J006.[Card_Type_ID] = J005.[Card_Type_ID]
+
+INNER JOIN 
+(
+	Select
+		P.Person_ID
+		,P.Preferred_Name
+		,P.Last_Name
+		,T.Description as 'Title'
+	from [dbo].Person P  WITH(NOLOCK)
+		Inner Join [dbo].Title T on P.Title_Code = T.Title_Code
+) 
+J007 ON J007.[Person_ID] = J003.[Contact_ID]
+
+LEFT OUTER JOIN [dbo].[Person_Current_Address_Phone] J008 ON J008.[Person_id] = J007.[Person_ID]
+
+WHERE
+	1=1
+	AND J002.[Client_ID] = @Client_ID_
+	--AND J004.[Description] IN(N'Father',N'Foster Parent',N'Grandparent',N'Guardian',N'Mother',N'Parent',N'Step Father',N'Step Mother')
+	--AND J006.[Description]=N'NDIS Number'
+GROUP BY
+	J002.[Client_ID]
+	,J002.[Title]
+	,J002.[Last_Name]
+	,J002.[Preferred_Name]
+	,J004.[Description]
+	,J007.[Title]
+	,J007.[Last_Name]
+	,J007.[Preferred_Name]
+	,J008.[Building_name]
+	,J008.[Location]
+	,J008.[dwelling_number]
+	,J008.[Street]
+	,J008.[suburb]
+	,J008.[Post_Code]
+	,J006.[Description]
+	,J005.[Card_No]
+
+ORDER BY
+	J002.[Client_ID]
+	
+	,Case
+		WHEN J004.[Description] is null then J004.[Description]
+		WHEN J004.[Description] = 'Mother' then '1'
+		WHEN J004.[Description] = 'Father' then '2'
+		WHEN J004.[Description] = 'Parent' then '3'
+		WHEN J004.[Description] = 'Grandparent' then '4'
+		WHEN J004.[Description] = 'Step Mother' then '5'
+		WHEN J004.[Description] = 'Step Father' then '6'
+		WHEN J004.[Description] = 'Guardian' then '7'
+		WHEN J004.[Description] = 'Foster Parent' then '8'
+		Else J004.[Description] END ASC
+		
+	,Case
+		WHEN J006.[Description] = 'NDIS Number' Then '1'
+		Else J006.[Description] END ASC</CommandText>
       </Query>
       <Fields>
-        <Field Name="Organisation_Name">
-          <DataField>Organisation_Name</DataField>
+        <Field Name="Client_ID">
+          <DataField>Client_ID</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="Client_Title">
+          <DataField>Client_Title</DataField>
           <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Client_LastName">
+          <DataField>Client_LastName</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Client_PreferredName">
+          <DataField>Client_PreferredName</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Contact_Type">
+          <DataField>Contact_Type</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Contact_Title">
+          <DataField>Contact_Title</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Contact_LastName">
+          <DataField>Contact_LastName</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Contact_PreferredName">
+          <DataField>Contact_PreferredName</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Contact_BuildingName">
+          <DataField>Contact_BuildingName</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Contact_Location">
+          <DataField>Contact_Location</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Contact_DwellingNumber">
+          <DataField>Contact_DwellingNumber</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Contact_Street">
+          <DataField>Contact_Street</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Contact_Suburb">
+          <DataField>Contact_Suburb</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Contact_PostCode">
+          <DataField>Contact_PostCode</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Client_CardType">
+          <DataField>Client_CardType</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Client_CardNo">
+          <DataField>Client_CardNo</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Address">
+          <Value>=
+(
+	IIF
+	( 
+		IsNothing(Fields!Contact_BuildingName.Value),
+		"",
+		(Fields!Contact_BuildingName.Value + ", ")
+	)
+)
++
+(
+	IIF
+	(
+		IsNothing(Fields!Contact_Location.Value) or (Fields!Contact_Location.Value = " "),
+		"",
+		(Fields!Contact_Location.Value + " / ")
+	)
+)
++
+(
+	IIF
+	(
+		IsNothing(Fields!Contact_DwellingNumber.Value),
+		"",
+		(Fields!Contact_DwellingNumber.Value + " ")
+	)
+)
++
+(
+	IIF
+	(
+		IsNothing(Fields!Contact_Street.Value) or (Fields!Contact_Location.Value = " "),
+		"",
+		(Fields!Contact_Street.Value + ", ")
+	)
+)
++
+(
+	IIF
+	(
+		IsNothing(Fields!Contact_Suburb.Value),
+		"",
+		(Fields!Contact_Suburb.Value + " ")
+	)
+)
++ "SA "+
+(
+	IIF
+	(
+		IsNothing(Fields!Contact_PostCode.Value),
+		"",
+		((CStr(Fields!Contact_PostCode.Value)) + " ")
+	)
+)</Value>
+        </Field>
+        <Field Name="Contact_Name">
+          <Value>=Fields!Contact_Title.Value &amp; " " &amp; Fields!Contact_PreferredName.Value &amp; " " &amp; Fields!Contact_LastName.Value</Value>
+        </Field>
+        <Field Name="Client_Name">
+          <Value>=Fields!Client_Title.Value &amp; " " &amp; Fields!Client_PreferredName.Value &amp; " " &amp; Fields!Client_LastName.Value</Value>
+        </Field>
+        <Field Name="NDISnumber_Filtered">
+          <Value>=System.Text.RegularExpressions.Regex.Replace(Fields!Client_CardNo.Value, "[^0-9,]", "")</Value>
         </Field>
       </Fields>
     </DataSet>
-    <DataSet Name="DataSet1">
+    <DataSet Name="REF_DataSet_BillingItems">
       <Query>
-        <DataSourceName>DataSource1</DataSourceName>
+        <DataSourceName>Ref_ASADWH</DataSourceName>
         <QueryParameters>
+          <QueryParameter Name="@Client_ID_">
+            <Value>=Parameters!Client_ID_.Value</Value>
+          </QueryParameter>
           <QueryParameter Name="@StartDate">
             <Value>=Parameters!StartDate.Value</Value>
           </QueryParameter>
           <QueryParameter Name="@EndDate">
             <Value>=Parameters!EndDate.Value</Value>
           </QueryParameter>
-          <QueryParameter Name="@Centre">
-            <Value>=Parameters!Centre.Value</Value>
-          </QueryParameter>
         </QueryParameters>
-        <CommandText>declare @ProvIDs_1 Table (Provider_ID int, ContractType VarChar(64),Provider_Class_Code VarChar(128))
-insert into @ProvIDs_1
-Select
-	J001.Provider_ID
-	,J003.ContractType
-	,J003.Provider_Class_Code
-From dbo.Provider_Contract J001
-Inner join dbo.Organisation J002 on J002.Organisation_ID = J001.Organisation_ID
-Left outer join
-(
-	select
-	PC.Provider_ID
-	,PC.Provider_Contract_Type_Code
-	,PC.Provider_Class_Code
-	,CT.Description 'ContractType'
-	,ROW_NUMBER()over(Partition by PC.Provider_ID Order by Case
-		When PC.Provider_contract_Type_code = 1 and PC.Effective_Date_To is null then '1'
-		When PC.Provider_contract_Type_code = 1 and PC.Effective_Date_To &gt; @StartDate then '2'
-		when PC.Provider_contract_Type_code = 1 and PC.Effective_Date_From &lt; @EndDate then '3'
-		else '4'
-		end
-		)'RN'
-	from dbo.Provider_Contract PC
-	left outer Join dbo.Provider_Contract_Type CT on CT.Provider_Contract_Type_Code = PC.Provider_Contract_Type_Code
-	where
-		1=1
-)J003 on J003.Provider_ID = J001.Provider_ID and J003.RN &lt; 2
-where
+        <CommandText>select
+	J001.Client_ID
+	,J001.Visit_Date
+	,J001.Rate
+	,J001.Unit
+	,J001.Amount
+	,J001.Rate_Type
+	,J001.Line_Description
+	,J002.Description as Origin_ItemNumber
+	,J004.Description as TypeOfUnit
+	,J003.[UOM_Code]
+	,J002.Contract_Billing_Item_ID
+	,J003.Contract_Billing_Rate_ID
+	,J002.[Description] as Billing_item
+	,J005.Description as Service_Type
+
+ FROM [dbo].[Actual_Service_Charge_Item] J001
+Inner Join [dbo].[FB_Contract_Billing_Item] J002 on J001.Contract_Billing_Item_ID = J002.Contract_Billing_Item_ID
+Left Outer Join [dbo].[FB_Contract_Billing_Rate] J003 on J001.Contract_Billing_Rate_ID = J003.Contract_Billing_Rate_ID
+Left Outer Join [dbo].[Unit_of_Measure] J004 ON J003.[UOM_Code] = J004.[UOM_Code]
+Left outer join [dbo].[Service_Type] J005 ON (replace((substring(J001.Line_Description,1,4)),' ','')) = J005.Service_Type_Code
+Where 
 	1=1
-	and J002.Organisation_Name in (@Centre)
-
---select * from @ProvIDs_1
---------------------------------------------------------------------------------------------------
-
-Declare @NoRoundCodeTable Table
-(
-	Provider_ID int
-	,ProviderName VarChar (128)
-	,ContractType VarChar(64)
-	,Provider_Class_Code VarChar(128)
-	,Activity_Date Date
-	,Activity_Start_Time DateTime
-	,Activity_End_Time DateTime
-	,MidActivity_Time DateTime
-	,Activity_Duration int
-	,ActivityType VarChar(16)
-	,ActivityDescription VarChar(128)
-	,ActivityCode VarChar(64)
-	,TryMatch int
-)
-insert into @NoRoundCodeTable
-Select
-	J001.Provider_ID
-	,(J005.Last_Name + ', ' + J005.Preferred_Name) 'ProviderName'
-	,J004.ContractType
-	,J004.Provider_Class_Code
-	,Cast(J001.Activity_Date as date)'Activity_Date'
-	,Cast(J001.Activity_Start_Time as datetime)'Activity_Start_Time'
-	,Cast(J001.Activity_End_Time as datetime)'Activity_End_Time'
-	,Cast(DateAdd(Minute,J001.Activity_Duration/2,J001.Activity_Start_Time) as datetime)'MidActivity_Time'
-	,J001.Activity_Duration
-	,IIF(J001.Indirect_Activity_Type_Code is null,'Task','IndirectActivity')'ActivityType'
-	,IIF(J001.Indirect_Activity_Type_Code is null,J003.Description,J002.Description) 'ActivityDescription'
-	,IIF(J001.Indirect_Activity_Type_Code is null,J001.Task_Type_code,J001.Indirect_Activity_Type_Code)'ActivityCode'
-	,IIF
-	(	
-		J002.Description like '%Start Shift%'
-		or J001.Indirect_Activity_Type_Code is null 
-		,1,0
-	)'TryMatch'
-from dbo.Activity_Work_Table J001
-Left outer join dbo.Indirect_Activity_Type J002 on J002.Indirect_Activity_Type_Code = J001.Indirect_Activity_Type_Code
-Left outer Join dbo.Task_Type J003 on J003.Task_Type_Code = J001.Task_Type_Code
-inner join @ProvIDs_1 J004 on J004.Provider_ID = J001.Provider_ID
-inner join dbo.Person J005 on J005.Person_ID = J001.Provider_ID
-
-where 
-	1=1
-	and Cast(J001.Activity_Date as date) between @StartDate and @EndDate
-	and (J001.Classn_Shift_Centre is null or J001.Classn_Shift_Centre = '')
-	and J001.Activity_Start_Time is not null 
-	and J001.Activity_End_Time is not null
-Order by
-1,2,3
---Select * from @NoRoundCodeTable
---/*
---------------------------------------------------------------------------------------------------
-declare @Provs_Roster Table
-(
-	Provider_ID int
-	,ProviderName varChar(128)
-	,Activity_Date Date
-	,Schedule_StartTime DateTime
-	,Schedule_EndTime DateTime
-	,Schedule_Duration int
-	,SPPID int
-	,RoundCode varChar(128)
-)
-
-insert into @Provs_Roster
-Select Distinct
-	X001.Provider_ID
-	,(X002.Last_Name + ', ' + X002.Preferred_Name) 'ProviderName'
-	,X001.Activity_Date
-	,X001.Schedule_StartTime
-	,X001.Schedule_EndTime
-	,X001.Schedule_Duration
-	,X001.SPPID
-	,X003.Generated_Provider_Code 'RoundCode'
-From 
-(
-	Select
-		WiA.SPPID 'SPPID'
-		,cast (WiA.Activity_Date as date) 'Activity_Date'
-		,cast (WiA.Schedule_Time as datetime2) 'Schedule_StartTime'
-		,DateAdd(MINUTE, WiA.Schedule_Duration,cast(WiA.Schedule_Time as datetime2))'Schedule_EndTime'
-		,WiA.Absence_Code 'Absence_Code'
-		,WiA.Provider_ID 'Provider_ID'
-		,WiA.Schedule_Duration 'Schedule_Duration'
-		,WiA.Generated_Provider_Code 'Generated_Provider_Code'
-		,ROW_NUMBER () -- sort by importance of 'covered' 'absent' and 'Un-Alocated'.
-			over 
-			(
-				Partition by cast(WiA.Schedule_Time as Datetime2), WiA.[SPPID] Order by 
-					Case
-						when ((WiA.Provider_ID &gt; 0) and (WiA.Absence_Code is NULL)) then concat('1_',WiA.Provider_ID)
-						when (WiA.Provider_ID &gt; 0) and (WiA.Absence_Code is not NULL) then concat('2_',WiA.Provider_ID)
-					else 'z'
-				end
-			) 'RN'
-	From dbo.Wi_Activity WiA
-	inner join @ProvIDs_1 PID on PID.Provider_ID = WiA.Provider_ID
-	where
-		1=1
-		and convert(date, Wia.Activity_Date) between @StartDate and @EndDate
-		and WiA.SPPID is not null
-)X001
-Inner Join dbo.Person X002 on X002.Person_ID = X001.Provider_ID --get prov name
-Inner Join dbo.Service_Provision_Position X003 on X003.Service_Prov_Position_ID = X001.SPPID
-Inner join dbo.Service_Delivery_Work_Team X004 on X004.Team_No = X003.Team_No and X004.Centre_ID = X003.Centre_ID
-
-where
-	1=1
-	and X001.Absence_Code is null
-	and X001.RN &lt; 2
-	and X001.Schedule_Duration is not null
-	and cast(X001.Activity_Date as date) between @StartDate and @EndDate
---	and X008.Provider_Contract_Type_Code = 1
-
-order by
-	1,3,4	
-
---Select * from @Provs_Roster
-
---------------------------------------------------------------------------------------------------
---*/
-Select
-J001.Provider_ID
-,J001.ProviderName
-,J001.ContractType
-,J001.Provider_Class_Code
-,J001.Activity_Date
-,J001.Activity_Start_Time
-,J001.Activity_End_Time
-,J001.Activity_Duration
-,J001.ActivityType
-,J001.ActivityCode
-,J001.ActivityDescription
-,STUFF
-(
-	(
-		Select
-		', '+J002.RoundCode
-		From @Provs_Roster J002 where
-		J002.Provider_ID = J001.Provider_ID
-		and J002.Activity_Date = J001.Activity_Date
-		and J001.TryMatch = 1
-		and J001.MidActivity_Time between J002.Schedule_StartTime and J002.Schedule_EndTime
-		For XML Path ('')
-	)
-	,1,2,''
-)'Possible Round matches'
-From @NoRoundCodeTable J001</CommandText>
+	and J001.Client_ID = @Client_ID_
+	and J001.Line_Description Not like 'HCP Daily Charges%'
+	and J001.Visit_Date between @StartDate and @EndDate</CommandText>
       </Query>
       <Fields>
-        <Field Name="Provider_ID">
-          <DataField>Provider_ID</DataField>
+        <Field Name="Client_ID">
+          <DataField>Client_ID</DataField>
           <rd:TypeName>System.Int32</rd:TypeName>
         </Field>
-        <Field Name="ProviderName">
-          <DataField>ProviderName</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-        <Field Name="ContractType">
-          <DataField>ContractType</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-        <Field Name="Provider_Class_Code">
-          <DataField>Provider_Class_Code</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-        <Field Name="Activity_Date">
-          <DataField>Activity_Date</DataField>
+        <Field Name="Visit_Date">
+          <DataField>Visit_Date</DataField>
           <rd:TypeName>System.DateTime</rd:TypeName>
         </Field>
-        <Field Name="Activity_Start_Time">
-          <DataField>Activity_Start_Time</DataField>
-          <rd:TypeName>System.DateTime</rd:TypeName>
+        <Field Name="Rate">
+          <DataField>Rate</DataField>
+          <rd:TypeName>System.Decimal</rd:TypeName>
         </Field>
-        <Field Name="Activity_End_Time">
-          <DataField>Activity_End_Time</DataField>
-          <rd:TypeName>System.DateTime</rd:TypeName>
+        <Field Name="Unit">
+          <DataField>Unit</DataField>
+          <rd:TypeName>System.Decimal</rd:TypeName>
         </Field>
-        <Field Name="Activity_Duration">
-          <DataField>Activity_Duration</DataField>
+        <Field Name="Amount">
+          <DataField>Amount</DataField>
+          <rd:TypeName>System.Decimal</rd:TypeName>
+        </Field>
+        <Field Name="Rate_Type">
+          <DataField>Rate_Type</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Line_Description">
+          <DataField>Line_Description</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Origin_ItemNumber">
+          <DataField>Origin_ItemNumber</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="TypeOfUnit">
+          <DataField>TypeOfUnit</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="UOM_Code">
+          <DataField>UOM_Code</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Contract_Billing_Item_ID">
+          <DataField>Contract_Billing_Item_ID</DataField>
+          <rd:TypeName>System.Decimal</rd:TypeName>
+        </Field>
+        <Field Name="Contract_Billing_Rate_ID">
+          <DataField>Contract_Billing_Rate_ID</DataField>
+          <rd:TypeName>System.Decimal</rd:TypeName>
+        </Field>
+        <Field Name="Temp_String">
+          <Value>=
+IIF
+(
+	(
+		(Int(Rnd()*100)) mod 2 = 0
+	)
+	,Fields!Origin_ItemNumber.Value + " 01_011_0107_1_1"
+	,Fields!Origin_ItemNumber.Value
+)</Value>
+        </Field>
+        <Field Name="Billing_item">
+          <DataField>Billing_item</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Service_Type">
+          <DataField>Service_Type</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Item_No">
+          <Value>= IIF
+(
+	(
+		((Len(Fields!Temp_String.Value)) &gt; 15)
+		AND (Code.IsStringInt(Right(Fields!Temp_String.Value,1)))
+		AND (Code.IsStringInt(GetChar(Right(Fields!Temp_String.Value,7),1)))
+		AND (Code.IsStringInt(GetChar(Right(Fields!Temp_String.Value,15),1)))
+	)
+	,Replace(Right(Fields!Temp_String.Value,15),"_"," ")
+	,"Not on record"
+)</Value>
+        </Field>
+        <Field Name="Units_Of_Time">
+          <Value>=Switch
+(
+	 Fields!Rate_Type.Value = "HR",""
+	,Fields!Rate_Type.Value = "DD",""
+	,Fields!Rate_Type.Value = "UNIT",""
+	,Fields!Rate_Type.Value = "VI",""
+)</Value>
+        </Field>
+        <Field Name="Line_DescriptionLftTrim">
+          <Value>=
+left
+(
+	Fields!Line_Description.Value,
+	(
+		len(Fields!Line_Description.Value)-27
+	)
+)</Value>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="DataSet_DeliveryCentre">
+      <Query>
+        <DataSourceName>Ref_ASADWH</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@Client_ID_">
+            <Value>=Parameters!Client_ID_.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>SELECT
+	J001.[Client_ID]
+	,J003.[Organisation_Name]
+FROM
+(
+Select
+	CL.Client_ID
+from [dbo].Client CL WITH(NOLOCK)
+	Inner Join [dbo].Person P WITH(NOLOCK) on Cl.Client_ID = P.Person_ID
+) J001
+
+LEFT OUTER JOIN [dbo].[Service_Delivery] J002 ON J002.[Client_ID] = J001.[Client_ID]
+INNER JOIN 
+(
+	Select 
+		SD.Client_ID
+		,O.Organisation_Name
+		,SD.Service_Type_Code 
+	from [dbo].Service_Delivery SD
+		join [dbo].Period_of_Residency PR on PR.Person_ID = SD.Client_ID
+		join [dbo].Address A on A.Address_ID = PR.Address_ID
+		Join [dbo].Service_Provision SP on A.Suburb_ID = SP.Suburb_ID and SP.Service_Type_Code = SD.Service_Type_Code
+		Join [dbo].Organisation O on Sp.Centre_ID = O.Organisation_ID
+	Where PR.To_Date is null and PR.Display_Indicator  = 1
+) J003 ON J003.[Client_ID] = J002.[Client_ID] AND J003.[Service_Type_Code] = J002.[Service_Type_Code]
+
+WHERE
+J001.[Client_ID]=@Client_ID_
+GROUP BY
+J001.[Client_ID]
+,J003.[Organisation_Name]
+/*
+SELECT Top 1
+J002.[Client_ID] AS 'Client_ID'
+,J002.[Title] AS 'Client_Title'
+,J002.[Last_Name] AS 'Client_LastName'
+,J002.[Preferred_Name] AS 'Client_PreferredName'
+,J004.[Description] AS 'Contact_Type'
+,J007.[Title] AS 'Contact_Title'
+,J007.[Last_Name] AS 'Contact_LastName'
+,J007.[Preferred_Name] AS 'Contact_PreferredName'
+,J008.[Building_name] AS 'Contact_BuildingName'
+,J008.[Location] AS 'Contact_Location'
+,J008.[dwelling_number] AS 'Contact_DwellingNumber'
+,J008.[Street] AS 'Contact_Street'
+,J008.[suburb] AS 'Contact_Suburb'
+,J008.[Post_Code] AS 'Contact_PostCode'
+,J006.[Description] AS 'Client_CardType'
+,J005.[Card_No] AS 'Client_CardNo'
+
+FROM [dbo].[WI_Activity] J001
+INNER JOIN 
+(
+	Select
+		CL.Client_ID
+		,P.Last_Name
+		,P.Preferred_Name
+		,T.Description as 'Title'
+	from [dbo].Client CL WITH(NOLOCK)
+		Inner Join [dbo].Person P WITH(NOLOCK) on Cl.Client_ID = P.Person_ID
+		Inner Join [dbo].Title T on P.Title_Code = T.Title_Code
+)
+
+J002 ON J002.[Client_ID] = J001.[Client_ID]
+
+LEFT OUTER JOIN [dbo].[Personal_Contact] J003 ON J003.[Person_ID] = J002.[Client_ID]
+LEFT OUTER JOIN [dbo].[Personal_Contact_Type] J004 ON J004.[Personal_Contact_Type_Code] = J003.[Personal_Contact_Type_Code]
+LEFT OUTER JOIN [dbo].[Card_Holder] J005 ON J005.[Person_ID] = J002.[Client_ID]
+LEFT OUTER JOIN [dbo].[Card_Type] J006 ON J006.[Card_Type_ID] = J005.[Card_Type_ID]
+
+INNER JOIN 
+(
+	Select
+		P.Person_ID
+		,P.Preferred_Name
+		,P.Last_Name
+		,T.Description as 'Title'
+	from [dbo].Person P  WITH(NOLOCK)
+		Inner Join [dbo].Title T on P.Title_Code = T.Title_Code
+) 
+J007 ON J007.[Person_ID] = J003.[Contact_ID]
+
+LEFT OUTER JOIN [dbo].[Person_Current_Address_Phone] J008 ON J008.[Person_id] = J007.[Person_ID]
+
+WHERE
+	1=1
+	AND J002.[Client_ID] = @Client_ID_
+	--AND J004.[Description] IN(N'Father',N'Foster Parent',N'Grandparent',N'Guardian',N'Mother',N'Parent',N'Step Father',N'Step Mother')
+	--AND J006.[Description]=N'NDIS Number'
+GROUP BY
+	J002.[Client_ID]
+	,J002.[Title]
+	,J002.[Last_Name]
+	,J002.[Preferred_Name]
+	,J004.[Description]
+	,J007.[Title]
+	,J007.[Last_Name]
+	,J007.[Preferred_Name]
+	,J008.[Building_name]
+	,J008.[Location]
+	,J008.[dwelling_number]
+	,J008.[Street]
+	,J008.[suburb]
+	,J008.[Post_Code]
+	,J006.[Description]
+	,J005.[Card_No]
+
+ORDER BY
+	J002.[Client_ID]
+	
+	,Case
+		WHEN J004.[Description] is null then J004.[Description]
+		WHEN J004.[Description] = 'Mother' then '1'
+		WHEN J004.[Description] = 'Father' then '2'
+		WHEN J004.[Description] = 'Parent' then '3'
+		WHEN J004.[Description] = 'Grandparent' then '4'
+		WHEN J004.[Description] = 'Step Mother' then '5'
+		WHEN J004.[Description] = 'Step Father' then '6'
+		WHEN J004.[Description] = 'Guardian' then '7'
+		WHEN J004.[Description] = 'Foster Parent' then '8'
+		Else J004.[Description] END ASC
+		
+	,Case
+		WHEN J006.[Description] = 'NDIS Number' Then '1'
+		Else J006.[Description] END ASC
+*/</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="Client_ID">
+          <DataField>Client_ID</DataField>
           <rd:TypeName>System.Int32</rd:TypeName>
         </Field>
-        <Field Name="ActivityType">
-          <DataField>ActivityType</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-        <Field Name="ActivityCode">
-          <DataField>ActivityCode</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-        <Field Name="ActivityDescription">
-          <DataField>ActivityDescription</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-        <Field Name="Possible_Round_matches">
-          <DataField>Possible Round matches</DataField>
+        <Field Name="Organisation_Name">
+          <DataField>Organisation_Name</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
       </Fields>
@@ -290,44 +538,23 @@ From @NoRoundCodeTable J001</CommandText>
     <ReportSection>
       <Body>
         <ReportItems>
-          <Tablix Name="Tablix1">
+          <Tablix Name="Tablix3">
             <TablixBody>
               <TablixColumns>
                 <TablixColumn>
-                  <Width>2.5cm</Width>
+                  <Width>2.73812cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>4.0875cm</Width>
+                  <Width>7.99807cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>2.5cm</Width>
+                  <Width>1.7724cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>2.5cm</Width>
+                  <Width>2.03698cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>2.5cm</Width>
-                </TablixColumn>
-                <TablixColumn>
-                  <Width>2.44708cm</Width>
-                </TablixColumn>
-                <TablixColumn>
-                  <Width>2.31479cm</Width>
-                </TablixColumn>
-                <TablixColumn>
-                  <Width>3.10854cm</Width>
-                </TablixColumn>
-                <TablixColumn>
-                  <Width>2.5cm</Width>
-                </TablixColumn>
-                <TablixColumn>
-                  <Width>2.5cm</Width>
-                </TablixColumn>
-                <TablixColumn>
-                  <Width>7.98979cm</Width>
-                </TablixColumn>
-                <TablixColumn>
-                  <Width>4.29917cm</Width>
+                  <Width>2.07668cm</Width>
                 </TablixColumn>
               </TablixColumns>
               <TablixRows>
@@ -336,24 +563,26 @@ From @NoRoundCodeTable J001</CommandText>
                   <TablixCells>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Textbox1">
+                        <Textbox Name="Textbox2">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Provider ID</Value>
+                                  <Value>Item No</Value>
                                   <Style>
                                     <FontWeight>Bold</FontWeight>
                                     <Color>White</Color>
                                   </Style>
                                 </TextRun>
                               </TextRuns>
-                              <Style />
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Textbox1</rd:DefaultName>
+                          <rd:DefaultName>Textbox2</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -361,6 +590,42 @@ From @NoRoundCodeTable J001</CommandText>
                             </Border>
                             <BackgroundColor>#004b8e</BackgroundColor>
                             <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>4pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox50">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Description</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox50</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>4pt</PaddingLeft>
                             <PaddingRight>2pt</PaddingRight>
                             <PaddingTop>2pt</PaddingTop>
                             <PaddingBottom>2pt</PaddingBottom>
@@ -370,14 +635,100 @@ From @NoRoundCodeTable J001</CommandText>
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Textbox3">
+                        <Textbox Name="Textbox42">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Provider Name</Value>
+                                  <Value>Units of Service</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox42</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>4pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox44">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Unit Price (Ex GST)</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox44</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>4pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox46">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Line Total</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value />
                                   <Style>
                                     <FontWeight>Bold</FontWeight>
                                     <Color>White</Color>
@@ -387,7 +738,7 @@ From @NoRoundCodeTable J001</CommandText>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Textbox3</rd:DefaultName>
+                          <rd:DefaultName>Textbox46</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -395,6 +746,94 @@ From @NoRoundCodeTable J001</CommandText>
                             </Border>
                             <BackgroundColor>#004b8e</BackgroundColor>
                             <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>4pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.6cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Item_No">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Item_No.Value</Value>
+                                  <Style>
+                                    <FontSize>8pt</FontSize>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Item_No</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>= Iif ( RunningValue ( Fields!Visit_Date.Value , CountDistinct , "REF_DataSet_BillingItems") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>4pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Line_Description">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=
+right
+(
+	Fields!Service_Type.Value,
+	(
+		len(Fields!Service_Type.Value)-3
+	)
+) 
++" /"+ 
+Right
+(
+	Fields!Line_DescriptionLftTrim.Value,
+	Len(Fields!Line_DescriptionLftTrim.Value) - Len(Split(Fields!Line_DescriptionLftTrim.Value," ").getvalue(0))
+)</Value>
+                                  <Style>
+                                    <FontSize>8pt</FontSize>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Line_Description</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>= Iif ( RunningValue ( Fields!Visit_Date.Value , CountDistinct , "REF_DataSet_BillingItems") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
+                            <PaddingLeft>4pt</PaddingLeft>
                             <PaddingRight>2pt</PaddingRight>
                             <PaddingTop>2pt</PaddingTop>
                             <PaddingBottom>2pt</PaddingBottom>
@@ -404,32 +843,35 @@ From @NoRoundCodeTable J001</CommandText>
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Textbox5">
+                        <Textbox Name="Unit">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Contract Type</Value>
+                                  <Value>=FormatNumber(Fields!Unit.Value,2) &amp; Environment.NewLine
+ &amp; Fields!TypeOfUnit.Value + "('s)"</Value>
                                   <Style>
-                                    <FontWeight>Bold</FontWeight>
-                                    <Color>White</Color>
+                                    <FontSize>8pt</FontSize>
+                                    <Format>#,0.00</Format>
                                   </Style>
                                 </TextRun>
                               </TextRuns>
-                              <Style />
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Textbox5</rd:DefaultName>
+                          <rd:DefaultName>Unit</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
                               <Style>Solid</Style>
                             </Border>
-                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <BackgroundColor>= Iif ( RunningValue ( Fields!Visit_Date.Value , CountDistinct , "REF_DataSet_BillingItems") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
                             <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingRight>4pt</PaddingRight>
                             <PaddingTop>2pt</PaddingTop>
                             <PaddingBottom>2pt</PaddingBottom>
                           </Style>
@@ -438,38 +880,84 @@ From @NoRoundCodeTable J001</CommandText>
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Textbox7">
+                        <Textbox Name="Rate">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Provider Class Code</Value>
+                                  <Value>=FormatCurrency(Fields!Rate.Value.ToString) &amp; Environment.NewLine
+ &amp; " per " &amp; Fields!TypeOfUnit.Value.ToString</Value>
                                   <Style>
-                                    <FontWeight>Bold</FontWeight>
-                                    <Color>White</Color>
+                                    <FontSize>8pt</FontSize>
+                                    <Format>'$'0.00;('$'0.00)</Format>
                                   </Style>
                                 </TextRun>
                               </TextRuns>
-                              <Style />
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Textbox7</rd:DefaultName>
+                          <rd:DefaultName>Rate</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
                               <Style>Solid</Style>
                             </Border>
-                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <BackgroundColor>= Iif ( RunningValue ( Fields!Visit_Date.Value , CountDistinct , "REF_DataSet_BillingItems") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
                             <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingRight>4pt</PaddingRight>
                             <PaddingTop>2pt</PaddingTop>
                             <PaddingBottom>2pt</PaddingBottom>
+                            <rd:FormatSymbolCulture>en-AU</rd:FormatSymbolCulture>
                           </Style>
                         </Textbox>
                       </CellContents>
                     </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Amount">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Amount.Value</Value>
+                                  <Style>
+                                    <FontSize>8pt</FontSize>
+                                    <Format>'$'#,0.00;('$'#,0.00)</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Amount</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>= Iif ( RunningValue ( Fields!Visit_Date.Value , CountDistinct , "REF_DataSet_BillingItems") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>4pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                            <rd:FormatSymbolCulture>en-AU</rd:FormatSymbolCulture>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.6cm</Height>
+                  <TablixCells>
                     <TablixCell>
                       <CellContents>
                         <Textbox Name="Textbox9">
@@ -479,14 +967,16 @@ From @NoRoundCodeTable J001</CommandText>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Activity Date</Value>
+                                  <Value>Sub Total</Value>
                                   <Style>
-                                    <FontWeight>Bold</FontWeight>
+                                    <FontWeight>Normal</FontWeight>
                                     <Color>White</Color>
                                   </Style>
                                 </TextRun>
                               </TextRuns>
-                              <Style />
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
                             </Paragraph>
                           </Paragraphs>
                           <rd:DefaultName>Textbox9</rd:DefaultName>
@@ -495,49 +985,19 @@ From @NoRoundCodeTable J001</CommandText>
                               <Color>LightGrey</Color>
                               <Style>Solid</Style>
                             </Border>
-                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <BackgroundColor>#2b70b1</BackgroundColor>
                             <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingRight>4pt</PaddingRight>
                             <PaddingTop>2pt</PaddingTop>
                             <PaddingBottom>2pt</PaddingBottom>
                           </Style>
                         </Textbox>
+                        <ColSpan>4</ColSpan>
                       </CellContents>
                     </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox11">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>Activity Start Time</Value>
-                                  <Style>
-                                    <FontWeight>Bold</FontWeight>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox11</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
                     <TablixCell>
                       <CellContents>
                         <Textbox Name="Textbox13">
@@ -547,14 +1007,17 @@ From @NoRoundCodeTable J001</CommandText>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Activity End Time</Value>
+                                  <Value>=Sum(Fields!Amount.Value)</Value>
                                   <Style>
-                                    <FontWeight>Bold</FontWeight>
+                                    <FontWeight>Normal</FontWeight>
+                                    <Format>'$'#,0.00;('$'#,0.00)</Format>
                                     <Color>White</Color>
                                   </Style>
                                 </TextRun>
                               </TextRuns>
-                              <Style />
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
                             </Paragraph>
                           </Paragraphs>
                           <rd:DefaultName>Textbox13</rd:DefaultName>
@@ -563,35 +1026,342 @@ From @NoRoundCodeTable J001</CommandText>
                               <Color>LightGrey</Color>
                               <Style>Solid</Style>
                             </Border>
-                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <BackgroundColor>#2b70b1</BackgroundColor>
                             <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingRight>4pt</PaddingRight>
                             <PaddingTop>2pt</PaddingTop>
                             <PaddingBottom>2pt</PaddingBottom>
+                            <rd:FormatSymbolCulture>en-AU</rd:FormatSymbolCulture>
                           </Style>
                         </Textbox>
                       </CellContents>
                     </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.6cm</Height>
+                  <TablixCells>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Textbox15">
+                        <Textbox Name="Textbox36">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Activity Duration (Minutes)</Value>
+                                  <Value>Monthly Total Invoiced Amount (GST Exclusive)</Value>
                                   <Style>
                                     <FontWeight>Bold</FontWeight>
                                     <Color>White</Color>
                                   </Style>
                                 </TextRun>
                               </TextRuns>
-                              <Style />
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Textbox15</rd:DefaultName>
+                          <rd:DefaultName>Textbox36</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#2b70b1</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>4pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                        <ColSpan>4</ColSpan>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox40">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Sum(Fields!Amount.Value)</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Format>'$'#,0.00;('$'#,0.00)</Format>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox40</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#2b70b1</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>4pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                            <rd:FormatSymbolCulture>en-AU</rd:FormatSymbolCulture>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <TablixHeader>
+                    <Size>2.0752cm</Size>
+                    <CellContents>
+                      <Textbox Name="Textbox14">
+                        <CanGrow>true</CanGrow>
+                        <KeepTogether>true</KeepTogether>
+                        <Paragraphs>
+                          <Paragraph>
+                            <TextRuns>
+                              <TextRun>
+                                <Value>Visit Date</Value>
+                                <Style>
+                                  <FontWeight>Bold</FontWeight>
+                                  <Color>White</Color>
+                                </Style>
+                              </TextRun>
+                            </TextRuns>
+                            <Style>
+                              <TextAlign>Right</TextAlign>
+                            </Style>
+                          </Paragraph>
+                        </Paragraphs>
+                        <rd:DefaultName>Textbox14</rd:DefaultName>
+                        <Style>
+                          <Border>
+                            <Color>LightGrey</Color>
+                            <Style>Solid</Style>
+                          </Border>
+                          <BackgroundColor>#004b8e</BackgroundColor>
+                          <PaddingLeft>2pt</PaddingLeft>
+                          <PaddingRight>4pt</PaddingRight>
+                          <PaddingTop>2pt</PaddingTop>
+                          <PaddingBottom>2pt</PaddingBottom>
+                        </Style>
+                      </Textbox>
+                    </CellContents>
+                  </TablixHeader>
+                  <TablixMembers>
+                    <TablixMember />
+                  </TablixMembers>
+                  <KeepWithGroup>After</KeepWithGroup>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="Visit_Date">
+                    <GroupExpressions>
+                      <GroupExpression>=Fields!Visit_Date.Value</GroupExpression>
+                    </GroupExpressions>
+                  </Group>
+                  <SortExpressions>
+                    <SortExpression>
+                      <Value>=Fields!Visit_Date.Value</Value>
+                    </SortExpression>
+                  </SortExpressions>
+                  <TablixHeader>
+                    <Size>2.0752cm</Size>
+                    <CellContents>
+                      <Textbox Name="Visit_Date">
+                        <CanGrow>true</CanGrow>
+                        <KeepTogether>true</KeepTogether>
+                        <Paragraphs>
+                          <Paragraph>
+                            <TextRuns>
+                              <TextRun>
+                                <Value>=Fields!Visit_Date.Value</Value>
+                                <Style>
+                                  <FontSize>8pt</FontSize>
+                                  <Format>dd/MM/yyyy</Format>
+                                </Style>
+                              </TextRun>
+                            </TextRuns>
+                            <Style>
+                              <TextAlign>Right</TextAlign>
+                            </Style>
+                          </Paragraph>
+                        </Paragraphs>
+                        <rd:DefaultName>Visit_Date</rd:DefaultName>
+                        <Style>
+                          <Border>
+                            <Color>LightGrey</Color>
+                            <Style>Solid</Style>
+                          </Border>
+                          <BackgroundColor>= Iif ( RunningValue ( Fields!Visit_Date.Value , CountDistinct , "REF_DataSet_BillingItems") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
+                          <PaddingLeft>2pt</PaddingLeft>
+                          <PaddingRight>4pt</PaddingRight>
+                          <PaddingTop>2pt</PaddingTop>
+                          <PaddingBottom>2pt</PaddingBottom>
+                        </Style>
+                      </Textbox>
+                    </CellContents>
+                  </TablixHeader>
+                  <TablixMembers>
+                    <TablixMember>
+                      <Group Name="Details" />
+                    </TablixMember>
+                  </TablixMembers>
+                </TablixMember>
+                <TablixMember>
+                  <TablixHeader>
+                    <Size>2.0752cm</Size>
+                    <CellContents>
+                      <Textbox Name="Textbox16">
+                        <CanGrow>true</CanGrow>
+                        <KeepTogether>true</KeepTogether>
+                        <Paragraphs>
+                          <Paragraph>
+                            <TextRuns>
+                              <TextRun>
+                                <Value />
+                                <Style>
+                                  <FontWeight>Normal</FontWeight>
+                                  <Color>White</Color>
+                                </Style>
+                              </TextRun>
+                            </TextRuns>
+                            <Style>
+                              <TextAlign>Right</TextAlign>
+                            </Style>
+                          </Paragraph>
+                        </Paragraphs>
+                        <rd:DefaultName>Textbox16</rd:DefaultName>
+                        <Style>
+                          <Border>
+                            <Color>LightGrey</Color>
+                            <Style>Solid</Style>
+                          </Border>
+                          <BackgroundColor>#2b70b1</BackgroundColor>
+                          <PaddingLeft>2pt</PaddingLeft>
+                          <PaddingRight>4pt</PaddingRight>
+                          <PaddingTop>2pt</PaddingTop>
+                          <PaddingBottom>2pt</PaddingBottom>
+                        </Style>
+                      </Textbox>
+                    </CellContents>
+                  </TablixHeader>
+                  <TablixMembers>
+                    <TablixMember />
+                  </TablixMembers>
+                  <KeepWithGroup>Before</KeepWithGroup>
+                </TablixMember>
+                <TablixMember>
+                  <TablixHeader>
+                    <Size>2.0752cm</Size>
+                    <CellContents>
+                      <Textbox Name="Textbox35">
+                        <CanGrow>true</CanGrow>
+                        <KeepTogether>true</KeepTogether>
+                        <Paragraphs>
+                          <Paragraph>
+                            <TextRuns>
+                              <TextRun>
+                                <Value />
+                                <Style>
+                                  <FontWeight>Bold</FontWeight>
+                                  <Color>White</Color>
+                                </Style>
+                              </TextRun>
+                            </TextRuns>
+                            <Style>
+                              <TextAlign>Right</TextAlign>
+                            </Style>
+                          </Paragraph>
+                        </Paragraphs>
+                        <rd:DefaultName>Textbox35</rd:DefaultName>
+                        <Style>
+                          <Border>
+                            <Color>LightGrey</Color>
+                            <Style>Solid</Style>
+                          </Border>
+                          <BackgroundColor>#2b70b1</BackgroundColor>
+                          <PaddingLeft>2pt</PaddingLeft>
+                          <PaddingRight>4pt</PaddingRight>
+                          <PaddingTop>2pt</PaddingTop>
+                          <PaddingBottom>2pt</PaddingBottom>
+                        </Style>
+                      </Textbox>
+                    </CellContents>
+                  </TablixHeader>
+                  <KeepWithGroup>Before</KeepWithGroup>
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            <DataSetName>REF_DataSet_BillingItems</DataSetName>
+            <Top>3.25838cm</Top>
+            <Height>2.4cm</Height>
+            <Width>18.69745cm</Width>
+            <Style>
+              <Border>
+                <Style>None</Style>
+              </Border>
+            </Style>
+          </Tablix>
+          <Tablix Name="Tablix4">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn>
+                  <Width>4.81049cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>13.88129cm</Width>
+                </TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.61323cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox75">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Client</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox75</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -608,126 +1378,26 @@ From @NoRoundCodeTable J001</CommandText>
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Textbox17">
+                        <Textbox Name="Textbox103">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Activity Type</Value>
+                                  <Value>AnglicareSA Primary Service Site</Value>
                                   <Style>
                                     <FontWeight>Bold</FontWeight>
                                     <Color>White</Color>
                                   </Style>
                                 </TextRun>
                               </TextRuns>
-                              <Style />
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Textbox17</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox19">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>Activity Code</Value>
-                                  <Style>
-                                    <FontWeight>Bold</FontWeight>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox19</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox21">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>Activity Description</Value>
-                                  <Style>
-                                    <FontWeight>Bold</FontWeight>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox21</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox23">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>Possible Round matches</Value>
-                                  <Style>
-                                    <FontWeight>Bold</FontWeight>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox23</rd:DefaultName>
+                          <rd:DefaultName>Textbox103</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -745,25 +1415,27 @@ From @NoRoundCodeTable J001</CommandText>
                   </TablixCells>
                 </TablixRow>
                 <TablixRow>
-                  <Height>0.6cm</Height>
+                  <Height>0.61323cm</Height>
                   <TablixCells>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Provider_ID">
+                        <Textbox Name="Client_Name">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>=Fields!Provider_ID.Value</Value>
+                                  <Value>=Fields!Client_Name.Value</Value>
                                   <Style />
                                 </TextRun>
                               </TextRuns>
-                              <Style />
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Provider_ID</rd:DefaultName>
+                          <rd:DefaultName>Client_Name</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -779,329 +1451,23 @@ From @NoRoundCodeTable J001</CommandText>
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="ProviderName">
+                        <Textbox Name="Textbox104">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>=Fields!ProviderName.Value</Value>
+                                  <Value>=First(Fields!Organisation_Name.Value, "DataSet_DeliveryCentre")</Value>
                                   <Style />
                                 </TextRun>
                               </TextRuns>
-                              <Style />
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>ProviderName</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="ContractType">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=Fields!ContractType.Value</Value>
-                                  <Style />
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>ContractType</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Provider_Class_Code">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=Fields!Provider_Class_Code.Value</Value>
-                                  <Style />
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Provider_Class_Code</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Activity_Date">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=Fields!Activity_Date.Value</Value>
-                                  <Style>
-                                    <Format>d/MM/yyyy</Format>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Activity_Date</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Activity_Start_Time">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=Fields!Activity_Start_Time.Value</Value>
-                                  <Style>
-                                    <Format>t</Format>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Activity_Start_Time</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Activity_End_Time">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=Fields!Activity_End_Time.Value</Value>
-                                  <Style>
-                                    <Format>t</Format>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Activity_End_Time</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Activity_Duration">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=Fields!Activity_Duration.Value</Value>
-                                  <Style />
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Activity_Duration</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="ActivityType">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=Fields!ActivityType.Value</Value>
-                                  <Style />
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>ActivityType</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="ActivityCode">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=Fields!ActivityCode.Value</Value>
-                                  <Style />
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>ActivityCode</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="ActivityDescription">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=Fields!ActivityDescription.Value</Value>
-                                  <Style />
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>ActivityDescription</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Possible_Round_matches">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=Fields!Possible_Round_matches.Value</Value>
-                                  <Style>
-                                    <Color>DimGray</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Possible_Round_matches</rd:DefaultName>
+                          <rd:DefaultName>Textbox104</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -1123,15 +1489,135 @@ From @NoRoundCodeTable J001</CommandText>
               <TablixMembers>
                 <TablixMember />
                 <TablixMember />
-                <TablixMember />
-                <TablixMember />
-                <TablixMember />
-                <TablixMember />
-                <TablixMember />
-                <TablixMember />
-                <TablixMember />
-                <TablixMember />
-                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="Details1" />
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            <DataSetName>REF_DataSet_SingleClientDetails</DataSetName>
+            <Top>0.01764cm</Top>
+            <Left>0.00283cm</Left>
+            <Height>1.22646cm</Height>
+            <Width>18.69178cm</Width>
+            <ZIndex>1</ZIndex>
+            <Style>
+              <Border>
+                <Style>None</Style>
+              </Border>
+            </Style>
+          </Tablix>
+          <Tablix Name="Tablix6">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn>
+                  <Width>18.69462cm</Width>
+                </TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.56031cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox81">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Account Details</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox81</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>1.11594cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Contact_Location">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>="NDIS No: "+
+IIF
+(
+	(Fields!Client_CardType.Value = "NDIS Number")
+	,IIF(IsNothing(Fields!Client_CardNo.Value),"---",Cstr(Fields!NDISnumber_Filtered.Value))
+	,"---"
+) 
+&amp; Environment.NewLine 
+&amp; Fields!Contact_Type.Value 
+&amp; Environment.NewLine 
+&amp; Fields!Contact_Name.Value</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Address.Value</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Contact_Location</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy>
+              <TablixMembers>
                 <TablixMember />
               </TablixMembers>
             </TablixColumnHierarchy>
@@ -1141,13 +1627,15 @@ From @NoRoundCodeTable J001</CommandText>
                   <KeepWithGroup>After</KeepWithGroup>
                 </TablixMember>
                 <TablixMember>
-                  <Group Name="Details" />
+                  <Group Name="Details2" />
                 </TablixMember>
               </TablixMembers>
             </TablixRowHierarchy>
-            <DataSetName>DataSet1</DataSetName>
-            <Height>1.2cm</Height>
-            <Width>39.24687cm</Width>
+            <DataSetName>REF_DataSet_SingleClientDetails</DataSetName>
+            <Top>1.29349cm</Top>
+            <Height>1.67625cm</Height>
+            <Width>18.69462cm</Width>
+            <ZIndex>2</ZIndex>
             <Style>
               <Border>
                 <Style>None</Style>
@@ -1155,28 +1643,32 @@ From @NoRoundCodeTable J001</CommandText>
             </Style>
           </Tablix>
         </ReportItems>
-        <Height>0.47244in</Height>
+        <Height>2.37771in</Height>
         <Style />
       </Body>
-      <Width>15.45153in</Width>
+      <Width>7.36231in</Width>
       <Page>
         <PageHeader>
-          <Height>1.64994cm</Height>
+          <Height>4.8193cm</Height>
           <PrintOnFirstPage>true</PrintOnFirstPage>
           <PrintOnLastPage>true</PrintOnLastPage>
           <ReportItems>
-            <Textbox Name="Textbox38">
+            <Textbox Name="Textbox45">
               <CanGrow>true</CanGrow>
               <KeepTogether>true</KeepTogether>
               <Paragraphs>
                 <Paragraph>
                   <TextRuns>
                     <TextRun>
-                      <Value>Provider Missing Round Codes</Value>
+                      <Value>Date: </Value>
                       <Style>
-                        <FontSize>16pt</FontSize>
                         <FontWeight>Bold</FontWeight>
-                        <Color>#004b8e</Color>
+                      </Style>
+                    </TextRun>
+                    <TextRun>
+                      <Value>=Cstr(Format(Today(),"dd/MM/yyyy"))</Value>
+                      <Style>
+                        <FontWeight>Bold</FontWeight>
                       </Style>
                     </TextRun>
                   </TextRuns>
@@ -1185,43 +1677,7 @@ From @NoRoundCodeTable J001</CommandText>
                 <Paragraph>
                   <TextRuns>
                     <TextRun>
-                      <Value>For </Value>
-                      <Style>
-                        <FontWeight>Normal</FontWeight>
-                      </Style>
-                    </TextRun>
-                    <TextRun>
-                      <Value>=Join (Parameters!Centre.Value, ", ")</Value>
-                      <Style>
-                        <FontWeight>Bold</FontWeight>
-                      </Style>
-                    </TextRun>
-                    <TextRun>
-                      <Value xml:space="preserve"> </Value>
-                      <Style>
-                        <FontWeight>Bold</FontWeight>
-                      </Style>
-                    </TextRun>
-                    <TextRun>
-                      <Value>Between </Value>
-                      <Style>
-                        <FontWeight>Normal</FontWeight>
-                      </Style>
-                    </TextRun>
-                    <TextRun>
-                      <Value>=Format(Parameters!StartDate.Value, "dd/MM/yyyy")</Value>
-                      <Style>
-                        <FontWeight>Normal</FontWeight>
-                      </Style>
-                    </TextRun>
-                    <TextRun>
-                      <Value> and </Value>
-                      <Style>
-                        <FontWeight>Normal</FontWeight>
-                      </Style>
-                    </TextRun>
-                    <TextRun>
-                      <Value>=Format(Parameters!EndDate.Value, "dd/MM/yyyy")</Value>
+                      <Value>Copy of monthly service statement.</Value>
                       <Style>
                         <FontWeight>Normal</FontWeight>
                       </Style>
@@ -1229,10 +1685,69 @@ From @NoRoundCodeTable J001</CommandText>
                   </TextRuns>
                   <Style />
                 </Paragraph>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>Service delivery period: </Value>
+                      <Style>
+                        <FontWeight>Normal</FontWeight>
+                      </Style>
+                    </TextRun>
+                    <TextRun>
+                      <Value>=Cstr(Format(Parameters!StartDate.Value, "dd/MM/yyyy") + " - " + Format(Parameters!EndDate.Value, "dd/MM/yyyy"))</Value>
+                      <Style>
+                        <FontWeight>Normal</FontWeight>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style />
+                </Paragraph>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value />
+                      <Style>
+                        <FontWeight>Normal</FontWeight>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style />
+                </Paragraph>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>Participant ID :</Value>
+                      <Style>
+                        <FontWeight>Bold</FontWeight>
+                      </Style>
+                    </TextRun>
+                    <TextRun>
+                      <Value xml:space="preserve">  </Value>
+                      <Style>
+                        <FontWeight>Normal</FontWeight>
+                      </Style>
+                    </TextRun>
+                    <TextRun>
+                      <Value>=
+IIF
+(
+	(First(Fields!Client_CardType.Value, "REF_DataSet_SingleClientDetails") = "NDIS Number")
+	,IIF(IsNothing(First(Fields!Client_CardNo.Value, "REF_DataSet_SingleClientDetails")),"---",Cstr(First(Fields!NDISnumber_Filtered.Value, "REF_DataSet_SingleClientDetails")))
+	,"---"
+)</Value>
+                      <Style>
+                        <FontWeight>Bold</FontWeight>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style />
+                </Paragraph>
               </Paragraphs>
-              <rd:DefaultName>Textbox38</rd:DefaultName>
-              <Height>1.64994cm</Height>
-              <Width>14.0875cm</Width>
+              <rd:DefaultName>Textbox45</rd:DefaultName>
+              <Top>2.37299cm</Top>
+              <Left>0.47679cm</Left>
+              <Height>2.44631cm</Height>
+              <Width>9.96263cm</Width>
               <Style>
                 <Border>
                   <Style>None</Style>
@@ -1243,14 +1758,240 @@ From @NoRoundCodeTable J001</CommandText>
                 <PaddingBottom>2pt</PaddingBottom>
               </Style>
             </Textbox>
-            <Image Name="Logo">
-              <Source>Embedded</Source>
-              <Value>Logo_AnglicareSA</Value>
-              <Sizing>FitProportional</Sizing>
-              <Left>34.94771cm</Left>
-              <Height>1.64994cm</Height>
-              <Width>4.29917cm</Width>
+            <Textbox Name="Textbox43">
+              <CanGrow>true</CanGrow>
+              <KeepTogether>true</KeepTogether>
+              <Paragraphs>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>=Parameters!SubTitle.Value</Value>
+                      <Style>
+                        <FontSize>12pt</FontSize>
+                        <FontWeight>Bold</FontWeight>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style />
+                </Paragraph>
+              </Paragraphs>
+              <rd:DefaultName>Textbox43</rd:DefaultName>
+              <Top>1.58072cm</Top>
+              <Left>0.47679cm</Left>
+              <Height>0.71113cm</Height>
+              <Width>9.96263cm</Width>
               <ZIndex>1</ZIndex>
+              <Style>
+                <Border>
+                  <Style>None</Style>
+                </Border>
+                <PaddingLeft>2pt</PaddingLeft>
+                <PaddingRight>2pt</PaddingRight>
+                <PaddingTop>2pt</PaddingTop>
+                <PaddingBottom>2pt</PaddingBottom>
+              </Style>
+            </Textbox>
+            <Textbox Name="Textbox8">
+              <CanGrow>true</CanGrow>
+              <KeepTogether>true</KeepTogether>
+              <Paragraphs>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>Monthly Service Statement</Value>
+                      <Style>
+                        <FontSize>20pt</FontSize>
+                        <FontWeight>Bold</FontWeight>
+                        <Color>#004b8e</Color>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style />
+                </Paragraph>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>Anglicare SA</Value>
+                      <Style>
+                        <FontSize>9pt</FontSize>
+                        <FontWeight>Bold</FontWeight>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style />
+                </Paragraph>
+              </Paragraphs>
+              <rd:DefaultName>Textbox8</rd:DefaultName>
+              <Left>0.47679cm</Left>
+              <Height>1.49958cm</Height>
+              <Width>9.96263cm</Width>
+              <ZIndex>2</ZIndex>
+              <Style>
+                <Border>
+                  <Style>None</Style>
+                </Border>
+                <PaddingLeft>2pt</PaddingLeft>
+                <PaddingRight>2pt</PaddingRight>
+                <PaddingTop>2pt</PaddingTop>
+                <PaddingBottom>2pt</PaddingBottom>
+              </Style>
+            </Textbox>
+            <Textbox Name="Textbox41">
+              <CanGrow>true</CanGrow>
+              <KeepTogether>true</KeepTogether>
+              <Paragraphs>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>Anglicare SA Ltd.</Value>
+                      <Style>
+                        <FontSize>7pt</FontSize>
+                        <Color>Gray</Color>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style>
+                    <TextAlign>Right</TextAlign>
+                  </Style>
+                </Paragraph>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>ABN 69 187 578 153</Value>
+                      <Style>
+                        <FontSize>7pt</FontSize>
+                        <Color>Gray</Color>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style>
+                    <TextAlign>Right</TextAlign>
+                  </Style>
+                </Paragraph>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>ACN 169 715 762</Value>
+                      <Style>
+                        <FontSize>7pt</FontSize>
+                        <Color>Gray</Color>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style>
+                    <TextAlign>Right</TextAlign>
+                  </Style>
+                </Paragraph>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>1/560 Notth East Road</Value>
+                      <Style>
+                        <FontSize>7pt</FontSize>
+                        <Color>Gray</Color>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style>
+                    <TextAlign>Right</TextAlign>
+                  </Style>
+                </Paragraph>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>Holden Hill SA 5088</Value>
+                      <Style>
+                        <FontSize>7pt</FontSize>
+                        <Color>Gray</Color>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style>
+                    <TextAlign>Right</TextAlign>
+                  </Style>
+                </Paragraph>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>P: 08 8118 2600</Value>
+                      <Style>
+                        <FontSize>7pt</FontSize>
+                        <Color>Gray</Color>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style>
+                    <TextAlign>Right</TextAlign>
+                  </Style>
+                </Paragraph>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>F: 08 8118 2651</Value>
+                      <Style>
+                        <FontSize>7pt</FontSize>
+                        <Color>Gray</Color>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style>
+                    <TextAlign>Right</TextAlign>
+                  </Style>
+                </Paragraph>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>admin@anglicaresa.com.au</Value>
+                      <Style>
+                        <FontSize>7pt</FontSize>
+                        <Color>Gray</Color>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style>
+                    <TextAlign>Right</TextAlign>
+                  </Style>
+                </Paragraph>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>www.anglicaresa.com.au</Value>
+                      <Style>
+                        <FontSize>7pt</FontSize>
+                        <Color>Gray</Color>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style>
+                    <TextAlign>Right</TextAlign>
+                  </Style>
+                </Paragraph>
+              </Paragraphs>
+              <rd:DefaultName>Textbox41</rd:DefaultName>
+              <Top>0.94572cm</Top>
+              <Left>14.58096cm</Left>
+              <Height>3.16626cm</Height>
+              <Width>4.11365cm</Width>
+              <ZIndex>3</ZIndex>
+              <Style>
+                <Border>
+                  <Style>None</Style>
+                </Border>
+                <PaddingLeft>2pt</PaddingLeft>
+                <PaddingRight>2pt</PaddingRight>
+                <PaddingTop>2pt</PaddingTop>
+                <PaddingBottom>2pt</PaddingBottom>
+              </Style>
+            </Textbox>
+            <Image Name="Image1">
+              <Source>Embedded</Source>
+              <Value>Logo_AnglicareSA_Cropped</Value>
+              <Sizing>FitProportional</Sizing>
+              <Top>0.17674cm</Top>
+              <Left>11.06031cm</Left>
+              <Height>0.71959cm</Height>
+              <Width>7.62914cm</Width>
+              <ZIndex>4</ZIndex>
               <Style>
                 <Border>
                   <Style>None</Style>
@@ -1264,12 +2005,85 @@ From @NoRoundCodeTable J001</CommandText>
             </Border>
           </Style>
         </PageHeader>
+        <PageFooter>
+          <Height>0.91542cm</Height>
+          <PrintOnFirstPage>true</PrintOnFirstPage>
+          <PrintOnLastPage>true</PrintOnLastPage>
+          <ReportItems>
+            <Textbox Name="Textbox1">
+              <CanGrow>true</CanGrow>
+              <KeepTogether>true</KeepTogether>
+              <Paragraphs>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>="Statement created on: " + Format(Today(), "dd/MM/yyyy")</Value>
+                      <Style />
+                    </TextRun>
+                  </TextRuns>
+                  <Style />
+                </Paragraph>
+              </Paragraphs>
+              <rd:DefaultName>Textbox1</rd:DefaultName>
+              <Top>0.31542cm</Top>
+              <Left>0.00283cm</Left>
+              <Height>0.6cm</Height>
+              <Width>10.43942cm</Width>
+              <Style>
+                <Border>
+                  <Style>None</Style>
+                </Border>
+                <PaddingLeft>2pt</PaddingLeft>
+                <PaddingRight>2pt</PaddingRight>
+                <PaddingTop>2pt</PaddingTop>
+                <PaddingBottom>2pt</PaddingBottom>
+              </Style>
+            </Textbox>
+            <Textbox Name="Textbox157">
+              <CanGrow>true</CanGrow>
+              <KeepTogether>true</KeepTogether>
+              <Paragraphs>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>="Page "+ Cstr(Globals!PageNumber)+" of "+ cstr(Globals!TotalPages)</Value>
+                      <Style />
+                    </TextRun>
+                  </TextRuns>
+                  <Style>
+                    <TextAlign>Right</TextAlign>
+                  </Style>
+                </Paragraph>
+              </Paragraphs>
+              <rd:DefaultName>Textbox157</rd:DefaultName>
+              <Top>0.31542cm</Top>
+              <Left>13.7132cm</Left>
+              <Height>0.6cm</Height>
+              <Width>4.98708cm</Width>
+              <ZIndex>1</ZIndex>
+              <Style>
+                <Border>
+                  <Style>None</Style>
+                </Border>
+                <PaddingLeft>2pt</PaddingLeft>
+                <PaddingRight>2pt</PaddingRight>
+                <PaddingTop>2pt</PaddingTop>
+                <PaddingBottom>2pt</PaddingBottom>
+              </Style>
+            </Textbox>
+          </ReportItems>
+          <Style>
+            <Border>
+              <Style>None</Style>
+            </Border>
+          </Style>
+        </PageFooter>
         <PageHeight>29.7cm</PageHeight>
         <PageWidth>21cm</PageWidth>
-        <LeftMargin>2cm</LeftMargin>
-        <RightMargin>2cm</RightMargin>
-        <TopMargin>2cm</TopMargin>
-        <BottomMargin>2cm</BottomMargin>
+        <LeftMargin>1cm</LeftMargin>
+        <RightMargin>1cm</RightMargin>
+        <TopMargin>1cm</TopMargin>
+        <BottomMargin>1cm</BottomMargin>
         <ColumnSpacing>0.13cm</ColumnSpacing>
         <Style />
       </Page>
@@ -1280,7 +2094,7 @@ From @NoRoundCodeTable J001</CommandText>
       <DataType>DateTime</DataType>
       <DefaultValue>
         <Values>
-          <Value>=Today()</Value>
+          <Value>=DateADD("d",-28,today())</Value>
         </Values>
       </DefaultValue>
       <Prompt>Start Date</Prompt>
@@ -1289,22 +2103,40 @@ From @NoRoundCodeTable J001</CommandText>
       <DataType>DateTime</DataType>
       <DefaultValue>
         <Values>
-          <Value>=Today()</Value>
+          <Value>=today()</Value>
         </Values>
       </DefaultValue>
       <Prompt>End Date</Prompt>
     </ReportParameter>
-    <ReportParameter Name="Centre">
+    <ReportParameter Name="Client_ID_">
+      <DataType>Integer</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>10070013</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Client ID </Prompt>
+    </ReportParameter>
+    <ReportParameter Name="SubTitle">
       <DataType>String</DataType>
-      <Prompt>Centre</Prompt>
+      <DefaultValue>
+        <Values>
+          <Value>Childrens Disability Services</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Sub Title</Prompt>
       <ValidValues>
-        <DataSetReference>
-          <DataSetName>DataSet2</DataSetName>
-          <ValueField>Organisation_Name</ValueField>
-          <LabelField>Organisation_Name</LabelField>
-        </DataSetReference>
+        <ParameterValues>
+          <ParameterValue>
+            <Value>Outreach Autism Therapy Service (OATS)</Value>
+            <Label>OATS</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>Childrens Disability Services</Value>
+            <Label>Childrens Disability Services</Label>
+          </ParameterValue>
+        </ParameterValues>
       </ValidValues>
-      <MultiValue>true</MultiValue>
     </ReportParameter>
   </ReportParameters>
   <ReportParametersLayout>
@@ -1312,6 +2144,11 @@ From @NoRoundCodeTable J001</CommandText>
       <NumberOfColumns>4</NumberOfColumns>
       <NumberOfRows>2</NumberOfRows>
       <CellDefinitions>
+        <CellDefinition>
+          <ColumnIndex>2</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>Client_ID_</ParameterName>
+        </CellDefinition>
         <CellDefinition>
           <ColumnIndex>0</ColumnIndex>
           <RowIndex>0</RowIndex>
@@ -1323,13 +2160,44 @@ From @NoRoundCodeTable J001</CommandText>
           <ParameterName>EndDate</ParameterName>
         </CellDefinition>
         <CellDefinition>
-          <ColumnIndex>2</ColumnIndex>
+          <ColumnIndex>3</ColumnIndex>
           <RowIndex>0</RowIndex>
-          <ParameterName>Centre</ParameterName>
+          <ParameterName>SubTitle</ParameterName>
         </CellDefinition>
       </CellDefinitions>
     </GridLayoutDefinition>
   </ReportParametersLayout>
+  <Code>Public Function IsStringInt(ByVal s As String) As Boolean  
+'Dim strBuilder As New System.Text.StringBuilder(s)  
+Select Case s
+	Case "0"
+		Return True
+	Case "1"
+		Return True
+	Case "2"
+		Return True
+	Case "3"
+		Return True
+	Case "4"
+		Return True
+	Case "5"
+		Return True
+	Case "6"
+		Return True
+	Case "7"
+		Return True
+	Case "8"
+		Return True
+	Case "9"
+		Return True
+	Case Else
+		Return False
+End Select
+End Function  
+
+
+
+</Code>
   <EmbeddedImages>
     <EmbeddedImage Name="Logo_AnglicareSA">
       <MIMEType>image/png</MIMEType>
@@ -1841,8 +2709,55 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA///gyWADqVGJ0AAAAABJRU5ErkJggg==</ImageData>
     </EmbeddedImage>
+    <EmbeddedImage Name="Logo_AnglicareSA_Cropped">
+      <MIMEType>image/png</MIMEType>
+      <ImageData>iVBORw0KGgoAAAANSUhEUgAAAw4AAABLCAYAAADZP9APAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4AkaADc7ySgtuAAAIABJREFUeNrsnXmYJFWV9n8RkRkRGbnU0vveTdPQTTdL00ADDQ2yu6COqCgoyIBb6+iojI7KuC84OKjzKYgLOi7jjOMOjgsygAJutIrsa7PJ0lutmRkRmRHx/XFvVhVFVWVk5o2s7Oo+z5NPVWVlRmbcuHHvec8573u0KIrYZ/tsn+2zfdbZ9ojW24lfS5MPXT60MY+xrwmBSD7CcX/vs322zxK25dHufYOwz5RYqqEd4ohLOum7zwayQGWC/0XjNq7xf8c1AxgC+qfpHE1gHhA08d7aOUdjNu+x/0vJsdsuN/GknQsdmAuk5efq8rz0Sb4j456PJnBGIuCpPcT5sABHPiygC1gIzAd65CMvx6cg515tDAw5Zv1AFSgCg/LvPjkGTwEuUALK8vewDee1aIxj2Mz8ZMw80OVx0nJeuh14HXuA3Jg5HPccp/pfasz1nNS2Td85Z+XczAL7AQcAi+W1nyvnckGOS1o+zHHj48m5W5FzdAgYkNf5ceAx4B55mkU5r/0OvZcNYKU8n3DcWhuNOe9ozP/GzwN9gnV97Jww5Px/sgPPX5drWFrOXVt+X1Oub13yuR75+jTQK88tGHN+yDHsl9d6UM6J3fLcffnT7cC5kJM+iD9un21kX1bho0z2Gc/ZT2MEHiJ53QZWbNiSJMrIjFtP9pPzZq6cM7PGjdMuuSY8LdeNYeChMXvEoFxT9lmCFt32seaAQwfZXOAGuXGVxjmfTOBsjndAmeTvsc8HQDdwHfDKaVq4/gH4iLxpxkbnJjofbdz/xj83fjxsOXavBn6d9JwDTga+JeecN8F4TwUUxv8eysVnB3BwB24qeWCp3Fj2Bw6Sj0XyuRxgY5lpdA10HXQNNHmKujbx
+pQvl8ETy9yiCMBS/+5UaaOgDngEeBe4D7pKO2ZPyp0rbCFwrv2QwyXWrBygZAzrSY5yKU4GtHegsXCPnXGmcUzjZPTnZGhSNAdQ54NPABzvkPBcDy4B1wLHAajmfe3XTMbWUCUYKTU+BbqDpBmi6fIDGmLk8sgJEuag2d6MQopAoCiEMiIIqBBWiqk/olzzpEDwA/Fmu89uAe9sEhOMEQT6ipcz3RVW/POY7ReMc62iC58JJnMaJHEcbeAJYK9f/6dpn50kgsABYDqyQAY9euc7VHg6Q1lKWha6LOaAbo4Mmf59wswoDub6JORFVXE86hEPATukwPgDcIde0p+TYlKcROH4MeL38jlqd+RJNsS7UC/RFMfbKeq+rB2zGBnAKwBXAPykcL0cGG9YCRwGHybk0GzPtkJLzxNDFuqGPi8eE4eheFyH2uyCASrUWfHgCuF/uF38BHpGBiE43E7hA+jKTXZ9gzLphyD3SBb4r/Z9psT0VOHyeXOYgshmIoq5E94jtuzdLZNxu5zQLnM2sLgdDdxI5N9/vpn/4ncCtMvKT5GZ7JoXsHGwLJQmCMIKd/Ts6BDSYwAa5MB4hf18GzCZjaaRSkDLEwlgDCJqm9htEkU2ETRT2EkYrCYJjqQZQDcD1SxJM3AP8Tj5ukyCjFTuLvDObjKVwmgDbd5fl9+00OwIzvYmePERRQdlRh8tQcqezjkAHjgQ2AScBh2lmZpGWMtHTGUaAgmY0P2+153pX2sTz2IrCYEkU+EuiindS5JfeFXrF3cDtwI+B/2F6o/CbgH9K9y4BTc9MHneKYjw31XjpVHY+uiyqevtJh7ldlpbOzCslgJyvmZkuTU+hGSk0Iz1mLujCydN0NE3iZxXrWhRZEFlRGHYRBoujsEoUVM6Iqh5R1Sfyyzukc3gT8FvgljavF1ngpek5Kxy0qffmPQk1REQEQ7sIywP3KBqn9cDpwAuBg8lYXaRre6Hx7GBZc/MkTxjlCcPFVIOj
+qVTPoxqAX3lM7m+/BH4D3N2hfuwWHPszDS0NmiZAVMk9EHjbPuAQ356PlX4FOWd0IJMywf+opV/72nyeIo1Xu8GSMNsChl8AHIiITCdlOeBY0qlx0fQWrFwG+P40zsPZwPOBE2UUZRkZK086BemUBAl6+76NVvPMDBmXSI2dxw5htIJqdQWV6gsYLnuIjMR10hm7heZSvRvFNVV4nn4F4ObpjKZMYRtIp9QCvzCCkrsLuH4azud44KXAKcAqI9uT0UwHLWWhGdO0NWiadFBTYDqQ7YEw6A2r3vMit/i8oNT3fuDLwIeYuEw1ScsAX051L0iPRtMnngdRUCUs9aPbBbS0NeVrJx2KVJqo6h3QZuCwCPj3VO9iqwYW0PS2zwHQ0AxdgBTGBSbCYE4UVOaEfvnIqFImdIefAm4E/hORAU3a5mpGeplmpBsJhzynzrbea6aaMY2+Ls7M06KQsDwwBPyixfF5EaJa4miymQKWCWlDva+maWBoYq9NpxgJYAXhUirVpfiVl8mAzG+Af0UESDvFdODNODYjGZfYe0YIJfdVwL/JfXwfcKhjeeAqHLt9C5iZzuJXVgN/a/O5HoKZnpUYaKhZIZtmsLgFeEuCn9IFrGz4BpnKvArAr6bBcXgl8HLgSDLWPMz0KFDQtM68a0YWWBMsE7IZiyA8AL9yAIPFvwdeIDfeRswBDiKleAkR1/VGnlvO1gm28VmATIUFAYgSsnvbdA4F4K3A2cDBRn6OplsOmmF27vzVDXTTAdNBM+051f6nDmd6eE3vMbI9q3U7XyfgFFLZsa0MfDAo9p2TnrXssFHw0AhwsIDhtW0OkByoW1lLNx061mR5nJEWNIoorC6I/PKrw/Lgq0OveDfw/4AvJvgNTtOsLDPNoqoPohSsWU7nScBlWObhOBaY6elZUwxd7HW2CTmnl2L5JRTLv+kw4PBKbOuApnwiXYdsZg7F8tkSEE0L6tmT7FNkM0uwzDZCKwNg1TSc60lY
+6eQ/RaD01yD4HEnZQVjpLqVRWr/SR3sicSai/OhqYBsZ6+v05F/E3J55dOXE+KWMznW6JgMSKaOWlXgc+H0TR9mEmZ6tHNhWqsgIUadZL3CwUvALopRM1PJXE/7+a4CvAI8a2d6Pp2cvO8Scf4BmZHuEg7qHzN+g1A/w8TaM13hbCXxAz/bG+I4DAF9AlFSVm8U4WsoEwS9pp52hdTJomGic9BS6nSfVs4j07GUH6U7XlYia93NIJji6WTczMw44hBUX4PcrNmxplFNTAL6Fmb6e7vzh9ORFgKoT1pQogmL58YSBZDN2EU4LJb7Cb7tAjv0+4DCFHQNcRL7Ni5pwFNZOw3U5nnQbgIOmQTZTINl6uZMxFZ5LtYoEDcMJfudu4CXAr0in/khX7oIRsGCZ7S1DSspKLsBlNEcyPEU5sA1D8CtPo57ErcpxXIah+LoLoPT7BL/3EcC3tZR5t1GYe6E5d/9uIz9bRrP3MMfGLxH55euAP7TbNwWuNvJzNE2vAxyjkGBoxyCi/OsoYFsUNFdRpekpEKT0tu12wKY92SnWUhapwjzSvUtW6Xb+28DP5b2r0tbvifdPXR/bL0HjWfzTgXvIZs6ltyCi/K06+uEY0Y8oai23WHaRAZNiBw31cS37dykDrPRqhHhF221PKVWygc/RlUu3/ZMNA4QiQDstD6xRHt2czBwbiuU3AJeinmysA8cqBUHC2fotyahq5ICXARdjmQfj2LQl89NuCwIoe4/LRbU5h1R12Y6Ivj+AUFHpNFtHxsoojaIJklsRwelQbesRJUmvS3XN0/VM1x4/ZUMRyf8q7RdEuAA43sj21L+kotzjAQl+Pwh8KAqbTI6IGvqljEpYt2XfkZmOPdo0M0PKzBAU7ZODoR23ARehpuRrJbCflpphe0IUErrDQ8DDDbzrbVjpz4k9ssE5E0UQhGLNr1RHlZNcv4woU60wKuucwrZMoSukC6dZ1+sTrKMIhstFhEpUJ9m5FLJm
+y1RPxwav8g4ECbytinN7CnDYQtY+Up16SyOLtw5CXaKddkRb+A1jz9GxF1FyLwCuUnz0ArBOKQjyqyTkbL0OeCcZSwCG9J4qOhbDSh7A55p8dxewSoJq1YDwZjqvf4MBbFaaNQOxcQopQZX8hi7gn4G3pArz8rrTNSOma1T1Cd2hu2mduNmoLQUuS89aGmsxDt0hELLTX5DOj9asGITMbsxC6Nzf1459RzedXNvJ0EneuNketLTVHZb6vxe6w+8EPtPiIc8wnO6UupYLnXJ/VWqA96GYb7kEx/5ow+TeagCuB8PlMkIZ606EhOqTCG7FEEJudxghEDMXyOB6vRJELEJUgCyUIG4Ojm1hpsEcJ9RR9gC+g5D07RRbDpwthGmmWkgiKfQ9xTyzTEinTqNSPRRR7roPOIyxRcAH20aIHm9iIs5DEGPbpRv9POVOSl30akHJfXsCwOFIzHS3MhAURuD5fYqdraOBT5GxNs94wAAiulMs72jhWh8PLE6obOcPHThiBeAo9RmWKnLBDxQd8Uzg80a2d6mR62UmOYBhebDmkLe7GednjfzsXi0dY/+JQoJi3yDwI0YzBHdF1SZ5/pqGbmWd0CuubBNwOHUmkn510xHqUHrq8rDU79FaBPo4bSbyG0SZ0k0x+Q0XkLE+Si4Tv2TXq4iyIde/A9GD4P8Q8uD11Conk4ZNS79sGSX3cEru8cAmLHMhGUuUTIng2Oc7bKjPJZfpmdIfqlRh10A/kGFerzUleMhYUKm+B3hVW++pTg8YAP9Ozikoj27GHiENRL17OwnSx2O22XlNpcA21wBnKT7y6UpLfYQKzT2oU7n6N+BGunKb6crNfNAwGon5Gs1zRI4k56gNuYUhuP4OBKmx02wesEI5UBKZMxXNFzPA1bqV/UmqZ9FSIz97RoEGwoCguHsncGWbP/lM3cr+nRGDED3G+bqRZ0skLpBcheawgyhXWtmm892kmzYz0TTDxHC60E3nC4jmks3a
+oTOS3yCJ0TFeehDwVRw7Pmh4eldE3+A2XP/vgOchmufdSmsS9xVEtvYWhIrW2cDReP6L6B/6ITv7oVq9gc7q4dADXEimzj0muIfvAu6TWempgYMIGM3eBxxG7YVY5svITTPCty1D3jDtsAywTrnMZaxPtgHeIAGbKtug1Bn3R8ikrWZ/DgP+jGO/k3m91rSUwU3LDhHBUGkYUUrRrB1OWjGQFwvkQ7QnstqorcdOhN/g0bqk8BrgL0a254JUzyL0GRgxlipF36C92YYe4NO6E19sLvLLIDpd1/punQV8sJFjPMcEcFjehvMtAGtnolM8Ah5SFvJafF3us43agcB+cfs37Dl7QkjoDg0Af63zyjTwbQpZLdaeHgTw9K4Q+BJwCCITtyups0Dwin4KvJxqcBBwHu3v9TKVnYxtTh2AiiIoeyVEo8vbZBZ+ikmtQS7jIMpT9wEHBEn1y9NWojTWUnpt0WiHnYCV7m0bv2GsiSzHCQg1ECWQC1itlN8gbqQ/tniUvwduppA9jEJ2z5JSbdVcH+B7NK9ctCARYCsA4e9QV7aj0k5NREFKZM0eaOEorwNuNwpzDzDyc2Ys0A2Gd7qIzGA77Z1GtveAuEAsqnoExb7bGRUbsIH3pnoX11dimsovMNqmrHSSbue6ZlSmaiKHx85hZHsWAp9qaoycbmum7ReS3/Aw9ct/zyVjHRbbJ9vRHwHvAd5EsgqIz1ldEVUJT3TYUP9T3bETAiF/QXA9/hcvhg6EOOY5iN5Kez1w+CzZzNyOULQRZVJtSxe3RYZ1MvRayFrA+YqOuBkrPV+ZdGkUgesN0Bq/4TIy1leZ1ZXtCFDabhsYjhDZhmZF7tYAC5XL0Yp6/z914IiJPh6qS9gqAcBtLRzhUj1T+Fp61tK04XTP2OkalPtrQPfJNn7sWi1lXhJHRWlkaRKlHn8c4yC5wH9HXmsqkFLhaBVqs8ATrtVaOsPeYLL07FxECWIjdrienrllSis2bInq
+rIPxuaaDRRAd3j/NPgNYTzp1VF3uqigj/m/511Zcfydhna1a18GxFyCUw/Zq4HA8ZvrCtvdsmBo4rGjTpx3bdn7DWBNs/7MVAaXNSkGQQOMPMzlhaiqzgO/j2BdTyO4dXIbxJqIXP6V+SnoqO4SsbSoVFRHp2YEOBQ7zgJXK+Q3iWlzX5Jr9Nd3pfk+qMJdYpN22eiHRxI9mgcPgjghRE91Ou1p3uiFupiAKqQ48Mwx8c+yzwF+DYp/Xyvkj+BHzEeoySdpRehJzKYqIwipRUCGq+mMeHlHgE4XVluZHc2NqYDg9vTRGKDWAozvuflNgYaUMIts7lZ2KZS6PtW9WAyi5TwH/sA8vjNhH6pZDi/LVMqL3CIiM9PX4MaqtBKC7EFFOlrh1ovdkA59pqauecuAwIsmatJ72XNrZv2HCRVWDXKab4fI5wEdbPNpGpSBotEypUbnODHAdWXsT+Q6qAa85VbWGN9G4hjdRNFpGVdOr1nX5U2u8xEpEM66meR18gyQyYgIQdiq/4Thsy1FenlD2AuD6Bt9lAt8wnO6zjcLcaZ23UVAZdQYDH4KqcBArniudZl3+jABDS9umpumgG2hGSpB+DVP+npqQzB16pdr93s558Wbd6T6qkSxOWB4CQeofS3TvAb6Q6lnYUmmLJsYlj+A5PJXQOc8hAX5D6Jeo7n6iBAzINac4BvxW5F6fBwq66TiaaaNbWdqR+dDsLJT6XoTIvsZptHEQsHzm8RsiwvJgCUHqn8rOjt3cTZB7P0n7+610qi0HTqkLHEb7Uz1Wewa4Fs+vP/YpA2zzEFz/JYgM7V4HHN4AHF5X57adpo0oKy0lvs5xU1EfLHPBtHclztgwXH49QrauWTJTD7BGqRqWcDAbjUrbwP+RtY+eVtBQAwiVqijLqQTg+S5CWWInsBtR5jCAaIADMIjg+lgIff4C0CvnYgEokLE0UoZQxUrpo8BiokXJ9W8Drm3hLGYB65UTo0eva7UD1yP1
+HbKFMtijNKAMtm3rFRrwJcPpOdsotJ/PEIVVIr9M6A4TukMlubk9IB3mB+T5PCPncyCDLCPAIaq43ZGYtz0yCHMAtW7csEi3sjnNzAjpzJQFmkYoypQ+2cbTnAt8ymik90UUUR18xkNE+8ZaH7BT01OtZW41Dd3OO6E7lGQvoeN1O9etdN+JIqq7n3CB1yCi2VXpCNWI4zUAYQHZ0C8twy8dEwzvfj5wtFGYqydZgidLwA4ClgDbYrxlg54pKO9xEXpFwlI/URiIdbsWLBo7Sspv5tFja+KXv67YsOXROu86NFa2YTRqfi37rGbvIu/YdQMIgn/4A54dGL2Rsvc0ead+yXfGBte/aG8EDquBDzO7u7PYR4KonAX2Txg4qFeracYMHWxrCa53GqKBSjN2BDBPWYmHWJCGJCKPaxYi0zA9oCGKBEDwfRgue4g67dsR5KfbpNP1+BiHOWBy7oHOaGmhLh2wVZS9ZQiFqLWIWujFOLaNmYJ0mpHxF9mGb9JaxmwRsFg5sBWp2Fs6dNE/XHkGsDIClBohgn9ad7rPbytoiEJCr0ToDhK6w08hFIOuBX6DiH5HtN6xNAXMCb3iIXjFkwIh13ioUZhrhu7wo9SPhKq0zxm5WflGIu9BqQ/gP+U9/ex5A0oyVZJcvSDJgJXqEpwoqCDB5a8QRM969iAiA/cJYE0wuP0TUdV/seF0k0Qna00zasGtWTGBg3oZ1jCg2ve3HQiRg2dkkCtAZHYngg7aGNe/9nc07v/RuOe1CSBDKH9qkQD49bpFzwbmxhJsEep4j9H+fiudanngrLrZhjCCktsP3DTuP08AN+JXXlU3mC6qOzYDR9K6gMweBRwupZDtntZSncnMsdOU3KQJ0kd0TO29Y4Hr/XMLwGEjuYy6kxldkBqpz/8vsvZxbQcN1UDUsAvZ09sR3W6vmcC5aGibGeekPSMfNwPfHvP8GkrucZQ4ETgW21xOxqrVnH6l5fnp2JZyWVIhP3d9
+5930zAX2V74eCaD0y7jAYdvWK96oO13vTLVLOSkMCdwBgsEdw/J7fhv4CclkhKoShDzFaFfog4LB7e9FcEDa5YC8EDjbyM1qbFka2hkAH5kA5F8DFCo7H30qPXe/lno5IBznJPce9cBhlCw+1OjsA+4CXhKW+t8OfDaVRFmepqGbTib0S7mYftImXXHjt3C0d8L/tmOCr9iwpdm3zgeysdZ9wVcpsq9MqWZvIJupX0VSGQme3TnBf3+A69cHDkLcJsNg8bXAVgVBnT0COLwM23yJMqWbUIJqVbKmInK7X4LnvwA4bFr6N0yIXtNgpg/Br5xIc1G/9UrPpTLSZTeufQLHfmlbQUOlKuo7y979iHTh92k/4fce+fgykMP1X4jrn4cgXJVaOK4OnKicuC8A4cM0Lw+brDOZsXLK+Q0lN6Q+GbEGGo7S0vYXDae7LbLBYamf6uD2fuA/5By6axrG/W7gtW38vALwmVTPooYGOCj1A3wReGS8+yQd5vlARWux5kQzTBDZ+PERZhU2HzhIdTS9OvB0hOgO3Ip9Liz1HximzDfryZUtxbk4BwCr5HVQDa5uo/Mt/gQW/lYBwSsssndbDjg3FjdktExpIvsprv8AQbCqbum3bcFg8TWIEs+kOFEdo6qUBb6gDDT4Fdjet4Ptu3fXlbKKDRyMpIHDIcBi5eotrZi4Hh9u4p2zgUOVll1VRhq/xbEXY5nvJdcmVa5qIOTndg38ibJ3HqIPxvuZfpWgYYS02wsR3TVbXQQ3KAe24rp26ua5ua58XsNAKQBRGvFMDNAwB/iuKNdIlvMV+iWq/U9SHdx+NXA88I/TBBqmw95jZHtXNdo8T5YQ1cpdxgOHvwe2pees6EFvbR2UvRwWITgiqm29bmXnabrCtVpEncuK7uurqoPbywkqL8Vxig9UzgFhpGHgLXvA/eETN3ot5tFSBCdvb7fTsc31datIwhDK3pPADyd5RQm4FjdGlbGuQdbuQShjJmad
+4qV+mmxmvrJNevdgALwN2C4bLSkADnrthkjKVuPYncXtsE1IpzYDGxt850HAIqX9G0puiVGZsqlsHvAfODZtaaI3XIad/c9Qct8KnITgEQzMwEVwLrBMObAVZTs3deg5H5ogvyGO6MBlRm7WMj1TSPQkg+FdVHc/sT10h89CkHzv3Is290O0lPW+Rno2AITeMNX+px5GZMsmUnm7FSgTKdh/hDM2Rz5U2+Ga4t4EY/gN9yo43NPAsJJxHIftQr9UkQCnnimXYY3CKqFfehpRatrp9jDQFysIqwFZ2wRevJeDhhRwQV1uA9SyDT9DCCpMZlcyVPRj5RszNsDbSVCatROAw0bgDcp6NghH5FbgvwBDmTKBcILnIKLpSUQ9NimPbqowkXX4xwbftQbHtpWVVozyG+IQ0/+TnNOdeOPAQGYZhks/BtYjZP1mImCo2WYylp0Av8Gj9ZKGJGx/YL+E+A03UoffsG3rFWfoVvb8RmvuG57Gg9sJhnfdjCDX/2Av29x14CqjkZ4NNeBQGgDYAnyIiUsyPqg73etUZIo0sfdMlNlQcl9rabWZ2ajqgeBzqahzzwGm8jI9EVAcrOOsgejGu0lXLBEbVUbGyN0D7pMK8IjMlsb1Gd6OECfZW20tcEpdny4CBos+8Lk6x3sAuDFWJ2khzbocOHOmAgcTuIqunLrvIdRjvlzDcsoqQkX0uiYlqNrm0imKSuPNMgFOR2gRxwVBxyoleQu5zjupX997IRnrJHIJ64B7Puzojyi5FwMvJcFawg6y0+RcUOi1hkgw+GQHnu8mMlZXAvyGKnUaGG7bekUO+JzuJJvtrw5uJyj1/xdwIkISeG+ztxtO99GNjnNUcQm94m2IaHEwibP5NnWgT0O3sukEgMNSYI1q1SIJHFRlrdboVrZLtQxqFFZBKNbUW3vmAquVj5HgN/xuD7pXfifLSuubYUDWXoaQc99b7UIK2fpCIgII3ALcEeOYl8oeGXHB23tmKnD4
+Zxz70FjpnDjm+lD2tjLawXOnslIlMQFyCN1x1bYAWILegcBB1yDv9BC/C2Q3qtWhKrHkOmcBH1XGk5kKmPYNDQLPB/5tL1oI16sv26kC/IHO7N9wuHKFMwGUnkZEj6bcdAyn5wDdyiV2ctXB7YSl/quBc2hMFnam2CrNMC/XnS4a3SOC8gDAV5mc/LlYS5m9KnkDMnOxVvEYLNbSmSWSQ6HOKfZdEFl/FXa2bueVX3zJL7gVkXWYyvbXTWeW6r059IogylP2FPs6Q6X4Ut75LDj23wMf3AvXljnAa2P1Iiu7AhDEsxvwK3+O1UnaTEM6dRSCbzmjgMMq4N1Ko8MCjb17zDODSklVgoOQBM/hMDKWidaht4G4AV6O4A/EAUHLldbCF92A+g1l3k0usyBROduyBwPDA8CpjEpH7g22jOT4DZ1YpqQlApSqI8pgkzZ+27b1ih7gQ0lmG4KhnYSl/p8AF6FepWdPMA2oRoH/+crOR2/3tz/YX+37G9WBpwmGdxGW+gnLg4TukGjQ5RWJ/DJR1YcwICwN7GJyIiNAMar6Sgm9YxqWqdwljtbNRGr3n6KxfjuT2Sm66bwmCY6P7EoeZw0/UTMd5WMUVdynmH7xjEbsPuAaiuX478hlwLE/BFxNgvX2HWivJWt31+VYVqrgVe5FSF7HtU81mHX4cBInOF3anxngi+SzWWUE2qILfuVX4xyRPmWqSlAjSKsuVTKB05TW5IeRbO+iUIrWsZdScl8BfL4uCLItR9lnizKlB+VjMjsAuAgnwRIlvwIDwxXgDESUfG+y5yfUv8Ht0LFcCaxRriDlV5EO1VSL0tuMbG93Ek2vAIJiH0Fx913AeXspaECe9zZEFjUDrAy94mIZGFmJyF7WOrbnEQ25coiu7XMR2YapVLH6AJcozKCpAZ+akQZRLpqhNVnlmlnAacqdYlG7/1dar91fB3wvCRnWqOoResN3Ur93jAWcqLp/QySyDf9LZ2Zap7KLGSr9
+HbalxQoi6ToUsgAXUHI3IJQG94aO0u+IVfkgAMAnGzz2/+L6jxGES+tIug6rAAAgAElEQVReA9uEAU6Q95JSwYvpAg5nkbFOIqso2hFFMFQMgTeP+8/jsjxA0WgZAGsUj4UDHKksUh5GsH13P2AxrzejzNkTTcQuZGrVIB04WSkIEsChXv3f+eSd3kRVlEqe+Jw9qy5VlW1OqH/DI8D2Djzfw7DN2crnU7EcMEUDw21br9CBN+rZZDTro6BCMLTDRyieDLDPQKjq3DnFxppChGFMRGffLkS5Wb1jViZq/dt88CYFsEQhcCgAa1XL/Cqq3X8Z8PVUYW5et9WX60li+1cRctX1gIPyMZJ8jRxwgQSmVZ7bFfo574oBhmuviyZ4b7Rt6xW1jfmnKzZsebCJb74NuIRi+eMSEMScaVmw0odQ8q7B838BfJQ9Q4a2GTsH21pct9+CkGB9GtFYsxEbAq6k5H6yrqDQaEO4NwFv3dOBwzzgcqW16CJ99jmeG5V+UhnHoYagRcahQP3ayLg2G1iqrIbSG2kksgi/eroyJz6dAjN9GH5lPZM3hMsAhyst8RDlLDfUmU/nxaonbNaGy+B6V9F8F+093Q5OqH/D7zvUgVXfiFGsQzuZujzhLGB+S12Gp8JqxT6Af0HIK+6zmKGL2oxFcBriyOjqQBAM7UBLWWhGSvRi0FNomi4cxwYDOpIvMQsRaNql4LzmailzsXp+QxmaaxiqIcqXP6zbuVfpTje6qb4PT+gOEZT67yJeX5vDddNR3r9Bt/Okujk79Ipna5pO1A7UAGhoBKW+CkKc4cEmv/6/UnIPQ+MVDTVXtUzxKHunU3ZPx6/eiOAI/maGBTHeHsu3FSI+Xwf6m/iMH1MsX0w2M6tucMs2YbD4MuBjMQIeHQ0cLiXnzFEWYa9UYbj8NBOnfOJLiMWK+uggOm3OUQgcNinlNwjg8HPAwvVOVxr9dyzwK6+fYmMooFrCUnTZnUrn/xQyVnKN
+8/wKDJfuBz7SapxJjs8SBBk1qrMPaBP8ToPPgWjco4/5DgGi3tRFRPzr3SBrUM1ZGQWEvyZuY6H2WQrYqDzDIjJndzO1AtcFjXYvju0weUXCUv/9wL/uwwKJWwicFJYHjwYOBRbKgNNchHhEVjedDLqOpqfASKHpKcFj0A0BEsarCGk6WtoqRBVvFmq6rJ+sJ1C7L/kNcYGDLsdmLfA64CVGfk6m0Z4asb9fxatlG/6BeIIAp2hmMk1EdTtPEqTvKc8/qBCU+h6T624rQPp8iq4NnNkQeABRuZCxwPNPpOSdiOc/AHwPwRm6FxFR31PtGNKpo+ruHVEEQ6USoyI+jdo9wHdxvTfXBSm6Dll7AUX3HODyPRU4bATOS4AQ/T5gxwT/fRSvUiaK1JTsiGN0SeDwkKIzUM9vECj2z5S9UKnUrZDjfJFc7CeSsVuHmS6o698QIJ3bZ6Zwxi9Spso19fxqVTI0kk7b+YhShnCCoBBNPEed1+hyk9THPO8guAWnxNhAT8Sxcwn1b7i7Axf/5cDBCSlITVrCsW3rFSuBzarrqUeWBeEwvXufT98eH006QRM1QJsNzAv90hwJIhbJ9XQZgqs1G5ir2/msZqTR0hZaOiOyFmmbqOIdjdD/bykEBpysWYqd4moFRCR7NaLMR5frXC2okZOPWTIgsRE4SLeyi/RMAd3KoVz+eOx2Uu4n9EtvZOoM9ljbpJn2zJmUslP1ig1bWuWflIGzKbr/Q8QLGypbGutLWCYEwSpc/70MlS6W8/pa4FfAHxFZvj3J/ilWtkEEd39Eaw0Sv8Rg8UIydv2gc8aGons+8CXql+d1HHBwgP9Q6sgK+dXfAv89ySseB4aVAgfLdPB8lXraavkNfqUfEdXcCfyZSnWDsuNrGjh2gZJ7FhOnek9UCoJEl90/M3k6byFwdGJKSn4FXP83wI8Vzf8XMbfHAm16G+P4PvQPPxlzYT5K+fiGDTX0a7fth5Wep7o8QRKjfz/F
+K840sj1Z1Xr1ICOtggx6zT6fftptJ5P3zDgC0RfmptAdmiPBxGHAMbrTvYSgCnCgou+xXkupdYpld+UjEf0tUmMCGbWsZ0q3sg6aLkq4TBvNMFFdLjUhphncTlgauFo6T3EsA6zTUzOnh5nkn6gSoygDL6bk/jtB+BYci6b6/BgGZDOQzaSpVI/E849kuPzPCBWnGxDZq5/tASBiDXAadowxKI2UKbWSbf8L8H/4lTPq+lwpAyzzEDz/ZEW+TFuBw4fIZg5UGh3uHwoQ0eDJyGLDQD9RNEfZZ4qSjf0UHW0JsFSZkyIcsscZLYf4MmVvg1LHz7Gh5L5xEuCg1okf7bI7mfrEi5V2qH7ODe6C6AitQv1iPdCLpiUaVYu35I8sXHV9AeCwhKLvW5k4SzjddqR6oBSB5+9k6pK7k5MqiwhK/SA4YCH7rJNtGyIr9RuerUp0ZFjqPwJ4VD5atYO0lKW8fwOahjlvlU0UPntNHiminIa1L4oIhnYQlvr/B7iwgXdu0k1ndkf2Vmp2HEr9LvWVpBpa2YC34vk/x/O/SC6ziGym+WucTolHNpOhGhyGXz0Mv/IOPP8+CUb/G7iuQ0f4IvLZbN1zr1TBr9xKa+ViNbuSkntGrGCtY4Pnv1mOX8viCu3q47AJeKvSEiVBiP4+9espdyqVZBVO1GpFRzuZjKVO5lLoxN/BKHnuZ5TcAaW9LFIGpFNrgQ0T/PeAumoCsRc6oOT6TJ2Wf5HSDMezvK0AXP9BOcdU2PFkM/a0g4YoAq8yQLwyobXAcmXXdGTxDABu68DF3wKOJ614Ton78m4myZxt23rFPGC9lkR0MwoJywPDdUDLPusM24Uo1fDGPf9H4EqEhOddCj7nJD0hkIqmQY2jUXvozRHCW576FRf/mQeioNR/OfCqRsdIeSnXdC77QQXg4RUbttybwOGvBQ5juHw5uwaI3WdgqjmUTkHWhp48zO4+kK7chZjpXyIyER8hmUa8zdpC4JWx
+sg0iaPfNCe7xZuyneP6dkj9XZ2dLQ8o4HUVB73YABwP4BF05ddKgYQhDpUFEtqGePalUklVkHJZLJ6NVOxFTZWlPtbbJ1OxvwM/xFGf5RB3fW8Y9uxpYoIxEGwYATzB5OYtOEmo/NRNj9gvUaW0fkWhzuthObABCVScOCW0DGatbqSxpFEGx7AK3d+D+2gUcQjqxDtmT2UHA/CRKNqSu/lamaDq3l1onN6RKur/GZs3MzOiLG5T6qOx6rIwgXb+LxrNtG2Xp1cwADqJM6Y8JfsRO4F1Ug4MYLF7L7gFwPZQELVOGIFT3FmB29wHknH+RgZgfAiciZJKn054fS6AlCKHkPgJ8Q9U0B77YYEO4d+wpwOENOPZmpSVKw2WATxOvRvoZpZKsIvq6GMi2eCQN1fXjRTfi2TJrAfBNiXLVmQA7pyHq9mt2JBlLncclHNw7mVyF5mBgbmK9G1wP4L8UHa03EYe0eSf2d8RTBUtAljQS92RnAoclpFML1PMb6nbI3k/PdCUyOUK/BCLbUGLvszxwzASOxYcRUdJ3SLC4p1kri54BHK6lrRl5waOgQnVwO8HgjlsR5aHNOGlZkujfMI02Zh1I2u4BzsSvHk//8Pd5ZvcgxTKxouJxQUQuA/N6HbrzL8VM34DgQLwINcHcRi0DvDmeBKsL8C3Fa/FVlNx4bQeED/5KhABDRwOHucBHlfZscH0ouQ8jmojEsYeUSrIKR3WBAuCwGliqLkIf1hyy8c3Sfovn36/sxgWRdclYi4CXj43QqOU31CWTHq60zGt8ZMCvPgLcquiIh5NEyU/zTuxN1I/A2cAx6mVJq0jQ0In8hlOUZgBrQMmr9NXZtA9NypGLqh4dCtLaYR9G1Eb/CiFR/TXgSt3p/kCqZ/FpRrbncuCnCHWjTrUtCL3744H3AG8Djm3heIdqaWu57EQ9owBDMLyLyo5tT4Sl/ncjyqPva/Jwm3UrO0+bQfyGsDzoyXugXXaz9A82MVS6
+lJ3999I/JEp1VFSAaJroUdBbgJ78iVjmNfI+P73No3scZro+jzSKYLg8DHxW8edXgSspuvHGLJfJyTWkNfyW8KB+hlxmlmJdf4A3NvCOx5SWKuk6pIw5VINCi0fajGNn1UmXhiBKUB4b95/dwPfw/PeRUpietk0oe68YE9FZq/Q6CwfztimBVyqhhV189l2oI5OuI2tP/04dReD6AzE31JXAKvX8hrrXdbrMQHXpINQkhe9hkijTtq1XGMABiThyUUjoDhfZO8uUDtFS1jvSs5YSVdxNURSK8scoQne68J++PzLnH6CBtiko7v4F8EImVztqpy1DRMpvkYDm04hI6nlGtnc2UUhQ6v8AzXfePSExfkO7LQwIqx5heZCwPLgNUTt+Ja03ujpyRpUpBT7AfSs2bHlqGj7+TuC9wKdw/efh+i8FnoeVXoJtieqFVoOnNWlXzz+OvqGfyXnwFhRJj9bZM/4xVmBcKCn9EDXNG8fbFyiW300uk6/rTzo2DJcvRPBEmi7DTjLjsBkzfQ45hYtU2QO/8h2JLOPaXyQZU+F0MWoLfCt2jNIIvXDI/sLE9bHfY6hUVkqSFt99I0KHXIyHKiczCMGrPAH8dYpXLU2s6Vs1BLhf4eKyWTnhtqnzCkCUssUp8TsA2+xVXgpWqZtJmi5LAYcqLycTGZ6bp1rKgXlJdIuOxP0+DGzfy0CDA/w/w+kGTUMzM+hWFj1TQHdEZZIADWDkZ2PkZh2F4IG8C9GwbTXwfETflffy7JLMpOxAhFTo7bqd+6Fc+65FqCvtSM9dOdvIz0aWzyxuZd+ZEU5xGOBvf6ivuvuJ68Ly4PnAccAHUdMd96gZBRxk/4Zp/hr90nE+HzgWr3IGA8NfY0ffNnYNiPLzSrU1ToRlwvxZGtnMeYgs67EJn9NKUsYL4kmwutB6E9nJrI+4Jem6DhlrIYL709JmmYRpwFU4CtPvUQQDw2WEPOZiRClFGlHHX+vEW2s2UzuvAJhF
+EAwTReqaWKUM8DgUoXLRrDO5PgHgMBn56XbgevzKi5rSWp58As6h7J0E/ASYrczJHO2yO9UmMEd5LfoIcBlpPKfC5gMbOoIYPeq0xyFGb1T+nUcB4a10nh2aIL9hKgnELJBPZC5HIYhMR3EvAw6v0DOFzTWQUHcxzs1CzxSWhqX+TwfFvgjwdCtra6ZDMLTjf4ingDIfeDuiO3yf3IPmyX0qK8FHLUtdltekiIj6LQc2GIU5aSPTBZpOFFbnE4bzNd0Qaqa1splUGmBFC/vyhpngFEdVH0RZ7iuAAYWHngscOgP5Db/soK/0hHz8AuihUj2ASvVMhjkDWEvesbFMmq4oyDuQMvaj5N5CpXoR8NWEzuMdZOJwGzwIgl+QbN+iLzJYfCOOXX/QHBvK3luAr3QacPgIcCB2IjffTwGT0a6U8OyuuLWGMxq1rrkqFZ1qwEFEpeJ08p3I1gBLlDkLohPvMJMrt4TANyh76oADiKxD2TsOIYmbUSwr++d6y0Ni8n6CwKuqbGEBsDix7EjjwGFrjFfaJNHPQACy+0k+hdyMnZQQv6GfqTkGphjvxKQqA8Dfi0DDXOByw2mMtqAZaYz8HIz8HI0osgH8Zx7wEFmHOCnro3Qr98+65RCFoWhZoKdEXbGUItVqzf2iiCgKa8COWofosXNA01Mj9QBjZ4bMTC1pcmyOBhYmkd1qt2lmBiPbuzko7v42ommeKvW7Q4GF7WhK1x6ENVKu+NsO/YZ9iGDW74FLgNUMlV7LUOlMrPTBZCwwTRoOSmYs4aeV3K9Q9nqByxR/bwd4VSzRH5Ft+CDJqqXdAXyHsveaut8pnQIzfRh+5XhEz5iOAA7rgPcwt1ftTqhpMK83g2CxNxBgidTrRwsncIUcv2a0Tg/BtnqURegFv+EJpq5d/yGu/zBBsJ+ykiLhaB2LSOuruylGlX+mdm4T0wWPiOksxLETyWamHzUIcDnI1H0xajYPOES5otLUWbHptuOUE8GD
+kczZcJ012NaS1biP2Hvss0ZuVm9LUXVNI3SHkJtqXD7OWi1loscELM1ebZl5mIfIXgw2+PajDKdn+nvJqNqG87MhCl8YlPovBS5WdNg1htOtz5SbQWZm7m1irkyX3Qu8H3g/XuX5eJXXAmeQz/aQsRoDEOkU5Bwoe59CBAK/pvB7votspr5UeTWASvWvEtgeJP2KsV3VtUnWa22C38f+XftZ68ruA9fhV14TC8w4FviVt3QKcLCBqylk04nIZDa14CXwPUYlWZsFDmrVakRpzx11nN0qcDUl72PkFZXsCgC1EriYWV1qwrVhCK6/nZnRsCpNEko9zc+RhxBktXq2Gis9W/k9LHpj/LIDr5PgN6gGSqJM6RamLhVK2osz5GNvsJN003m1kZvV+jJUGgD4ZNwQCnByWxqG6QZa2uqJKt7+wJ8afPcRM02G1cjPIay474oq7neZuldK7ABCEj0uoqpP6A2Dpo/NK03hKzLOP4zGvWei14jnR/+jEYmijJsR5XF7mv1MPlYxVHwzQ8XzKWR7G1LpNHSY1aUxWLyaSvUuRXMkA1wQ63sIH2k/hKKVPsHaH9V5TpsAMIx9PhwDIKDseRSy9dUmReXJS4BDmJpL2hbg8Gay9pFK5Vc70YRDNQehetHoDZkDjlXLb6hAvFTk5yT7vqAk6lTLAoWhOvUd4eDei0hhTnkVkru+OqiRaMzRKfwGMa5/Il7Zymb1ZTsh+JWnm41wJGxHAAuVl5PV5zdAgtkAWRqTR+h2757hoCEDfC0ur2HKqeqXCP3SbUzde2OszUFmHNphWsoiqnjrGgQOOWaYWlBtDzKcbqoDT18h7+NWbL4AV2rHKKr6VHY+cg/wI0SmSE8UOYyWcJvy+Sv38Kv8APBO4CsMFv8Jr/I6HFt0Q45j6ZSo6x8YvhrRMK7VMuRzyVgrYu0XwkfKEZFrz/1AvAC7pkE+azNUvIAmmsKp9GhWA5fMeNBQG/R0KkeluoLJG5RNZktQ
+relfdAPiKU0NA9dQ9s5Vdp00DaXnUhlxcOtZkJjPNdodvFXbiJWezWDMkv6IWo8MlION+GVCaeXA9tmAsNKBd/QJysvJRvkNj9SfxwTj89EKAXAXsBB1KmGdah8zsj1LdTvf+qUr9QNc2sBb9tfMzPx2cQckQFnT4NtWAYuV1+5HIWHFnWRrMNCMFCTcD0HPFNDdoQ2hVzwdQbht1pYBi1RfR5m9ugr4HPusFbsbuADP/wGefzV5ZzbZmNmhjAXVYC3F8vmIviit2HkNNTTWtOTzyk2FWkwYKr4K0Vvi0ekCDh+ikO3tiCZX7bCUAZXqGhpXiFmFpVDmUvAb/sZzG79NusFScs/tWIBXv8tuzfokiTmZawtraZ78XrOH8CrnI0pVtDGOYpqJI0YeMI+S+1Hm9sxVSp4vucPAr+MsJ8C6hPgNnUrQ25gQEfy+GIEFDygKoqzqtVNDd7rSYWlgFULAYKbaJuAtRq7lhqiEXpHQHb4T+H4Db3uhbuXadrKy58fSBt92iJ4pZNEU4uMoxH/mwSLP5qONrbvuBpboVnaOnimgAtRNCh7sPKFXfE2LwGGdnukyVXNAglJfSGdmWvdUuwY4kqHSL4FVscGDY0Gx/BZE76lmG5CeCBzbEeXHLd80Ojj2fErumcDnpwM4PB8rffZekW0YGbkU4K1t4p2K+Q1VGgANAA9SDX6J658WS3+4nRZG4Pm7Yjq425MDDikQ3Z51WiNJPyAfjTmxkFW6eY2S5++J8eoNmInxG37RgXeyBRymHDj4I0CpHimxCAzWFHaU7w1mlrA08ALgatQR/jvJTOCyVNd8JV3kZXT4/Q28xQDO0K32NVWTEfFG+ghpJND4Tcp8Xo+olZ7M8qFXPDH0iq/WrYFX65ludFs9yNLEuZ2IKBtrxinUgFNUX8coqICI5v6ZfabSHgGez1Dp16SMhbHUIg0DrPQKvMrhTe5FGvA6unIzJzru2FBy3wp8mXiy02JfUfDRNvDF
+vQo0AKR0gP0bvUyorh8XDkoj0Ywq8GkpEdZZFowQeOPocj8mX6/eDB0scxHwomkYhRPIZtQCB1EmFJcAdVJC/IYdHbp5bgQWKAdK1djSt2XgqSioJnJy0hE6lcYj1HuKvdFwuo/RM4XWp6k7TOgNb0VENOPaSi1lHtxW3X+RcVhGfIXBArBBNTE68t0aOJ7KhuR4nhN6pdOr/U8+I0vB1AIHI4VuZRfLgE8z1g2sV30do4oHkzdm3Wet2UPAhQ35MgJgnNWk77s/8HcdF3BtyY81wEwfCBzf0L6i4KMvI2svVdofYE8wUUbSaAfPucCBSsu5/KYiuTfjV/4oy0c6xxorZ/mT8o7g45G46BrbTksDxyuXBRVz5MaYr96k/PMFcLmHzlT2OJJsRq1EpZC+HSIGr2DFhi1VYKt0MNSbpmPkZ2eBi2bgKrwQ+JjudCs5mHRo39ugk/cmPdPV1pPWRsUbljcwTvvJEid18QCRcfi/Bt7yS+DU6uD2cksdgicbF8H9WNfk22cD+2kptWMUVTqia/NMtp/jVX4uM9r1TextR9FcN/jXkHPiCctUqjAwDLsHoW8Q+obkzzY9GgFTwtf5l4bwRosX7VjSqbeSz+5901UQaBdJZy8u4XMpZnqWUn5DpfoEgnTaiJWBqyi5R9KV65wxdX2IH+27CdcbIsom0wjOSoNtbcT1XgX8V5tGYDaqZUEFv6GMaJxY96yBg9XLko5kxTqRGH10QkTwB4mf5bk9qnqJnaCR6SIsD74vqvrfIl652p5gGnC5kZtdUKFmFLrDhH7pV8ANDe6f56jIdjQKBnUrmwu94rKY13OtbudzKvkNUVAlqrh/o/Es4h3Al4Jy/9sNp0cxcLAA1jfry+iZQlo1izX0ShBPuGSfNW9fo+yeEUtlSRD1F0ng0Egj0l7gwlik6CiCXQNF4E3AM3KtSjGqdjW+F0O9n886+gTr4NieDsK8yllUgzdQiOGb2yakU5upVNfHvZ9b
+3TG/sNeVKI1cLg2E1OEy6STEsTNiS4jFclCqILrSNpM6+BFl773kMis7gtAeRuBX+okvMfgksI0gPKTp1vR1kbgFrvdZeTPd14ZRWEg6tUSpLKjgNzwmH/Xs+ET4DX7H9m/oFUBJ8fwRmbM/AHHDPneH7tAA0bwupeTVMZul7nQTDG7/EUKNJ2TPt5N10znbyPWqWX5EtuFTDa6l5+mZrnmaPg3rp1BHilN+psmxUvrxEuje0WQw4CvB4I7XG5luR2XQRwLIlYgSrkaymzpwqvIxCipEVe9RmtDJ32cN2fW4/i7CqH5QVsy3AoIb1Yi9kIy1KNbe7PkA1wHfmsYx+RUl9+XknHhCPBkLKtX3Ay+Pe8M0a+/HsQ9rSJZqpgEHy8wQXxYvDRynNLopIrk3NAkcdgHfpOx1xngKvsIDTN0s67ngx/WT+05mGgrZecC3EWVmSdtm5WVCwom9Lf7nq+Y3ROBXdtGg3FubbA2wWHn/hupIx+hYtmLDlruA2xMrVwIMpxvD6T5AArgMe7alga+qKlGK/DKhX7qFxspu0sDFhtM1LQMgCdILYrzUBo5S3ptASLDe2uTb7wTuVJ5lEwBuDiKg16gdmUT/Bnmu+/gNydouYDthQ/GQRoCDDvxj7CB5yQO4fJrHJAS+E9u/E3786cQsv292x1wGvCO2DNZMNRGpjAscbOBApdFNEcm9oYUjfJvhcnKypo2DoFuI16Bs9Pu7CQMfx4ZcZgOCI3Bogp+kAycod9wbi/ZvTLB/w44OvIMPwrGzyvkNJXeoCafqR6E3nOjJGoW5GNmekxHRsGXsuXap4XQvVaXOE7iDAN+ksUzMK4HV09VQTfIVVsZ4aRewSnXtvpyr17ZwiK1RRa1AhzYKHBpFlPNJgt/gl2GfDGu7LGbmK6IJIHccZvrwWHujXwW/8ucOue6fZagYL6isaZB3csDFSQEHA7iMvDNLeaSu5uh4vvjZ6MOb6OGLnwmQseT5r4z56nWk
+U+q0+Uf5DU+1cJQHESVLHQAcfBBt2Rv7/tXgxtjEqGYt50Ahu0aCh3+QIFC1WSTBbyh7LvHkbfNijqou26kgnehSh200GknwG0Rp2KMIJZVG7LtBsa+/wahZ40tWfg5GfvYmCdLP3QMdhHVaynqnkZ+jyAMOCEsDO4AfN/jOs1LdC6etrdOYJnD1NpT1upXNK+U3hFWiivc0cFcLh7lXRuRVIge0tF0AGiVPnK5nCin1/IZiM3vaPmvOGpngEY1VafwLTszKGkFK/nSHjMmjwE9iV2XYFgjFqVn1XtrMrvkCLPMViWQbhopQdK9H1Cdm6iDDiZpzTbTrVuV5bmReb5fS6KLgBsSVOTwtIX7DrhaP9AmGiufgWFYiJOO4Dq5XGaBxHkEIXE7JPVHp2E5kjg1mupuS+++U3DcAXwKupLkysYlsEYaxPAF+w8MxweUxWOmFyoDtyD1dCoH/7cCNphc4Un2GpQqiPKGhebFiw5a/bdt6xbVBuf81RrY30RM3sr3o6cyioDzwrbA8eD7whSYc51bMBF4tHd/PAk/HfF8auNpwulC1VoUiKnxzA98BhIjBRs2cRn6f4DgsBObVub9P1ZTzG3xont8w4tQkIUGsGWmiirsE+H0DbzspIX7Dw8TnP+6z5s0GemKtCSKAvJv4xOh1wPOkU11nMQnB9Z4EftAh41IBrqDkviyWhKyhg2MvpuS+Su4JyoBDjqR6NhTLUHR/hdDOrzLaRnUylnk0xf/Dca9LAT/Er56u1MEUTl5c4JBE/4Zf01hpz0T2IIJc9IJp46tUR7rsNiPw/TM8/1Y8/9jEJYFTBhSy4NjrJIB4J6JU7JeI+ujtLRz9LOX60KP8hjgppeNIKwZfYpEeQshGnga0S34tHBOFMuTfN4+7PouA/ZRnTUeJ0c3Y+4KhnecY2V496QHSzAwpM0No508NSwOnyv4F/wN8F9iWwEeuATYjekocpWcKS8LyoAf8qAGn/U2G001c0VwA
+ABfHSURBVH2kKm4DQOgOQeOqaWfqmcJCyTOYFtM0A2Rn5jrAYZNuqg3yRUKG9de0Vrv/TBQmABxEudHqBt+2ISF+w32IAKjNs9MZ0QR/P+s0xr1usnHWJnlvzQcKpX+QkuvwTBBFmMiOx0zHIy5XR4Jpccnzb6OQjZeGF9yGLxNfFKMd9hv8ym+pVI+JFSTLWFByXwd8nSn4po2ufJeRzSxUHt0NQhgqDQN/P8bJUSnSXwF2KC8DEGz1OTLq80wdgLZOKb+hWA5Q11DrI5Tc6QMOo/0bmgEOVeCTlLxr2tZLpAYgspnl+JUL8CoX4Hp9ckG6X/58VM6JXfIGjBARUx2h6jAPUWe+AjgYWKcckIsSrrip8kOVlylpGszq6mLXwNVYaa1tGa1o3Pbr+kPASeOAw4HYpnp+Q9EtIzgEDduKDVse37b1iv8IhnZeYORnt2WodCuLbmWJKu6G0B3eEBR3fwjBSfkjInPyFxlcGBq3LtecFl3+NBAlIvMkKDtAAsYD5c9FutNl6mYWLW2jGSmqUWiF7vD8mF/1QOADKkFDFAaE7tB2Gsu2FIB/MBR+j2bvLd3KOqFXnDfFq/LAWhVytc8CW2okRp+IKm6RKMyqLKPSDBNgvwbeshRYobrHhQRrxyFEEuqdoIZ6ArUm90YH+Bui0eUAM9NeG9t3EZy/62MChznAS2IF9KIIhktF4DsdNjY+8HXKXjzgkE6BlT4Cr3IcU/QHiw0ctCMuOYJ06k3kHfWntqMvAj4OPJ7gAO5SznMQTkcOwXOYCjgci5lWx28QAOgZhAqRCvs9lerv8SobEy/5mfxmbqVJzrV4/rcpls9tK2Hf0AVCz1gQZnsIgg0EwQaqobhGQQhRKLaEsTEmTRPv1XUBQmoP1U6s6xWJ1714rnJgO3Yhmj9r2mrBqQbg+o/wXGWpExPpkA1PSIe7WXtXUNx9lm7nCu0k3mppGyNtY+Rm2VHVPyyquIdFVY+w6hH5ZVcCBw/B
+VallOS35SMufjpa2bc1IoRmmIPCm0mhGWqgAjZ/f+ki5TRz7gFGYM1ulEywj5zcRLyNXs+fpVm79dJGin73+pEAQeyfdd3Qrq9QxJwyIKu5OWldJ2wUMRlGY1VR+P0GQXijnY5zreqqe6bKVBzU0HXPe/nmiKD9d0yMCCKtUdj7q0XplQqfaOhrp5iykUuOWzr6ebCae3yaO+xOFPplKu4aS+36ymaWxsjIZG7zKRYhKiqhp4KAdcUkauDqREiUx4A8BlyU8eE/Imm+1wCFjZSh7K5laReVUpU7KqFLNkwrP5hOU3B+3HThEEbj+IDG67Nax9zNUOgnDWDAtLeF1TThC6VRnLBVirj+OqOeMs/iq5zd0gols1h/HPesg0tuKPysAwTtq2lZs2NK3besVbw1K/d9Idc1v/3hpGlraQkuLCJ4h7lGbKLSjKBJAuLaXaBqggwYaGmh6Q+BXquDMivHSEzQzc47qhmGyTKmRCKEBvEyVmlPLl0pE1w+a4iUnaarLlEQJzt00lx0ea2VgN2G4AF3lmIzI1JoxgcMxelJcFU1Xzbdu7OOBoDwAIutcZuZZCriKQjYXu5tzpfp74kllZ2kkkyHKlL5GZ5aDPQX8ENd/O9kYc11UbrxY+gV3TOjuxPzg9+HYBydSyiIG/O2oLU1qD3CAGs9heZ1XHadUn3+0jlplFOHneP698tjts9Euuw+1eKRHgXMpubT9HDrXYf5DTOBwMI5tTxs5PkkT2azx0nizgP2V8xvEZ93U6mFWbNjyzbA8+J1gqEMUbDUNdAPNSKGlTLSUJR6GKZ7TUyLS2+D8keUh9cpKLOAbykuDwoDQHd5FY8T9PHB0R2QboAbu1jJ5APAE1aTfsDJCJlfhiG5XznMQYHSunDdxgOBRnXI9kzCZVbte0eGWd9jpfR/HPjZ+fwUX4PPEI0afiW2tjpWFr1TBr9xG831N2mFfYKg4HKvqRgMKWRO4iEmgb92dUzvikkOAd5NL
+oASk7IHn30B7VFf6RLRMNXCoq6yUB1YrLQMRTuFWxWfiA5e3XZp19FxUiNjfgF95I2WPjuhNMf0O840xIiA6cIzy6HtH7JoRlL0B6eiMtfVYZkY5UCq5AfAzRUe7MCj23RUM75qxU1QCh1VMnfn+pJHtWarbais+pFTmT2msTCkPzJdR7ekfP1HqtQjBuxhvi4B1qvkNsjfBrxUd7mlCtfFCSRrvJZ5k9n4kwG/oGAsDQq+0CzXKTqsRmdv/A146zWe2HLgJx34xhZh6G8UylL3rgP+O8WobuCi2BKvwmb5JY81r220PANfFlmYVSYIL5L3UGHDQjrhEAz5JIeskUsYwMFwF/qVNAzeIVxlWznOo38vhCGCeUn6D628HfpfAGP2UkptMZmZq4PAHhUf8EiX3owyXSFoTv8Md5jLxdNZnAYcrJ0Z3go32VBi/cb4gEYEHeAx4RMXhVmzYUgZOCYZ3PRYUd8/MeToqKTqZ/uw6LWW9w8ipJ4rLEo4vNfi2Hi1lFZRyBloCDiMNzyaq4TpJzxSU8xtCr7gLIf6gwh6LAsU9eDQNzcyYxIuOb9IzhVynXE/l24AY2/sR5OhW7W0UsrPpKTwP2/yh3Fs+iBBBaJdlgPcBt5F3NscGDZUqDJUGgTcRT0L4YNKpk2MF04IQSu5jwNV7wJS4TGZdYt1HZDN54PUNAwfgbGzrBYnJr4qasFvaNGiC3Kc6EC2Aw2Imb3N/AjlHXWhTyIndjyBhqrYnge8k3o352Q5uEXXqUDX7ACX3QwyV9s6ypVGHOY6s5v7AMpnin1kmrv1ENZrHquc3VAH+hMIa1xUbtjwNbA6Gdj4ZFPtm3OWRpNgCE/McdOArKns2jCw7VZ/IL99H43yUg2vcj44wfSS6PtHes15Lqf2u0hF9SJEjKoFDEpKsJoj67Hq2YSaXKYWjsrmtorMU8FJsE6w0dOdhdvdB5DIfAv6KUF67DDhB3ssqJ14OkRn6MHAfWfvjzOmZ
+FVsEpRrUSpTe1QDgfUNsn1dwdH+BmoqJpO23VKp/lNUI9U2MwZuZoFxpUuCgHXHJXODy2OmahhybAIZKO4BPtnHQRNMP5cpKem3xXjLZ4qQ0misaTP05wXH6FkOl4UQ6bU/u4N6VwNE/TNl7LbsGKh3RGbudNjpH4hTJryVjmcxAesMY6b2xNgtYnhC/4QYUyyqu2LDlUeC4YGjHtmBo58y6PvqUwOGNutO9UU9A9jQsD4KIEDa62a+RhOTOGUIrayACV+Nto2rS75hmeaq6wN9HVb3Yj7xG+8dwho/RZzK/oeKpCmacR8Za8KyqiZQBOQfm9VrM7jqUvHMxZvpG4B7pSP87cCFwNEJufIG8z3sQpUA6Qo0thSCyFxCNFRcDhwAvQXRg/hVwBznnA8zpWUI+S+y1uxrAzv6IsvcO4Csxz3UhcHZsCdbBoofgTewpdmnsrINQjVwKvGaim2cy+wy5zIJEap+LLsC/kkyjoclsENhFGC5T6jQIhyuL4DncPYGTspaUwppYf6TnQVL2V+CnuP7Zifd1EA7uX0muYcq3gHsZGP421eCARKSEO9EmVhKa0O9AdWPCjtk1Iyh7JYSk3Fg7AdvMJ8BvCFFX+z0ePGzbtvWK9UFx939GUfgCI9fLdDYfU7l46nYuHbrD42uR5gKXGk6X+o8MA4Li7j5ETXKjtlo1Z6DlEUxZ4BUPBq4d8/Qy4CDNUJxxqLigllt3R+iXXKJIqTCDbAK3qs7LVgL7zWh+gzu0W+6vrZjBVOpCmgaplHhkMxCGc6gGJ1ANTqBSFc57pVpEBLFKiOzHTgS53kD0mjAloMjJx1ws08ZMgZluTqrcr8DuwQghvPP/GnjnheQy8fYHkW24ScEYt9N+gOs/RDVYGYt369hQ9t4yfr2ccPfRjrjkxP/f3rnGuFFdcfw3M36t7eyGhIVACUsSCgkFKmAJKSlNQQJVVFRQCahaqeJb26gggQRC7VaVKEJVH1BAUFWiFbTi
+CxVFFX1RPiBVoCpQokAfIaUlpASSzT78tmc8j9sP98561mt7vd4Zr3e1Rxp57PG8zj333HPuPed/SMS/TDYCQ8uyoWoeAR7tM8OqwGwktRyGkilq1miLo58EzlaF4kJQBgJMaxaZ9BolPUKh/EWGIsZmjd4JAonfv5tK7QfYjlyCTCVYs9QoQnagi39ngT2hIn4NCrlzFUKbwyquD91RaqycTUb1Otuu2F84+uaTn/eq+e941fx3YyNbDH1oePW7DtIB2trkzD5mZDcPhx1qA+BW8yCru55Y4qkJBhCBRzkyFyq++TPLe/TUho2h5iUKD88slVgm3HATzQLTwnPPCTPhXK04XLjI33bpqexpazJEk3mwuUeWeanLgT1dw4zrOiR05ulYITJ4IiNtLyHtGBEsiq1JOHNNbf5+r1QxoVTJI1GBnl/CmXFgf/coTRbI+mOrjR6maj7RVY5IPAaJ+FXU7c8QmBhrp1meiiSvAfx4s3tZftzdks1uYDIaSFbDn8FopktIp5Khzaa4Lsj8hhMR8+oA8GrXsXC9GrhVs9oHJwhkxcyvUbdvIF96k0J57eY+NOo3HOzi31uAbUp+1xbJ9j3U4siVodfaaCCD9SOL+XvA1U7h5BtO8RTCWeVheLEFRt7n9GTmdiO7OfRbCdfBLc9MAz/p4fRbgY8NCqJSw0iO+2NP0Mu6NOxcDOHM5TccCfOywHFChmRVPNmKTBxvR3vWdH6DXB36K8sLndSBexjJLm9FyC94GjPkykQiLmsFJAOf8Zg8bui9Ow22A4UylCovIStlP7/EK3yFoeSWrhxuCcF6mIhWmSOm31A1810jT8p0hbubBWN+G49PPEA6tSOSWdmKCVb9T8CLK8SwqUhgOuWSz84WR/aGOrspDZQDfeLV413HwvWk2TyQydh/72P7vwxcS836KjOF9ylW1p4D4c4VB+ym8T7FUHINLjfg5xy83PTrucCO0B0l2waJ4d0vYXoduM6r5vfb
+08dOuKUpokgy7aPhux25+j0CPBlFXgOAQqd6pIeJl1Hg0fimrYMHvyMdmXOQKyI+XR22UazClN4IWcZd4C0Vix+iUGnoqaws8tiaMsA1emKItUohhZUZQJ1CuU7VpC95j72Q40KpAjOFo9SsO4Cb6K2g7N1LrAnx8CoVj5PA013nfsqCcNdr4xOXtHQctPGJXcA9kYQoeQJKFQe4cwUZ9lEkEJ0yZ2IMWZE2ONhcHGr9hgY2fz/oBcz64cgM60aV3X5roxIyXm8nVfPrzBQOMVuUWMzuKoNvFUI+s2VLlLJcEXKlGeDZLq+wbw3nN9RYWPhtN6nExtBCB+fL8sE+v2UZ+Cmww63kvmVPvXfCLZ6SCZFi9dQwUfHo5ysj5X4js2lMT2ZCv49nlfGq+YPAQ0s8dTvwqpHdvFkbQENTQbKejoSq9J93V9hhXp4Ten6DT39R6D+hkp7MQvt6A2cAFwxaont4jeXhmaU8C+vXLFmzIbH8r6JY+TWTswWKFRnbv9JjpSfkc+RLMJ0/QsW8F1kM8Rl6i2a5kWTi0q5Woz0BNWsaeGEVS8mvKFW645OmQTadAW5f4Dho4xMG8ATDmUzoAyv48Ks/JJxiJL3SbCSOg+TXKPML8ZwLhJeILQSY9TKyAEu/6JHIEInkLO2rKygLFvAz4DLq9nUUyr9kKvchhbKcTXDcwTLAfCfBduTzFSswOWsylTtOrvhnStWHsOwbkUv0z3WjDogibGcQqJHf0Fw9bS/xCPIb6vb/6C/QQ5BqSHS6c91q/pv2zLGD9cl3624lJ8OYBtSJEK6NZ5Zwyzl/AmEMuM/IborGzqgWAL69xNO+ARwyNoxeEEXoVEieA1o8mUWGHQJs1xPpM7UwY/eFwKsWWjniYdDrnlkKXUj1VBbgC7SuEbJVSwydvmbzG1wLZH5DGLC5HjLk8zbgIqrmXeRKLzKV+5BcEco1acBHPV56ojH2FcpwanaaXOn3mPVbkdEeP6L3auZD
+wAOkkzISouMmggXfVnN1zkPAS5h1+U6LvbcMV7pTG5/YCfOTo+8jnbqWoQji/sw6VGofIJGUVpJmIxFuGfpwHrJa50n16zVkUunw8hvmEjCLfeTXM1TNB8kMnRE6fKXVEipzpegVtQ1Ts26iZu1FLnOPMZTcMC/+UtdDx5Wf5xwIQHiyvV1Phh45HphWDYlMcVx1+neUwfU2kO/hbruIGeGuiA0K2XNwtMFKninghtALvzkuSDjhD1f4rR3gCbXtdUtTt7glbgA+bqQ3prRkGs1IoBkx+l7wynMRnoNw6nj1Kl614Co5fgMJ3fg08JqxYVSP4tmE5+BZlRMsRNhqRxuAp/T0xtuM9IgMpxIetMUsFgFfvPm3Zl9dJoaKDldb9H0C5wpAj6dxbWuf0gv7tEQ6dP6pce1IBNLxEfAvYZufCDW8StMxsptG3PLsz4Fbgj4FcLNckVhOKwwueY2wsija6nG1bcKyr8Ky9yBBYHYCZ5FMDBMz5GSqEchZmNs6CLUQjc3z5LjnuVAxBZBDFtg8gAwLfQWZyxcGbQM2kyvlaKA9eU3dTAuMIwXgydUuJsBj5EvjyDBHq0mJNSswXb37duCdGIA2PrEDuAvbgcmZOjK7XCBjEDXmIza07aoBBjduGo/FsJ0CcEePBk6YdAKzPstMYRO24xGP6diO10JIWr1Xq98MwCUeixGPGdiOH5wbBz6N7cDJGaH4oCmjRszta4uMCgB1J3j+7/rMrzrwMPnS9xWfuuHJQorH9IBRJ/nuuO8QTf2G5VARGebzLDIO9mJq1k5q1uVIbOmtwOkkYiMYhnQidF0qySAqRKcRH18x+ugSahbDcaFuW8rYnVED9fvIFbr/KKX9nlKeYdBeNA1OzrhK/mPK+PT7u2iyiLrxuLUO9k3zdbQW/2m+T6s+Oc9mChwTc/pG0h+U/vJpDBilWIa6kkG6fKPmJ7Od+X1ahg+6AyTHr6ktAex2q/nLqeavQyYhb9UT6YwW
+T8kwISMuw100A03TpFPRrWMsPGkECyXHwkN4LngOwpWOgnBthG3OKEfhsOLVP4B3gVPqSvfryexuzyojrEpAgAQaGiLQ/HPfhddC5Nq1oQYSD77b5eYvafHUbV41X/YkCpO2yM388aOV5yCazhdqkLaZHyrcSvZFB00S7KNptcWBfcKuYc9+gBZ4HJ+HWi+GsjY3uRKFjFeBHzvFU78Iyl1zuwd/b36n9o+toSfSN3v16mdphPgmgCs9q4xbmnK0eCrWeQAeRBII2xId5NkCfhv5JCz8UW3g12Cw6mdjcRFwJjJp/xxlcA6rzVByqgeYbauxp6y2mhrvjqgJmcPKSfgvva8qdKJJZN0IUz1LPCAMXpMNnELCyU6y+ullZBJ5VvHfaxpTg/ue0jHvA2hCCLTxiY3I+DBbMU9XhoRg/qpEN4otONR6av8jta00JZXHlAk8o8bCJHHRxtv092OqA4jArKaOXB6sqv+cj4ylNAPn64FPvUvXgYAD90/6u+Lg8+yygCNpdJhW09pMxYkAn32en6T7So6DQClkXY4R5PL3GDIc7Qz13Y8zzgTe0w3wxFBKz0LmWUyrmYtZZUAdVftFdbwYkZL06TTggoByZJG+IFoY+52cgk4yLTo4Dos5HcFPd855byg5v1++pRxf/93SwEVKnp3AgBCUUaMFH5rvF+SV/9u/VVtGSkffXPYk16iS17OAK5BY9+cp2d2sZDcFJDQjZgjXEa3aQDPiunBtT+m6upLTspoV9J3eY2rgP6bkelodp8VM1h71bPkmgyLYRiLQj+qBvrGYAyhUv3x3CYP9GLIQ1KzS9XqLdm8nw3Q47n/WAkZ4J8eZNtfWmpyWFDLhu4QstrVFtUc8wLtWxgAdnPVg+xjI/IaoQjPiwHjA5jAWsS/ajT/NbeEn3L+tjE7/XjuBjYGxWjTJmdaj96D1MNmy1Ov6bW4q28Nr89/jzfffdsX+fo+ZutIpCaV/hwPyFOSxrfpDRcmt
+p2R5jUIfrk4Sf3uwIWRiCaE72vjEOvfWaZ0WkkGjEmbQ4Gw2NjylIH3D1Vtn3Tr10XFo5xDHlOwmA/tuG0cxaJzYNGbQfZkOGsXrtE7rNCC0Ao7DOq1Rx+H/VNpcwc34dIUAAAAASUVORK5CYII=</ImageData>
+    </EmbeddedImage>
   </EmbeddedImages>
-  <Language>en-au</Language>
+  <Variables>
+    <Variable Name="StringListLength_01">
+      <Value>=0</Value>
+      <Writable>true</Writable>
+    </Variable>
+    <Variable Name="StringVar_01">
+      <Value>=""</Value>
+      <Writable>true</Writable>
+    </Variable>
+    <Variable Name="BoolVar_01">
+      <Value>=True</Value>
+      <Writable>true</Writable>
+    </Variable>
+  </Variables>
   <rd:ReportUnitType>Cm</rd:ReportUnitType>
-  <rd:ReportID>37c6fb90-6fff-4a04-9664-81d6e5ef3139</rd:ReportID>
+  <rd:ReportID>2b23e2b0-99c5-467f-8ecd-266a66380c1b</rd:ReportID>
 </Report>
