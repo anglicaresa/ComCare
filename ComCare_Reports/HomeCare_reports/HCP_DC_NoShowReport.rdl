@@ -40,7 +40,7 @@ J004.Organisation_Name
 ,J006.Description
 ,CONVERT(datetime, J001.Schedule_Time) AS Schedule_Time
 ,Case
-	when (J001.Client_Not_Home &lt;&gt; 0) then 'Client not home'
+	when ( cast(J001.Client_Not_Home as int) = 1 or J001.Visit_Cancel_Reason_ID=1) then 'Client not home'
 	when (J001.Cancellation_Date IS NOT NULL) then 'Cancelled visit'
 	else ''
 end
@@ -85,10 +85,10 @@ Inner Join dbo.Task_Type J006 ON J006.Task_Type_Code = J001.Schedule_Task_Type
 
 WHERE
 1=1					
-AND ((J001.Client_Not_Home &lt;&gt; 0) OR (J001.Cancellation_Date IS NOT NULL))
-AND (J001.Schedule_Time BETWEEN (@Start_Date) AND (@End_Date)) 
+AND ( cast(J001.Client_Not_Home as int) =1 OR  J001.Cancellation_Date IS NOT NULL or J001.Visit_Cancel_Reason_ID = 1)
+AND J001.Schedule_Time BETWEEN (@Start_Date) AND (@End_Date)
 AND J004.Organisation_Name IN (@Organisation_Name_)
-AND (J002.Deceased_Date IS NULL)
+AND J002.Deceased_Date IS NULL
 --AND J001.Client_ID = 10071612
 
 GROUP BY 
@@ -107,7 +107,7 @@ GROUP BY
 	,J006.Description
 	,CONVERT(datetime, J001.Schedule_Time)
 	,Case
-		when (J001.Client_Not_Home &lt;&gt; 0) then 'Client not home'
+		when ( cast(J001.Client_Not_Home as int) = 1 or J001.Visit_Cancel_Reason_ID=1) then 'Client not home'
 		when (J001.Cancellation_Date IS NOT NULL) then 'Cancelled visit'
 		else ''
 	end
@@ -116,68 +116,12 @@ ORDER BY
 1,2,14</CommandText>
       </Query>
       <Fields>
+        <Field Name="Name">
+          <Value>=Fields!Title.Value &amp; " " &amp; Fields!Last_Name.Value &amp; ", " &amp; Fields!Preferred_Name.Value</Value>
+        </Field>
         <Field Name="Organisation_Name">
           <DataField>Organisation_Name</DataField>
           <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-        <Field Name="Client_ID">
-          <DataField>Client_ID</DataField>
-          <rd:TypeName>System.Int32</rd:TypeName>
-        </Field>
-        <Field Name="Title">
-          <DataField>Title</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-        <Field Name="Last_Name">
-          <DataField>Last_Name</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-        <Field Name="Preferred_Name">
-          <DataField>Preferred_Name</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-        <Field Name="Birth_Date">
-          <DataField>Birth_Date</DataField>
-          <rd:TypeName>System.DateTime</rd:TypeName>
-        </Field>
-        <Field Name="Building_name">
-          <DataField>Building_name</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-        <Field Name="Location">
-          <DataField>Location</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-        <Field Name="dwelling_number">
-          <DataField>dwelling_number</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-        <Field Name="Street">
-          <DataField>Street</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-        <Field Name="suburb">
-          <DataField>suburb</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-        <Field Name="Post_Code">
-          <DataField>Post_Code</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-        <Field Name="Description">
-          <DataField>Description</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-        <Field Name="Schedule_Time">
-          <DataField>Schedule_Time</DataField>
-          <rd:TypeName>System.DateTime</rd:TypeName>
-        </Field>
-        <Field Name="CancelType">
-          <DataField>CancelType</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-        <Field Name="Name">
-          <Value>=Fields!Title.Value &amp; " " &amp; Fields!Last_Name.Value &amp; ", " &amp; Fields!Preferred_Name.Value</Value>
         </Field>
         <Field Name="Address">
           <Value>=
@@ -234,6 +178,62 @@ ORDER BY
 		((CStr(Fields!Post_Code.Value)) + " ")
 	)
 )</Value>
+        </Field>
+        <Field Name="Client_ID">
+          <DataField>Client_ID</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="Title">
+          <DataField>Title</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Last_Name">
+          <DataField>Last_Name</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Preferred_Name">
+          <DataField>Preferred_Name</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Birth_Date">
+          <DataField>Birth_Date</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="Building_name">
+          <DataField>Building_name</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Location">
+          <DataField>Location</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="dwelling_number">
+          <DataField>dwelling_number</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Street">
+          <DataField>Street</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="suburb">
+          <DataField>suburb</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Post_Code">
+          <DataField>Post_Code</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Description">
+          <DataField>Description</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Schedule_Time">
+          <DataField>Schedule_Time</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="CancelType">
+          <DataField>CancelType</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
         </Field>
       </Fields>
     </DataSet>

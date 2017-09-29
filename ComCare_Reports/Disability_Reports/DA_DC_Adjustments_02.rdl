@@ -32,7 +32,7 @@
         </QueryParameters>
         <CommandText>select distinct
 	J001.Client_ID
-	,J010.Effective_From_Date 'Activity_Date'
+	,Format(J010.Effective_From_Date, 'yyyy-MM-dd') 'Activity_Date'
 	,J010.Comments 'Charge_Item_Line_Description'
 	,Format(J010.Adjustment_Amount, '#######0.#0') 'UnitPrice'
 	,J014.Description 'GST_Type'
@@ -40,6 +40,7 @@
 	,IIF(J009.Organisation_Name = 'NDIA National Disability Insurance Agency', 'NDIS funded',IIF(J009.Client_ID IS NULL,'No Contract Billing','Self Managed')) 'Funding_type'
 	,iif(J011.Description like '%eduction%',-1,1)'AdjustmentType'
 	,J015.Processing_Date
+	,J010.Client_CB_Adj_ID
 from
 (
 	select
@@ -151,7 +152,7 @@ Order by
         </Field>
         <Field Name="Activity_Date">
           <DataField>Activity_Date</DataField>
-          <rd:TypeName>System.DateTime</rd:TypeName>
+          <rd:TypeName>System.String</rd:TypeName>
         </Field>
         <Field Name="Charge_Item_Line_Description">
           <DataField>Charge_Item_Line_Description</DataField>
@@ -180,6 +181,10 @@ Order by
         <Field Name="Processing_Date">
           <DataField>Processing_Date</DataField>
           <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="Client_CB_Adj_ID">
+          <DataField>Client_CB_Adj_ID</DataField>
+          <rd:TypeName>System.Decimal</rd:TypeName>
         </Field>
       </Fields>
     </DataSet>

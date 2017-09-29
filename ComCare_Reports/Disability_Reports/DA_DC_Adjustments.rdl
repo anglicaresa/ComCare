@@ -36,6 +36,7 @@
 	,J012.Description 'Funder_Contract'
 	,IIF(J009.Organisation_Name = 'NDIA National Disability Insurance Agency', 'NDIS funded',IIF(J009.Client_ID IS NULL,'No Contract Billing','Self Managed')) 'Funding_type'
 	,iif(J011.Description like '%eduction%',0,1)'AdjustmentType'
+	,J010.Client_CB_Adj_ID
 
 --	,J009.RN
 --	,J009.ContractBillingGroup
@@ -152,7 +153,7 @@ group by
 	,IIF(J009.Organisation_Name = 'NDIA National Disability Insurance Agency', 'NDIS funded',IIF(J009.Client_ID IS NULL,'No Contract Billing','Self Managed'))
 	,J009.RN
 	,iif(J011.Description like '%eduction%',0,1)
-
+	,J010.Client_CB_Adj_ID
 Order by
 2,1</CommandText>
       </Query>
@@ -188,6 +189,10 @@ Order by
         <Field Name="AdjustmentType">
           <DataField>AdjustmentType</DataField>
           <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="Client_CB_Adj_ID">
+          <DataField>Client_CB_Adj_ID</DataField>
+          <rd:TypeName>System.Decimal</rd:TypeName>
         </Field>
       </Fields>
     </DataSet>
@@ -852,7 +857,6 @@ IIF
                             <PaddingBottom>2pt</PaddingBottom>
                           </Style>
                         </Textbox>
-                        <rd:Selected>true</rd:Selected>
                       </CellContents>
                     </TablixCell>
                     <TablixCell>
