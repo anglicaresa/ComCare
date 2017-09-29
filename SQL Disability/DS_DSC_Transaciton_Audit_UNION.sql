@@ -35,7 +35,7 @@ select * from
 		,J001.Visit_Duration 'Actual_Duration'
 		,IIF (J011.Description is NULL,'No Contract',J011.Description) 'contract_type'
 		,J004.Description 'task_Description'
-		,J001.Client_Not_Home
+		,iif(cast(J001.Client_Not_Home as int) = 1 or J001.Visit_Cancel_Reason_ID = 1,1,0)'Client_Not_Home'
 		,IIF (J002.Client_ID IS NULL, 0, 1) 'Has_Charge_Item'
 		,convert (int ,'0') 'In_WiA_Only'
 		,J002.Line_Description 'Charge_Item_Line_Description'
@@ -194,7 +194,7 @@ select * from
 		,J001.AcS_Visit_Duration as 'Actual_Duration'
 		,IIF (J011.Description is NULL,'No Contract',J011.Description) 'contract_type'
 		,J004.Description 'task_Description'
-		,J001.Client_Not_Home
+		,iif(cast(J001.Client_Not_Home as int) = 1 or J001.Visit_Cancel_Reason_ID = 1,1,0)'Client_Not_Home'
 		,IIF (J002.Client_ID IS NULL, 0, 1) 'Has_Charge_Item'
 		,IIF (J001.Client_ID IS NULL, 1, 0) 'In_WiA_Only'
 		,J002.Line_Description 'Charge_Item_Line_Description'
@@ -227,6 +227,7 @@ select * from
 			,Wi_A.Activity_ID 'WiA_Activity_ID'
 			,Ac_S.Visit_Duration 'AcS_Visit_Duration'
 			,Ac_S.Client_Not_Home 'Client_Not_Home'
+			,Ac_S.Visit_Cancel_Reason_ID
 			,Ac_S.Visit_Date 'AcS_Visit_Date'
 			,Ac_S.Visit_No 'Visit_No'
 			,IIF(Ac_S.Task_Type_Code is null,Wi_A.Schedule_Task_Type, Ac_S.Task_Type_Code) 'Task_Type_Code'
@@ -340,7 +341,7 @@ select * from
 
 --		and J002.RN = 2
 
-
+/*
 	Group by
 		J001.Client_ID
 	--	,2
@@ -358,9 +359,10 @@ select * from
 		,J002.Amount
 		,IIF(J009.Organisation_Name = 'NDIA National Disability Insurance Agency', 'NDIS funded',IIF(J009.Client_ID IS NULL,'No Contract Billing','Self Managed'))
 --		,J002.RN
+*/
 )t2
 
-Union-- all
+Union
 
 select * from
 (

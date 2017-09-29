@@ -56,7 +56,7 @@ J004.Organisation_Name
 ,J006.Description
 ,CONVERT(datetime, J001.Schedule_Time) AS Schedule_Time
 ,Case
-	when (J001.Client_Not_Home <> 0) then 'Client not home'
+	when ( cast(J001.Client_Not_Home as int) = 1 or J001.Visit_Cancel_Reason_ID=1) then 'Client not home'
 	when (J001.Cancellation_Date IS NOT NULL) then 'Cancelled visit'
 	else ''
 end
@@ -101,10 +101,10 @@ Inner Join dbo.Task_Type J006 ON J006.Task_Type_Code = J001.Schedule_Task_Type
 
 WHERE
 1=1					
-AND ((J001.Client_Not_Home <> 0) OR (J001.Cancellation_Date IS NOT NULL))
-AND (J001.Schedule_Time BETWEEN (@Start_Date) AND (@End_Date)) 
+AND ( cast(J001.Client_Not_Home as int) =1 OR  J001.Cancellation_Date IS NOT NULL or J001.Visit_Cancel_Reason_ID = 1)
+AND J001.Schedule_Time BETWEEN (@Start_Date) AND (@End_Date)
 AND J004.Organisation_Name IN (@Organisation_Name_)
-AND (J002.Deceased_Date IS NULL)
+AND J002.Deceased_Date IS NULL
 --AND J001.Client_ID = 10071612
 
 GROUP BY 
@@ -123,7 +123,7 @@ GROUP BY
 	,J006.Description
 	,CONVERT(datetime, J001.Schedule_Time)
 	,Case
-		when (J001.Client_Not_Home <> 0) then 'Client not home'
+		when ( cast(J001.Client_Not_Home as int) = 1 or J001.Visit_Cancel_Reason_ID=1) then 'Client not home'
 		when (J001.Cancellation_Date IS NOT NULL) then 'Cancelled visit'
 		else ''
 	end

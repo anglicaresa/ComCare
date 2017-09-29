@@ -55,7 +55,7 @@ Left outer join
 )J003 on J003.Provider_ID = J001.Provider_ID and J003.RN < 2
 where
 	1=1
-	and J002.Organisation_Name = @Centre
+	and J002.Organisation_Name in (@Centre)
 
 --select * from @ProvIDs_1
 --------------------------------------------------------------------------------------------------
@@ -105,7 +105,7 @@ inner join dbo.Person J005 on J005.Person_ID = J001.Provider_ID
 where 
 	1=1
 	and Cast(J001.Activity_Date as date) between @StartDate and @EndDate
-	and J001.Classn_Shift_Centre is null
+	and (J001.Classn_Shift_Centre is null or J001.Classn_Shift_Centre = '')
 	and J001.Activity_Start_Time is not null 
 	and J001.Activity_End_Time is not null
 Order by

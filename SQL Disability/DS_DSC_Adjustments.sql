@@ -12,13 +12,13 @@ select top 1 * from dbo.FB_Client_CB_Bill_Adjustment
 select Top 1 * from dbo.FB_Client_CB_Transaction
 
 */
-
+use ComCareProd
 
 Declare @Client_ID_ as INT
 set @Client_ID_ = 10076603
 
-DECLARE @StartDate AS Date = '2017-05-01'
-DECLARE @EndDate AS Date = '2017-05-01'
+DECLARE @StartDate AS Date = '2017-09-25'
+DECLARE @EndDate AS Date = '2017-09-28'
 declare @Organisation varchar(64) = 'Disabilities Children'
 declare @FiltType int = 1
 --declare @Organisation varchar(64) = 'Disabilities Adults'
@@ -56,6 +56,7 @@ select distinct
 	,IIF(J009.Organisation_Name = 'NDIA National Disability Insurance Agency', 'NDIS funded',IIF(J009.Client_ID IS NULL,'No Contract Billing','Self Managed')) 'Funding_type'
 	,iif(J011.Description like '%eduction%',-1,1)'AdjustmentType'
 	,J015.Processing_Date
+	,J010.Client_CB_Adj_ID
 from
 (
 	select
@@ -151,7 +152,7 @@ Where
 			end
 	and (J009.ContractBillingGroup <> 'DCSI' or J009.ContractBillingGroup is null)
 	and (J012.Description in (select * from @ContractFilt) or J012.Description is null)
---	and J012.Description in (@ContractFilt)
+--	and (J012.Description in (@ContractFilt) or J012.Description is null)
 
 --	and J001.Client_ID = 10072626
 --	and J015.Processing_Date between '2017-08-22 09:21:37.000' and '2017-08-24 09:21:37.000'

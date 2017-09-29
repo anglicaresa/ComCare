@@ -6,14 +6,22 @@ select top 1 * from dbo.wi_activity
 where Round_Allocation_ID <> 0 and sppid = 191 and provider_ID = 10012649
 
 select * from dbo.FC_Transaction-- where Client_ID = 10019493
+
+
+
+select * from dbo.Task_Type -- task_type_code, Serice_Type_Code
+select * from dbo.Service_Delivery where Client_ID = 10004304 --Service_TypeCode, Funding_Prog_Code
+select * from dbo.Funding_Program --Funding_Prog_Code
+select * from dbo.FC_Contract_Area_Product--Funder_Contract_ID, Funding_Prog_Code
+select * from dbo.FC_Funder_Contract --Funder_Contract_ID
 10019493
 */
 
 use ComCareProd
 
-Declare @Client_ID_ INT = 10016125
-DECLARE @StartDate Date = '2017-07-13'
-DECLARE @EndDate Date = '2017-07-13'
+Declare @Client_ID_ INT = 10004304
+DECLARE @StartDate Date = '2017-09-07'
+DECLARE @EndDate Date = '2017-09-20'
 --print @StartDate
 --Declare @Organisation Varchar(128) = 'Home Care West'
 Declare @Organisation Varchar(128) = 'Home Care North'
@@ -46,16 +54,16 @@ select * from
 		,J001.Visit_Duration 'Actual_Duration'
 		,J088.CareModel 'CareModel'
 		,J004.Description 'task_Description'
-		,cast(J001.Client_Not_Home as int)'Client_Not_Home'
+		,iif(cast(J001.Client_Not_Home as int) = 1 or J001.Visit_Cancel_Reason_ID = 1,1,0)'Client_Not_Home'
 		,IIF (J002.Client_ID IS NULL, 0, 1) 'Has_Charge_Item'
 		,convert (int ,'0') 'In_WiA_Only'
 		,J002.Line_Description 'Charge_Item_Line_Description'
 		,J002.Amount 'Amount'
-		,J088.funderContract 'funderContract'
+		,J088.funderContract 'funderContract' --J088
 		,iif(J001.Group_Activity_ID is Null, 0, 1) 'HasGroupActivity'
 		,J001.Travel_Km 'Travel_Km'
 
-	from dbo.Actual_Service J001
+	from (select * from dbo.Actual_Service _AS where cast(_AS.Visit_Date as date) between @StartDate and @EndDate) J001
 
 	Left outer Join
 	(
@@ -100,7 +108,7 @@ select * from
 			where 
 				1=1
 				and FC_T.FC_Transaction_Type_ID = 3
-				and FC_T.Actual_Amount <> 0.0
+			--	and FC_T.Actual_Amount <> 0.0
 
 		)FC_T on FC_T.FC_Account_ID = FC_A.FC_Account_ID
 
@@ -137,18 +145,22 @@ select * from
 	Left outer Join
 	(
 		select
-			FC_CC.Client_ID 'Client_ID'
+			TT.Task_Type_Code
+			,SD.Client_ID 'Client_ID'
 			,FC_FC.Description 'funderContract'
 			,FC_FCM.Description 'CareModel'
-		from dbo.FC_Client_Contract FC_CC
-		Left outer Join dbo.FC_Funder_Contract FC_FC	on FC_FC.funder_Contract_ID = FC_CC.funder_Contract_ID
+		from dbo.Task_Type TT
+		Left outer join dbo.Service_Delivery SD on SD.Service_Type_Code = TT.Service_Type_Code
+		left outer join dbo.FC_Contract_Area_Product CAP on CAP.Funding_Prog_Code = SD.Funding_Prog_Code
+		Left outer Join dbo.FC_Funder_Contract FC_FC on FC_FC.funder_Contract_ID = CAP.funder_Contract_ID
 		Left outer Join dbo.FC_Funding_Care_Model FC_FCM on FC_FCM.Funding_Care_Model_ID = FC_FC.Funding_Care_Model_ID
 
-	)J088 on J088.Client_ID = J001.Client_ID	
+	)J088 on J088.Client_ID = J001.Client_ID and J088.Task_Type_Code = J001.Task_Type_Code
+
 
 	left outer join dbo.Task_Type J004 on J004.Task_Type_Code = J001.Task_Type_Code
 	left outer join dbo.Service_Delivery J005 ON J001.Client_ID = J005.Client_ID
-
+	--funding_Prog_code
 	left outer join 
 	(
 		Select 
@@ -199,12 +211,11 @@ select * from
 
 	Where 
 		1=1
---		and J001.Client_ID = @Client_ID_
+		and J001.Client_ID = @Client_ID_
 		and (J006.RN < 2 or J006.RN is NULL)
 		and (J009.RN < 2 or J009.rn is null)
 		and cast(J001.Visit_Date as date) between @StartDate and @EndDate
 		and J088.CareModel = 'Home Care Package'
-		
 
 		and J006.Organisation_Name = @Organisation
 		AND (IIF (J088.funderContract is NULL,'No Contract',J088.funderContract) in (select * from @ContractType))
@@ -240,12 +251,12 @@ select * from
 		,J001.AcS_Visit_Duration 'Actual_Duration'
 		,J088.CareModel 'CareModel'
 		,J004.Description 'task_Description'
-		,cast(J001.Client_Not_Home as int) 'Client_Not_Home'
+		,iif(cast(J001.Client_Not_Home as int) = 1 or J001.Visit_Cancel_Reason_ID = 1,1,0)'Client_Not_Home'
 		,IIF (J002.Client_ID IS NULL, 0, 1) 'Has_Charge_Item'
 		,IIF (J001.Client_ID IS NULL, 1, 0) 'In_WiA_Only'
 		,J002.Line_Description 'Charge_Item_Line_Description'
 		,J002.Amount 'Amount'
-		,J088.funderContract 'funderContract'
+		,J088.funderContract 'funderContract'--J088
 		,iif(J001.Group_Activity_ID is Null, 0, 1) 'HasGroupActivity'
 		,J001.Travel_Km 'Travel_Km'
 	FROM 
@@ -275,6 +286,7 @@ select * from
 			,Wi_A.Activity_ID 'WiA_Activity_ID'
 			,Ac_S.Visit_Duration 'AcS_Visit_Duration'
 			,Ac_S.Client_Not_Home 'Client_Not_Home'
+			,Ac_S.Visit_Cancel_Reason_ID
 			,Ac_S.Visit_Date 'AcS_Visit_Date'
 			,Ac_S.Visit_No 'Visit_No'
 			,IIF(Ac_S.Task_Type_Code is null,Wi_A.Schedule_Task_Type, Ac_S.Task_Type_Code) 'Task_Type_Code'
@@ -293,7 +305,7 @@ select * from
 					else 'z'
 				end
 			) AS 'RN'
-		from dbo.WI_Activity Wi_A
+		from (select * from dbo.WI_Activity where cast(Activity_Date as date) between @StartDate and @EndDate) Wi_A
 		Left Outer Join dbo.Actual_Service Ac_S 
 		ON 
 			1=1
@@ -352,7 +364,7 @@ select * from
 			where 
 				1=1
 				and FC_T.FC_Transaction_Type_ID = 3
-				and FC_T.Actual_Amount <> 0.0
+			--	and FC_T.Actual_Amount <> 0.0
 
 		)FC_T on FC_T.FC_Account_ID = FC_A.FC_Account_ID
 
@@ -366,14 +378,17 @@ select * from
 	Left outer Join
 	(
 		select
-			FC_CC.Client_ID 'Client_ID'
+			TT.Task_Type_Code
+			,SD.Client_ID 'Client_ID'
 			,FC_FC.Description 'funderContract'
 			,FC_FCM.Description 'CareModel'
-		from dbo.FC_Client_Contract FC_CC
-		Left outer Join dbo.FC_Funder_Contract FC_FC	on FC_FC.funder_Contract_ID = FC_CC.funder_Contract_ID
+		from dbo.Task_Type TT
+		Left outer join dbo.Service_Delivery SD on SD.Service_Type_Code = TT.Service_Type_Code
+		left outer join dbo.FC_Contract_Area_Product CAP on CAP.Funding_Prog_Code = SD.Funding_Prog_Code
+		Left outer Join dbo.FC_Funder_Contract FC_FC on FC_FC.funder_Contract_ID = CAP.funder_Contract_ID
 		Left outer Join dbo.FC_Funding_Care_Model FC_FCM on FC_FCM.Funding_Care_Model_ID = FC_FC.Funding_Care_Model_ID
 
-	)J088 on J088.Client_ID = J001.Client_ID
+	)J088 on J088.Client_ID = J001.Client_ID and J088.Task_Type_Code = J001.Task_Type_Code
 
 	Left outer Join dbo.Task_Type J004 on J004.Task_Type_Code = J001.Task_Type_Code
 	Left Outer Join dbo.Service_Delivery J005 ON J001.Client_ID = J005.Client_ID
@@ -427,7 +442,7 @@ select * from
 
 	Where 
 		1=1
---		and J001.Client_ID = @Client_ID_
+		and J001.Client_ID = @Client_ID_
 		
 		and 1 = iif(J001.RN > 1 and J001.WiA_Provider_ID = 0, 0, 1)
 		and (J006.RN < 2 or J006.RN is null)
@@ -440,24 +455,6 @@ select * from
 		AND (IIF (J088.funderContract is NULL,'No Contract',J088.funderContract) in (select * from @ContractType))
 --		and (IIF (J011.Description is NULL,'No Contract',J011.Description) in (@ContractType))
 
-
-	Group by
-		J001.Client_ID
-		,J001.WiA_Provider_ID 
-		,IIF(J001.WiA_Schedule_TimeKILL = 'true', null, Cast (J001.WiA_Schedule_Time as Datetime)) 	
-		,J001.WiA_Scheduled_Duration 
-		,(Cast (J001.AcS_Activity_Start_Time as Datetime)) 
-		,J001.AcS_Visit_Duration
-		,J088.CareModel 
-		,J004.Description 
-		,J001.Client_Not_Home
-		,IIF (J002.Client_ID IS NULL, 0, 1) 
-		,IIF (J001.Client_Not_Home IS NULL, 1, 0) 
-		,J002.Line_Description 
-		,J002.Amount
-		,J088.funderContract
-		,iif(J001.Group_Activity_ID is Null, 0, 1)
-		,J001.Travel_Km
 )t2
 
 

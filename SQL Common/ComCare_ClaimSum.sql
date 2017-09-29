@@ -1,7 +1,9 @@
---select * from dbo.FC_Client_Supplement
+--select * from dbo.FC_Client_Supplement where override_Rate is not null
 --select distinct Activity_type from FC_Transaction
 --select Description from dbo.FC_Transaction_Type
+--select * from dbo.FC_Supplement_Type J009 where (J009.FC_Supplement_Type_ID = 5 or J009.FC_Supplement_Type_ID = 6 or J009.FC_Supplement_Type_ID = 7 or J009.FC_Supplement_Type_ID = 9 or J009.FC_Supplement_Type_ID = 30 or J009.FC_Supplement_Type_ID = 1)
 --use ComCareProd
+
 /*
 declare @TransactionType table(Type VarChar(128))
 
@@ -19,11 +21,13 @@ insert into @TransactionType
 
 
 --declare @Client_ID int = 10019215
-declare @Client_ID int = 10013840
+--declare @Client_ID int = 10013840
+declare @Client_ID int = 10021555
+
 declare @FiltIncomeTested int = 1
-declare @ClaimYear int = 2016
-declare @ClaimPeriod_Start int = 6
-declare @ClaimPeriod_End int = 11
+declare @ClaimYear int = 2017
+declare @ClaimPeriod_Start int = 1
+declare @ClaimPeriod_End int = 6
 
 Declare @FunderContract_ID Table 
 (
@@ -44,6 +48,8 @@ where
 --select * from @FunderContract_ID
 
 --------------<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<here down
+Declare @StartDate Date = DATEFROMPARTS(@ClaimYear,@ClaimPeriod_Start,1)
+Declare @EndDate Date = DateADD(Day,-1,DATEFROMPARTS(@ClaimYear,@ClaimPeriod_End+1,1))
 
 Declare @ClaimSum_01 Table
 (
@@ -65,6 +71,7 @@ Declare @ClaimSum_01 Table
 --	,Billing_End_Date DateTime
 	,Period_INT int
 	,Funded_indicator int
+	,LevelOfCare int
 
 )
 insert into @ClaimSum_01
@@ -100,6 +107,7 @@ select
 --	,J007.Billing_End_Date
 	,J005.Period 'Period_INT'
 	,J001.Funded_Indicator
+	,J001.Program_Level_ID 'LevelOfCare'
 
 from dbo.FC_Funder_Contract J002
 left outer join dbo.FC_Client_Contract J001 on J002.funder_Contract_ID = J001.funder_Contract_ID
@@ -112,7 +120,7 @@ where
 --	and J002.Funder_Contract_ID in (@FunderContract_ID)
 	and J002.Funder_Contract_ID in (select Funder_Contract_ID from @FunderContract_ID)
 	and J005.Claim_Year = @ClaimYear
-	and J005.Period between @ClaimPeriod_Start and @ClaimPeriod_end
+	and J005.Period between @ClaimPeriod_Start and @ClaimPeriod_End
 
 order by
 1,2,4, J005.Period
@@ -123,6 +131,7 @@ Declare @SubsRate Table
 (
 	Client_ID int
 	,Description VarChar(64)
+	,FC_Supplement_Type_ID int
 	,Supplement_Rate Dec(10,2)
 	,From_Date Datetime
 	,To_Date DateTime
@@ -134,11 +143,13 @@ select
 	J001.Client_ID 'Client_ID'
 --	,J001.Program_Level_ID
 	,J009.Description
-	,iif(J005.Override_Rate is null, J007.Supplement_Rate,J005.Override_Rate)'Supplement_Rate'
+	,J009.FC_Supplement_Type_ID
+	,cast(J009.Affect_Funder_Claim + cast(iif(J005.Override_Rate is null, J007.Supplement_Rate,J005.Override_Rate)as Varchar(16))as decimal(10,2))'Supplement_Rate'
 	,iif(J005.Override_Rate is null, J007.Effective_From_Date,J005.Effective_From_Date)'From_Date'
 	,iif(J005.Override_Rate is null, J007.Effective_To_Date,J005.Effective_To_Date)'To_Date'
 	,J005.Effective_From_Date 'Sup_From_Date'
 	,J005.Effective_To_Date 'Sup_To_Date'
+	
 From
 (
 	select 
@@ -164,41 +175,124 @@ where
 	and (J007.Effective_To_Date > J001.Effective_From_Date or J007.Effective_To_Date is null)
 	and J001.Effective_To_Date is null
 	and (J005.Effective_To_Date > J001.Effective_From_Date or J005.Effective_To_Date is null)
-	and (J009.Description = 'Base Subsidy' or J009.Description = 'Income Tested')
+	and (J009.FC_Supplement_Type_ID = 5 or J009.FC_Supplement_Type_ID = 6 or J009.FC_Supplement_Type_ID = 7 or J009.FC_Supplement_Type_ID = 9 or J009.FC_Supplement_Type_ID = 30 or J009.FC_Supplement_Type_ID = 1)
 
 order by 1,3,4
-select * from @SubsRate
+--select * from @SubsRate
 -----------------------------------------------------------------------------------------------------------------------------
---/* Need to handle the vairous dates for rate changes.
+Declare @Hosp Table
+(
+	Client_ID int
+	,From_Date Datetime
+	,To_Date DateTime
+)
+insert into @Hosp
+select Distinct
+	J001.Client_ID
+	,cast(J002.From_Date as datetime)'From_Date'
+	,cast(J002.To_Date as datetime)'To_Date'
+From @ClaimSum_01 J001
+left outer join dbo.Hospitalisation J002 on J002.Client_ID = J001.Client_ID
+where
+	1=1
+	and J002.From_Date between @StartDate and @EndDate
+	or J002.To_Date Between @StartDate and @EndDate
+	or @StartDate between J002.From_Date and J002.To_Date
+
+
+-----------------------------------------------------------------------------------------------------------------------------
+--/* Need to handle the vairous dates for rate changes. done
 Select
-J001.*
-,iif(J001.FirstDayOfPeriod > J002.Sup_To_Date ,0.0 ,J002.Supplement_Rate) 'BaseSubsidy_Rate'
-,(iif(J001.FirstDayOfPeriod > J003.Sup_To_Date ,0.0 ,J003.Supplement_Rate) *-1) 'IncomeTested_Rate'
-,(iif(J001.FirstDayOfPeriod > J002.Sup_To_Date ,0.0 ,J002.Supplement_Rate) * J001.Eligible_Days) 'BaseSubsidy_Total'
-,((J003.Supplement_Rate *-1)* J001.Eligible_Days) 'IncomeTested_Total'
-From 
-(
-	select 
-		CS.* 
-		,DateADD(Day,-1,DATEFROMPARTS(CS.Claim_Year,CS.Period_INT+1,1))'LastDayOfPeriod'
-		,DATEFROMPARTS(CS.Claim_Year,CS.Period_INT,1)'FirstDayOfPeriod'
-	from @ClaimSum_01 CS
-) J001
-Left outer join
+	T02.*
+	,Cast(T02.BaseSubsidy_Rate * T02.RateMult as decimal(12,4)) 'Cal_BaseSubsidy'
+	,Cast(T02.IncomeTested_Rate * T02.RateMult as decimal(12,4)) 'Cal_IncomeTested'
+	,Cast(T02.Dementia_Veterans_Rate * T02.RateMult as decimal(12,4)) 'Cal_Dementia_Veterans'
+	,Cast(T02.Financial_Hardship_Rate * T02.RateMult as decimal(12,4)) 'Cal_Financial_Hardship'
+	,Cast(T02.Oxygen_Rate * T02.RateMult as decimal(12,4)) 'Cal_Oxygen'
+From
 (
 	Select
-	*
-	From @SubsRate SR
-	where SR.Description = 'Base Subsidy'
-)J002 on 
-	J001.Client_ID = J002.Client_ID and J001.LastDayOfPeriod between J002.From_Date and iif(J002.To_Date is null, DATEFROMPARTS(2200,01,01),J002.To_Date)
-Left outer join
-(
-	Select
-	*
-	From @SubsRate SR
-	where SR.Description = 'Income Tested'
-)J003 on J001.Client_ID = J003.Client_ID and J001.LastDayOfPeriod between J003.From_Date and iif(J003.To_Date is null, DATEFROMPARTS(2200,01,01),J003.To_Date)
+	T01.*
+	,cast(iif 
+	(
+		T01.Sum_Rate is null or T01.Sum_Rate = 0
+		,0.0
+		,(T01.Actual_Income/(T01.Sum_Rate + iif(T01.Sum_Rate is null or T01.Sum_Rate = 0,1.0,0.0 )))
+	)as decimal(12,4))  'RateMult'
+	From
+	(
+		Select
+			J001.*
+			,iif(J001.FirstDayOfPeriod > J002.Sup_To_Date ,0.0 ,iif(J002.Supplement_Rate is null,0.0,J002.Supplement_Rate)) 'BaseSubsidy_Rate'
+			,iif(J001.FirstDayOfPeriod > J003.Sup_To_Date ,0.0 ,iif(J003.Supplement_Rate is null,0.0,J003.Supplement_Rate)) 'IncomeTested_Rate'
+			,iif(J001.FirstDayOfPeriod > J004.Sup_To_Date ,0.0 ,iif(J004.Supplement_Rate is null,0.0,J004.Supplement_Rate)) 'Dementia_Veterans_Rate'
+			,iif(J001.FirstDayOfPeriod > J005.Sup_To_Date ,0.0 ,iif(J005.Supplement_Rate is null,0.0,J005.Supplement_Rate)) 'Financial_Hardship_Rate'
+			,iif(J001.FirstDayOfPeriod > J006.Sup_To_Date ,0.0 ,iif(J006.Supplement_Rate is null,0.0,J006.Supplement_Rate)) 'Oxygen_Rate'
+
+			,iif(J001.FirstDayOfPeriod > J002.Sup_To_Date ,0.0 ,iif(J002.Supplement_Rate is null,0.0,J002.Supplement_Rate))
+			+iif(J001.FirstDayOfPeriod > J003.Sup_To_Date ,0.0 ,iif(J003.Supplement_Rate is null,0.0,J003.Supplement_Rate))
+			+iif(J001.FirstDayOfPeriod > J004.Sup_To_Date ,0.0 ,iif(J004.Supplement_Rate is null,0.0,J004.Supplement_Rate))
+			+iif(J001.FirstDayOfPeriod > J005.Sup_To_Date ,0.0 ,iif(J005.Supplement_Rate is null,0.0,J005.Supplement_Rate))
+			+iif(J001.FirstDayOfPeriod > J006.Sup_To_Date ,0.0 ,iif(J006.Supplement_Rate is null,0.0,J006.Supplement_Rate))'Sum_Rate'
+
+			,IIF(J007.Client_ID is null,0,1 )'HospInPeriod'
+		From 
+		(
+			select 
+				CS.* 
+				,DateADD(Day,-1,DATEFROMPARTS(CS.Claim_Year,CS.Period_INT+1,1))'LastDayOfPeriod'
+				,DATEFROMPARTS(CS.Claim_Year,CS.Period_INT,1)'FirstDayOfPeriod'
+			from @ClaimSum_01 CS
+		)J001
+		Left outer join
+		(
+			Select
+			*
+			From @SubsRate SR
+			where SR.FC_Supplement_Type_ID = 5 --Base Subsidy
+		)J002 on 
+			J001.Client_ID = J002.Client_ID and J001.LastDayOfPeriod between J002.From_Date and iif(J002.To_Date is null, DATEFROMPARTS(2200,01,01),J002.To_Date)
+		Left outer join
+		(
+			Select
+			*
+			From @SubsRate SR
+			where SR.FC_Supplement_Type_ID = 6 --Income Tested
+		)J003 on J001.Client_ID = J003.Client_ID and J001.LastDayOfPeriod between J003.From_Date and iif(J003.To_Date is null, DATEFROMPARTS(2200,01,01),J003.To_Date)
+
+		Left outer join
+		(
+			Select
+			*
+			From @SubsRate SR
+			where SR.FC_Supplement_Type_ID = 9 --Dementia and Cognition and Veterans
+		)J004 on J001.Client_ID = J004.Client_ID and J001.LastDayOfPeriod between J004.From_Date and iif(J004.To_Date is null, DATEFROMPARTS(2200,01,01),J004.To_Date)
+
+		Left outer join
+		(
+			Select
+			*
+			From @SubsRate SR
+			where SR.FC_Supplement_Type_ID = 7 or SR.FC_Supplement_Type_ID = 30 --Financial Hardship
+		)J005 on J001.Client_ID = J005.Client_ID and J001.LastDayOfPeriod between J005.From_Date and iif(J005.To_Date is null, DATEFROMPARTS(2200,01,01),J005.To_Date)
+
+		Left outer join
+		(
+			Select
+			*
+			From @SubsRate SR
+			where SR.FC_Supplement_Type_ID = 1 --Oxygen
+		)J006 on J001.Client_ID = J006.Client_ID and J001.LastDayOfPeriod between J006.From_Date and iif(J006.To_Date is null, DATEFROMPARTS(2200,01,01),J006.To_Date)
+
+		Left outer Join @Hosp J007 on J007.Client_ID = J001.Client_ID and 
+				(	
+					J001.FirstDayOfPeriod Between J007.From_Date and J007.To_Date
+					or J001.LastDayOfPeriod Between J007.From_Date and J007.To_Date
+					or J007.From_Date Between J001.FirstDayOfPeriod and J001.LastDayOfPeriod
+				)
+	)T01
+)T02
+
 --*/
 
 
@@ -318,7 +412,7 @@ select Distinct
 	,J010.To_Date
 --	,J011.FC_Supplement_Type_ID
 --	,J011.Funding_Care_Model_ID
---	,J011.Hosp_Reason_Code
+	,J011.Hosp_Reason_Code
 	,J011.Supplement_Exceed_Limit_Percentage
 From
 (
