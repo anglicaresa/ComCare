@@ -67,7 +67,7 @@ select
 	,IIF (J011.Description is NULL,'No Contract',J011.Description) as contract_type
 --	,J009.Contract_Billing_ID
 --	,J001.Visit_No
-	,J001.Client_Not_Home
+	,iif(cast(J001.Client_Not_Home as int) = 1 or J001.Visit_Cancel_Reason_ID = 1,1,0)'Client_Not_Home'
 	,J001.Provider_ID
 	,J033.Scheduled_Duration	
 	,J001.Visit_Duration as 'Actual_Duration'
