@@ -28,7 +28,7 @@
           </QueryParameter>
         </QueryParameters>
         <CommandText>Declare @StartDate Date = DATEFROMPARTS(@ClaimYear,@ClaimPeriod_Start,1)
-Declare @EndDate Date = DateADD(Day,-1,DATEFROMPARTS(@ClaimYear ,@ClaimPeriod_End + 1,1))
+Declare @EndDate Date = DateADD(Day,-1,DATEFROMPARTS(@ClaimYear,@ClaimPeriod_End+1,1))
 
 Declare @ClaimSum_01 Table
 (
@@ -87,6 +87,7 @@ select
 	,J005.Period 'Period_INT'
 	,J001.Funded_Indicator
 	,J001.Program_Level_ID 'LevelOfCare'
+	
 
 from dbo.FC_Funder_Contract J002
 left outer join dbo.FC_Client_Contract J001 on J002.funder_Contract_ID = J001.funder_Contract_ID
@@ -116,9 +117,13 @@ Declare @SubsRate Table
 	,To_Date DateTime
 	,Sup_From_Date DateTime
 	,Sup_To_Date DateTime
+
+	--,Creation_Date DateTime
+	,Last_Modified_Date DateTime
+	,Last_mod_Type VarChar(32)
 )
 insert into @SubsRate
-select
+select distinct
 	J001.Client_ID 'Client_ID'
 --	,J001.Program_Level_ID
 	,J009.Description
@@ -128,14 +133,16 @@ select
 	,iif(J005.Override_Rate is null, J007.Effective_To_Date,J005.Effective_To_Date)'To_Date'
 	,J005.Effective_From_Date 'Sup_From_Date'
 	,J005.Effective_To_Date 'Sup_To_Date'
-	
+	--,J005.Creation_Date
+	,iif(J005.Last_Modified_Date is null,J005.Creation_Date,J005.Last_Modified_Date)'Last_Modified_Date'
+	,iif(J005.Last_Modified_Date is null,'Creation_Date','Last_Modified_Date')'Last_Modified_Date'
 From
 (
 	select 
 	CC.* 
 	from dbo.FC_Client_Contract CC
 	inner join(Select Distinct Client_ID,Effective_From_Date from @ClaimSum_01) CS on CS.Client_ID = CC.Client_ID
-	where CC.Effective_To_Date is null
+--	where CC.Effective_To_Date is null or CC.Effective_To_Date &gt; @EndDate or CC.Effective_To_Date between @StartDate and @EndDate
 )J001
 
 Left outer Join dbo.FC_Funder_Contract J002	on J002.funder_Contract_ID = J001.funder_Contract_ID
@@ -152,7 +159,7 @@ where
 	and J002.Funder_Contract_ID in (@FunderContract_ID)
 --	and J001.Funder_Contract_ID in (select Funder_Contract_ID from @FunderContract_ID)
 	and (J007.Effective_To_Date &gt; J001.Effective_From_Date or J007.Effective_To_Date is null)
-	and J001.Effective_To_Date is null
+--	and (J001.Effective_To_Date is null or J001.Effective_To_Date &gt; @EndDate or J001.Effective_To_Date between @StartDate and @EndDate)
 	and (J005.Effective_To_Date &gt; J001.Effective_From_Date or J005.Effective_To_Date is null)
 	and (J009.FC_Supplement_Type_ID = 5 or J009.FC_Supplement_Type_ID = 6 or J009.FC_Supplement_Type_ID = 7 or J009.FC_Supplement_Type_ID = 9 or J009.FC_Supplement_Type_ID = 30 or J009.FC_Supplement_Type_ID = 1)
 
@@ -203,10 +210,15 @@ From
 		Select
 			J001.*
 			,iif(J001.FirstDayOfPeriod &gt; J002.Sup_To_Date ,0.0 ,iif(J002.Supplement_Rate is null,0.0,J002.Supplement_Rate)) 'BaseSubsidy_Rate'
+			,J002.Last_Modified_Date 'BaseSubsidy_Rate_ModDate'
 			,iif(J001.FirstDayOfPeriod &gt; J003.Sup_To_Date ,0.0 ,iif(J003.Supplement_Rate is null,0.0,J003.Supplement_Rate)) 'IncomeTested_Rate'
+			,J003.Last_Modified_Date 'IncomeTested_Rate_ModDate'
 			,iif(J001.FirstDayOfPeriod &gt; J004.Sup_To_Date ,0.0 ,iif(J004.Supplement_Rate is null,0.0,J004.Supplement_Rate)) 'Dementia_Veterans_Rate'
+			,J004.Last_Modified_Date 'Dementia_Veterans_Rate_ModDate'
 			,iif(J001.FirstDayOfPeriod &gt; J005.Sup_To_Date ,0.0 ,iif(J005.Supplement_Rate is null,0.0,J005.Supplement_Rate)) 'Financial_Hardship_Rate'
+			,J005.Last_Modified_Date 'Financial_Hardship_Rate_ModDate'
 			,iif(J001.FirstDayOfPeriod &gt; J006.Sup_To_Date ,0.0 ,iif(J006.Supplement_Rate is null,0.0,J006.Supplement_Rate)) 'Oxygen_Rate'
+			,J006.Last_Modified_Date 'Oxygen_Rate_ModDate'
 
 			,iif(J001.FirstDayOfPeriod &gt; J002.Sup_To_Date ,0.0 ,iif(J002.Supplement_Rate is null,0.0,J002.Supplement_Rate))
 			+iif(J001.FirstDayOfPeriod &gt; J003.Sup_To_Date ,0.0 ,iif(J003.Supplement_Rate is null,0.0,J003.Supplement_Rate))
@@ -222,7 +234,7 @@ From
 				,DateADD(Day,-1,DATEFROMPARTS(CS.Claim_Year,CS.Period_INT+1,1))'LastDayOfPeriod'
 				,DATEFROMPARTS(CS.Claim_Year,CS.Period_INT,1)'FirstDayOfPeriod'
 			from @ClaimSum_01 CS
-		) J001
+		)J001
 		Left outer join
 		(
 			Select
@@ -353,6 +365,10 @@ From
           <DataField>BaseSubsidy_Rate</DataField>
           <rd:TypeName>System.Decimal</rd:TypeName>
         </Field>
+        <Field Name="BaseSubsidy_Rate_ModDate">
+          <DataField>BaseSubsidy_Rate_ModDate</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
         <Field Name="IncomeTested_Rate">
           <DataField>IncomeTested_Rate</DataField>
           <rd:TypeName>System.Decimal</rd:TypeName>
@@ -360,6 +376,10 @@ From
         <Field Name="Dementia_Veterans_Rate">
           <DataField>Dementia_Veterans_Rate</DataField>
           <rd:TypeName>System.Decimal</rd:TypeName>
+        </Field>
+        <Field Name="IncomeTested_Rate_ModDate">
+          <DataField>IncomeTested_Rate_ModDate</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
         </Field>
         <Field Name="Financial_Hardship_Rate">
           <DataField>Financial_Hardship_Rate</DataField>
@@ -373,9 +393,17 @@ From
           <DataField>Sum_Rate</DataField>
           <rd:TypeName>System.Decimal</rd:TypeName>
         </Field>
+        <Field Name="Dementia_Veterans_Rate_ModDate">
+          <DataField>Dementia_Veterans_Rate_ModDate</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
         <Field Name="HospInPeriod">
           <DataField>HospInPeriod</DataField>
           <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="Financial_Hardship_Rate_ModDate">
+          <DataField>Financial_Hardship_Rate_ModDate</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
         </Field>
         <Field Name="RateMult">
           <DataField>RateMult</DataField>
@@ -384,6 +412,10 @@ From
         <Field Name="Cal_BaseSubsidy">
           <DataField>Cal_BaseSubsidy</DataField>
           <rd:TypeName>System.Decimal</rd:TypeName>
+        </Field>
+        <Field Name="Oxygen_Rate_ModDate">
+          <DataField>Oxygen_Rate_ModDate</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
         </Field>
         <Field Name="Cal_IncomeTested">
           <DataField>Cal_IncomeTested</DataField>
@@ -554,10 +586,25 @@ where
                   <Width>2.5cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>2.5cm</Width>
+                  <Width>3.02917cm</Width>
                 </TablixColumn>
                 <TablixColumn>
                   <Width>2.5cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>3.00271cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>3.66417cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>3.79646cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>2.5cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>3.18792cm</Width>
                 </TablixColumn>
                 <TablixColumn>
                   <Width>2.5cm</Width>
@@ -946,6 +993,40 @@ where
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
+                        <Textbox Name="Textbox8">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Calc Eligible Days</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox8</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
                         <Textbox Name="Textbox23">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
@@ -1048,6 +1129,40 @@ where
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
+                        <Textbox Name="Textbox18">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Base Subsidy Rate Edit Date</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox18</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
                         <Textbox Name="Textbox24">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
@@ -1066,6 +1181,41 @@ where
                             </Paragraph>
                           </Paragraphs>
                           <rd:DefaultName>Textbox24</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox21">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>InCome Tested
+Rate Edit Date</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox21</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -1116,6 +1266,48 @@ where
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
+                        <Textbox Name="Textbox26">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Dementia &amp; Veterans
+</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                                <TextRun>
+                                  <Value>Rate Edit Date</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox26</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
                         <Textbox Name="Textbox12">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
@@ -1134,6 +1326,48 @@ where
                             </Paragraph>
                           </Paragraphs>
                           <rd:DefaultName>Textbox12</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox28">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Financial Hardship
+</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                                <TextRun>
+                                  <Value>Rate Edit Date</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox28</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -1553,6 +1787,39 @@ where
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
+                        <Textbox Name="RateMult">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!RateMult.Value</Value>
+                                  <Style>
+                                    <Format>#.##</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>RateMult</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                        <rd:Selected>true</rd:Selected>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
                         <Textbox Name="LevelOfCare">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
@@ -1621,13 +1888,47 @@ where
                               <TextRuns>
                                 <TextRun>
                                   <Value>=Fields!Cal_BaseSubsidy.Value</Value>
-                                  <Style />
+                                  <Style>
+                                    <Format>0.00##;-0.00##</Format>
+                                  </Style>
                                 </TextRun>
                               </TextRuns>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
                           <rd:DefaultName>Cal_BaseSubsidy</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="BaseSubsidy_Rate_ModDate">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!BaseSubsidy_Rate_ModDate.Value</Value>
+                                  <Style>
+                                    <Format>d</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>BaseSubsidy_Rate_ModDate</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -1651,13 +1952,47 @@ where
                               <TextRuns>
                                 <TextRun>
                                   <Value>=Fields!Cal_IncomeTested.Value</Value>
-                                  <Style />
+                                  <Style>
+                                    <Format>0.00##;-0.00##</Format>
+                                  </Style>
                                 </TextRun>
                               </TextRuns>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
                           <rd:DefaultName>Cal_IncomeTested</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="IncomeTested_Rate_ModDate">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!IncomeTested_Rate_ModDate.Value</Value>
+                                  <Style>
+                                    <Format>d</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>IncomeTested_Rate_ModDate</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -1681,13 +2016,47 @@ where
                               <TextRuns>
                                 <TextRun>
                                   <Value>=Fields!Cal_Dementia_Veterans.Value</Value>
-                                  <Style />
+                                  <Style>
+                                    <Format>0.00##;-0.00##</Format>
+                                  </Style>
                                 </TextRun>
                               </TextRuns>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
                           <rd:DefaultName>Cal_Dementia_Veterans</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Dementia_Veterans_Rate_ModDate">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Dementia_Veterans_Rate_ModDate.Value</Value>
+                                  <Style>
+                                    <Format>d</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Dementia_Veterans_Rate_ModDate</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -1711,13 +2080,47 @@ where
                               <TextRuns>
                                 <TextRun>
                                   <Value>=Fields!Cal_Financial_Hardship.Value</Value>
-                                  <Style />
+                                  <Style>
+                                    <Format>0.00##;-0.00##</Format>
+                                  </Style>
                                 </TextRun>
                               </TextRuns>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
                           <rd:DefaultName>Cal_Financial_Hardship</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Financial_Hardship_Rate_ModDate">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Financial_Hardship_Rate_ModDate.Value</Value>
+                                  <Style>
+                                    <Format>d</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Financial_Hardship_Rate_ModDate</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -1741,7 +2144,9 @@ where
                               <TextRuns>
                                 <TextRun>
                                   <Value>=Fields!Cal_Oxygen.Value</Value>
-                                  <Style />
+                                  <Style>
+                                    <Format>0.00##;-0.00##</Format>
+                                  </Style>
                                 </TextRun>
                               </TextRuns>
                               <Style />
@@ -1818,6 +2223,11 @@ where
                 <TablixMember />
                 <TablixMember />
                 <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
               </TablixMembers>
             </TablixColumnHierarchy>
             <TablixRowHierarchy>
@@ -1832,7 +2242,7 @@ where
             </TablixRowHierarchy>
             <DataSetName>DataSet1</DataSetName>
             <Height>1.64979cm</Height>
-            <Width>55.96666cm</Width>
+            <Width>72.64708cm</Width>
             <Style>
               <Border>
                 <Style>None</Style>
@@ -1843,7 +2253,7 @@ where
         <Height>0.64952in</Height>
         <Style />
       </Body>
-      <Width>22.03412in</Width>
+      <Width>28.60121in</Width>
       <Page>
         <PageHeader>
           <Height>1.19098cm</Height>
@@ -1896,9 +2306,9 @@ where
               <Source>Embedded</Source>
               <Value>Logo_AnglicareSA</Value>
               <Sizing>FitProportional</Sizing>
-              <Left>47.69937cm</Left>
+              <Left>63.69187cm</Left>
               <Height>1.19098cm</Height>
-              <Width>8.26729cm</Width>
+              <Width>8.95521cm</Width>
               <ZIndex>1</ZIndex>
               <Style>
                 <Border>
@@ -2507,6 +2917,7 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA///gyWADqVGJ0AAAAABJRU5ErkJggg==</ImageData>
     </EmbeddedImage>
   </EmbeddedImages>
+  <Language>en-AU</Language>
   <rd:ReportUnitType>Cm</rd:ReportUnitType>
   <rd:ReportID>5070c382-781c-4017-87d9-c19df9507a52</rd:ReportID>
 </Report>
