@@ -4,6 +4,9 @@ where
 	1=1
 	and organisation_type_code = 1
 	and Organisation_Name like 'Home Care%'
+
+select * from dbo.FC_Funder_Contract
+select * from dbo.Organisation where Organisation_Type_Code = 1
 */
 use ComCareProd
 
@@ -29,7 +32,7 @@ select
 from dbo.FC_Funder_Contract
 where 
 	1=1
-	AND (Description like 'CHSP%' )
+	AND (Description like 'CHSP%' or Description = 'Fee for Service' )
 order by 1
 
 ---------------------------------------------------------------------------------------------------------------------------

@@ -48,7 +48,8 @@ where
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------
 select distinct
 	J001.Client_ID
-	,Format(J010.Effective_From_Date, 'yyyy-MM-dd') 'Activity_Date'
+	,cast(J010.Effective_From_Date as date) 'Effective_From_Date'
+	,cast(J010.Effective_To_Date as date) 'Effective_To_Date'
 	,J010.Comments 'Charge_Item_Line_Description'
 	,Format(J010.Adjustment_Amount, '#######0.#0') 'UnitPrice'
 	,J014.Description 'GST_Type'
