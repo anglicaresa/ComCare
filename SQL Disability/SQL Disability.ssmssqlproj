@@ -169,12 +169,6 @@
           <AssociatedConnUserName />
           <FullPath>DS_Statistics_Pt2.sql</FullPath>
         </FileNode>
-        <FileNode Name="DS_Statistics_Pt3.sql">
-          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
-          <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
-          <AssociatedConnUserName />
-          <FullPath>DS_Statistics_Pt3.sql</FullPath>
-        </FileNode>
         <FileNode Name="DSC_Clients_BasicDailyFee.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
