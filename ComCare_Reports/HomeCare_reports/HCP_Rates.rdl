@@ -31,7 +31,7 @@ J003.[Description] as Agency_Name
 ,SUM(J004.[Surcharge_Sunday]) as Sunday_Rate
 ,SUM(J004.[Surcharge_Public_Holiday]) as Public_Holiday_Rate
 ,SUM(J004.[Surcharge_Wkday_After_Hr]) as WeekDay_After_Hr_Rate
-,SUM(J004.[Client_Not_Home_Charge_Amount]) as Client_Not_Home_Charge_Amount
+,SUM(J004.[Cancellation_Charge_Amount]) as Cancellation_Charge_Amount
 ,J004.[Min_Units] as Min_Units_Hours_of_Charge
 ,J004.[Max_Units] as Max_Units_Hours_of_Charge
 ,DATEADD(DD,0,DATEDIFF(DD,0,J004.[Effective_From_Date])) as Effective_From_Date
@@ -103,8 +103,8 @@ ORDER BY
           <DataField>WeekDay_After_Hr_Rate</DataField>
           <rd:TypeName>System.Decimal</rd:TypeName>
         </Field>
-        <Field Name="Client_Not_Home_Charge_Amount">
-          <DataField>Client_Not_Home_Charge_Amount</DataField>
+        <Field Name="Cancellation_Charge_Amount">
+          <DataField>Cancellation_Charge_Amount</DataField>
           <rd:TypeName>System.Decimal</rd:TypeName>
         </Field>
         <Field Name="Min_Units_Hours_of_Charge">
@@ -170,25 +170,25 @@ ORDER BY
             <TablixBody>
               <TablixColumns>
                 <TablixColumn>
-                  <Width>1in</Width>
+                  <Width>1.29167in</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>1in</Width>
+                  <Width>1.36458in</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>1in</Width>
+                  <Width>1.1875in</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>1in</Width>
+                  <Width>1.07292in</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>1in</Width>
+                  <Width>1.28125in</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>1in</Width>
+                  <Width>1.39583in</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>1in</Width>
+                  <Width>1.09375in</Width>
                 </TablixColumn>
                 <TablixColumn>
                   <Width>1in</Width>
@@ -203,7 +203,7 @@ ORDER BY
                   <Width>1.21875in</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>1in</Width>
+                  <Width>1.52083in</Width>
                 </TablixColumn>
                 <TablixColumn>
                   <Width>2.125in</Width>
@@ -215,7 +215,7 @@ ORDER BY
                   <Width>1in</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>1in</Width>
+                  <Width>1.08333in</Width>
                 </TablixColumn>
                 <TablixColumn>
                   <Width>1in</Width>
@@ -471,7 +471,7 @@ ORDER BY
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Client Not Home Charge Amount</Value>
+                                  <Value>Cancellation Charge Amount</Value>
                                   <Style>
                                     <FontFamily>Tahoma</FontFamily>
                                     <FontSize>11pt</FontSize>
@@ -1193,14 +1193,14 @@ ORDER BY
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Client_Not_Home_Charge_Amount">
+                        <Textbox Name="Cancellation_Charge_Amount">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>=Fields!Client_Not_Home_Charge_Amount.Value</Value>
+                                  <Value>=Fields!Cancellation_Charge_Amount.Value</Value>
                                   <Style>
                                     <FontFamily>Tahoma</FontFamily>
                                   </Style>
@@ -1209,7 +1209,7 @@ ORDER BY
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Client_Not_Home_Charge_Amount</rd:DefaultName>
+                          <rd:DefaultName>Cancellation_Charge_Amount</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -1694,7 +1694,7 @@ ORDER BY
             <DataSetName>DataSet1</DataSetName>
             <Top>0.36in</Top>
             <Height>0.43in</Height>
-            <Width>23.21875in</Width>
+            <Width>25.51042in</Width>
             <Style />
           </Tablix>
           <Textbox Name="textbox1">
@@ -1717,7 +1717,7 @@ ORDER BY
             </Paragraphs>
             <rd:DefaultName>textbox1</rd:DefaultName>
             <Height>0.36in</Height>
-            <Width>23.21876in</Width>
+            <Width>25.51042in</Width>
             <ZIndex>1</ZIndex>
             <Style>
               <PaddingLeft>2pt</PaddingLeft>
@@ -1730,7 +1730,7 @@ ORDER BY
         <Height>0.81083in</Height>
         <Style />
       </Body>
-      <Width>23.21876in</Width>
+      <Width>25.51042in</Width>
       <Page>
         <PageHeight>11.69in</PageHeight>
         <PageWidth>16.54in</PageWidth>

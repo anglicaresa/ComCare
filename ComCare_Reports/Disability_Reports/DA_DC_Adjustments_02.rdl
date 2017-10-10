@@ -32,7 +32,8 @@
         </QueryParameters>
         <CommandText>select distinct
 	J001.Client_ID
-	,Format(J010.Effective_From_Date, 'yyyy-MM-dd') 'Activity_Date'
+	,cast(J010.Effective_From_Date as date) 'Effective_From_Date'
+	,cast(J010.Effective_To_Date as date) 'Effective_To_Date'
 	,J010.Comments 'Charge_Item_Line_Description'
 	,Format(J010.Adjustment_Amount, '#######0.#0') 'UnitPrice'
 	,J014.Description 'GST_Type'
@@ -150,9 +151,13 @@ Order by
           <DataField>Client_ID</DataField>
           <rd:TypeName>System.Int32</rd:TypeName>
         </Field>
-        <Field Name="Activity_Date">
-          <DataField>Activity_Date</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
+        <Field Name="Effective_From_Date">
+          <DataField>Effective_From_Date</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="Effective_To_Date">
+          <DataField>Effective_To_Date</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
         </Field>
         <Field Name="Charge_Item_Line_Description">
           <DataField>Charge_Item_Line_Description</DataField>
@@ -227,6 +232,9 @@ where
                 </TablixColumn>
                 <TablixColumn>
                   <Width>3.77cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>3.47896cm</Width>
                 </TablixColumn>
                 <TablixColumn>
                   <Width>16.19312cm</Width>
@@ -308,6 +316,44 @@ where
                             </Paragraph>
                           </Paragraphs>
                           <rd:DefaultName>Textbox29</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BottomBorder>
+                              <Style>None</Style>
+                            </BottomBorder>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox7">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value />
+                                  <Style>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox7</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -606,7 +652,7 @@ where
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Adjustment Date</Value>
+                                  <Value>From Date</Value>
                                   <Style>
                                     <Color>White</Color>
                                   </Style>
@@ -618,6 +664,44 @@ where
                             </Paragraph>
                           </Paragraphs>
                           <rd:DefaultName>Textbox5</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Style>None</Style>
+                            </TopBorder>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox11">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>To Date</Value>
+                                  <Style>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox11</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -891,14 +975,14 @@ where
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Actual_Visit_Time">
+                        <Textbox Name="Effective_From_Date">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>=Fields!Activity_Date.Value</Value>
+                                  <Value>=Fields!Effective_From_Date.Value</Value>
                                   <Style>
                                     <Format>d/MM/yyyy</Format>
                                   </Style>
@@ -909,7 +993,42 @@ where
                               </Style>
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Actual_Visit_Time</rd:DefaultName>
+                          <rd:DefaultName>Effective_From_Date</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Effective_To_Date">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Effective_To_Date.Value</Value>
+                                  <Style>
+                                    <Format>d/MM/yyyy</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Effective_To_Date</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -1138,6 +1257,7 @@ IIF
                 <TablixMember />
                 <TablixMember />
                 <TablixMember />
+                <TablixMember />
               </TablixMembers>
             </TablixColumnHierarchy>
             <TablixRowHierarchy>
@@ -1159,7 +1279,7 @@ IIF
             <FixedRowHeaders>true</FixedRowHeaders>
             <DataSetName>DataSet1</DataSetName>
             <Height>2.38208cm</Height>
-            <Width>39.60689cm</Width>
+            <Width>43.08585cm</Width>
             <Style>
               <Border>
                 <Style>None</Style>
@@ -1170,7 +1290,7 @@ IIF
         <Height>0.93783in</Height>
         <Style />
       </Body>
-      <Width>15.59326in</Width>
+      <Width>16.96293in</Width>
       <Page>
         <PageHeader>
           <Height>2.13501cm</Height>
@@ -1181,9 +1301,9 @@ IIF
               <Source>Embedded</Source>
               <Value>Logo_AnglicareSA</Value>
               <Sizing>FitProportional</Sizing>
-              <Left>28.29687cm</Left>
+              <Left>34.27583cm</Left>
               <Height>1.95862cm</Height>
-              <Width>11.31001cm</Width>
+              <Width>8.63835cm</Width>
               <Style>
                 <Border>
                   <Style>None</Style>
@@ -1257,7 +1377,7 @@ IIF
               <rd:DefaultName>Textbox38</rd:DefaultName>
               <Top>0.00001cm</Top>
               <Height>1.95861cm</Height>
-              <Width>21.98687cm</Width>
+              <Width>25.46583cm</Width>
               <ZIndex>1</ZIndex>
               <Style>
                 <Border>

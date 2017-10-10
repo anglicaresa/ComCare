@@ -549,7 +549,7 @@ select
 from [dbo].[FC_Funder_Contract]
 where 
 	1=1
-	AND (Description like 'CHSP%' )
+	AND (Description like 'CHSP%' or Description = 'Fee for Service' )
 	
 order by 1</CommandText>
       </Query>
