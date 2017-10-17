@@ -52,7 +52,8 @@ From
 		join dbo.Service_Delivery SD on SD.Client_ID = PR.Person_ID and SD.Service_Type_Code = SP.Service_Type_Code
 		
 	Where 
-			PR.To_Date is null 
+			PR.To_Date is null
+			and SD.Client_ID = 10073393
 			and PR.Display_Indicator = 1
 			and O.Organisation_Name in (@Org_Name)
 )JX001
@@ -139,7 +140,7 @@ Inner join
 
 where
 	1=1
-	--and J001.Client_ID = 10069222
+	and J001.Client_ID = 10073393
 	and J001.Billing_End_Date is null
 	and J008.Organisation_Name = @Org_Name
 --	and IIF (J006.Description is NULL,'No Contract',J006.Description) in (@FunderContractFilt)

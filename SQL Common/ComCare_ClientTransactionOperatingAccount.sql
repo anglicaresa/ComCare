@@ -15,7 +15,7 @@ insert into @TransactionType
 --*/
 
 
-declare @Client_ID int = 10020984
+declare @Client_ID int = 10063049
 declare @FiltIncomeTested int = 1
 
 
@@ -32,17 +32,17 @@ from dbo.FC_Client_Contract J001
 Left outer Join dbo.FC_Funder_Contract J002	on J002.funder_Contract_ID = J001.funder_Contract_ID
 where J001.Client_ID = @Client_ID and J001.End_Date_of_Claim is null
 
-select * from @FunderContract_ID
+--select * from @FunderContract_ID
 
 --------------<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<here down
 select --distinct
 	J001.Client_ID
 	,Concat(J006.Last_Name,', ',J006.Preferred_Name)'ClientName'
 	,J005.*
-from [dbo].FC_Client_Contract J001
-Left outer Join [dbo].FC_Funder_Contract J002	on J002.funder_Contract_ID = J001.funder_Contract_ID
-Left outer Join [dbo].FC_Funding_Care_Model J003 on J003.Funding_Care_Model_ID = J002.Funding_Care_Model_ID
-Left outer join [dbo].FC_Account J004 on J004.client_Contract_ID = J001.client_Contract_ID
+from dbo.FC_Client_Contract J001
+Left outer Join dbo.FC_Funder_Contract J002	on J002.funder_Contract_ID = J001.funder_Contract_ID
+Left outer Join dbo.FC_Funding_Care_Model J003 on J003.Funding_Care_Model_ID = J002.Funding_Care_Model_ID
+Left outer join dbo.FC_Account J004 on J004.client_Contract_ID = J001.client_Contract_ID
 
 Left outer join 
 (

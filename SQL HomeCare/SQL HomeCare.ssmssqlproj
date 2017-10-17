@@ -37,6 +37,12 @@
           <AssociatedConnUserName />
           <FullPath>CHSP_TransactionAudit.sql</FullPath>
         </FileNode>
+        <FileNode Name="HCP_Actual_V_Estimated_TravKMs.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>HCP_Actual_V_Estimated_TravKMs.sql</FullPath>
+        </FileNode>
         <FileNode Name="HCP_Admission_Discharge.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
@@ -66,6 +72,12 @@
           <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
           <AssociatedConnUserName />
           <FullPath>HCP_BushFireArea.sql</FullPath>
+        </FileNode>
+        <FileNode Name="HCP_Cancelation_Records.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>HCP_Cancelation_Records.sql</FullPath>
         </FileNode>
         <FileNode Name="HCP_ClientContactDetails.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>

@@ -1,8 +1,8 @@
 --use ComCareProd
 --use ComCareUAT
 use ComCareProd
-Declare @Client_ID_ as INT = 10072283
-DECLARE @StartDate Date = '2017-09-25'
+Declare @Client_ID_ as INT = 10073393
+DECLARE @StartDate Date = '2017-09-29'
 DECLARE @EndDate Date = '2017-09-29'
 declare @Organisation VarChar(64) = 'Disabilities Children'
 declare @DuplicateChargeItem as int = 0
@@ -620,6 +620,7 @@ select * from
 
 	Where 
 		1=1
+--		and J001.Client_ID = @Client_ID_
 		and @DuplicateChargeItem = 0
 		and J006.Organisation_Name = @Organisation
 		and (J006.RN < 2 or J006.RN is null)

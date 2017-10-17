@@ -196,7 +196,7 @@ Left outer join
 		,1 'AS_Indicator'
 --		,A_S.
 	from dbo.Actual_Service A_S
-)J009 on 
+)J009 on
 	J009.Provider_ID = J006.Provider_ID 
 	and J009.Visit_Date = J007.Activity_Date 
 	and J009.Visit_No = J007.Actual_Service_Visit_No
