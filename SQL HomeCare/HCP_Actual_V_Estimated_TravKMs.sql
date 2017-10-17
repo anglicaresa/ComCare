@@ -41,5 +41,6 @@ where
 	1=1
 	and J001.Travel_Km is not null
 	and (J001.Travel_Km > 0 or J001.Estimated_Travel_Km > 0)
+	and J001.Company_Vehicle = 0
 --	and J001.Activity_Date = '2017-10-16' 
 --	and J001.Provider_ID = 10013234
