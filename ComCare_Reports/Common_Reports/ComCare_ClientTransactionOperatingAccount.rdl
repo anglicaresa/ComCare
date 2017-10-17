@@ -165,12 +165,12 @@ J005.TransationDate
             <Value>=Parameters!Client_ID.Value</Value>
           </QueryParameter>
         </QueryParameters>
-        <CommandText>select
+        <CommandText>select distinct
 J002.Description
 ,J002.Funder_Contract_ID
 from [dbo].FC_Client_Contract J001
 Left outer Join [dbo].FC_Funder_Contract J002	on J002.funder_Contract_ID = J001.funder_Contract_ID
-where J001.Client_ID = @Client_ID and J001.End_Date_of_Claim is null</CommandText>
+where J001.Client_ID = @Client_ID --and J001.End_Date_of_Claim is null</CommandText>
       </Query>
       <Fields>
         <Field Name="Description">

@@ -94,6 +94,10 @@
       <FullPath>DC_ClientSetupAudit.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
+      <Name>DC_CustomerTracker.rdl</Name>
+      <FullPath>DC_CustomerTracker.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
       <Name>DC_MonthlyServiceStatement.rdl</Name>
       <FullPath>DC_MonthlyServiceStatement.rdl</FullPath>
     </ProjectItem>
@@ -110,8 +114,8 @@
       <FullPath>DC_TimeSheet_Vs_Schedule.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>DC_CustomerTracker.rdl</Name>
-      <FullPath>DC_CustomerTracker.rdl</FullPath>
+      <Name>DC_Statistics_ServiceCountOverTime.rdl</Name>
+      <FullPath>DC_Statistics_ServiceCountOverTime.rdl</FullPath>
     </ProjectItem>
   </Reports>
   <Configurations>

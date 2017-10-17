@@ -54,6 +54,14 @@
       <FullPath>HCP_BushFireArea.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
+      <Name>HCP_Cancellation_Records.rdl</Name>
+      <FullPath>HCP_Cancellation_Records.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
+      <Name>HCP_ClaimSum.rdl</Name>
+      <FullPath>HCP_ClaimSum.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
       <Name>HCP_Client_NoSrvAdv.rdl</Name>
       <FullPath>HCP_Client_NoSrvAdv.rdl</FullPath>
     </ProjectItem>
@@ -118,8 +126,8 @@
       <FullPath>HCP_VisitTime_V_PackageStartTime.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>HCP_ClaimSum.rdl</Name>
-      <FullPath>HCP_ClaimSum.rdl</FullPath>
+      <Name>HCP_Actual_Vs_Estimate_Travel_KMs.rdl</Name>
+      <FullPath>HCP_Actual_Vs_Estimate_Travel_KMs.rdl</FullPath>
     </ProjectItem>
   </Reports>
   <Configurations>

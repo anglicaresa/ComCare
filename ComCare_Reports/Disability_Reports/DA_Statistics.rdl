@@ -503,6 +503,70 @@ and Description Not in (select * from @t_CharExc)</CommandText>
         </Field>
       </Fields>
     </DataSet>
+    <DataSet Name="DataSet4">
+      <Query>
+        <DataSourceName>Ref_ASADWH</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@Organisation_Name_">
+            <Value>=Parameters!Organisation_Name_.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@ServiceType">
+            <Value>=Parameters!ServiceType.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>SELECT distinct
+--	J001.Client_ID AS 'Client_ID'
+	J013.Service_Type as 'Service_Type'
+	,count(J013.Service_Type)over(partition by J013.Service_Type)'Service_Count_By_Type'
+FROM dbo.Client J001
+LEFT OUTER JOIN dbo.Service_Delivery J009 ON J009.Client_ID = J001.Client_ID
+INNER JOIN
+(
+	Select 
+		SD.Client_ID
+		,O.Organisation_Name
+		,SD.Service_Type_Code 
+	from dbo.Service_Delivery SD
+		join dbo.Period_of_Residency PR on PR.Person_ID = SD.Client_ID
+		join dbo.Address A on A.Address_ID = PR.Address_ID
+		Join dbo.Service_Provision SP on A.Suburb_ID = SP.Suburb_ID and SP.Service_Type_Code = SD.Service_Type_Code
+		Join dbo.Organisation O on Sp.Centre_ID = O.Organisation_ID
+	Where 
+		PR.To_Date is null 
+		and PR.Display_Indicator  = 1
+) J010 ON J010.Client_ID = J009.Client_ID AND J010.Service_Type_Code = J009.Service_Type_Code
+
+Inner Join
+(
+	Select
+		SD.Client_ID
+		,ST.Description 'Service_Type'
+	From dbo.Service_Delivery SD
+		left outer join dbo.Service_Type ST On ST.Service_Type_Code = SD.Service_Type_Code
+	Where 
+		1=1
+		AND (SD.To_Date IS NULL or SD.To_Date &gt; getdate())
+)J013 on J013.Client_ID = J001.Client_ID
+
+WHERE
+	1=1
+	and J010.Organisation_Name = @Organisation_Name_
+	and J013.Service_Type IN (@ServiceType)
+
+ORDER BY
+	1</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="Service_Type">
+          <DataField>Service_Type</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Service_Count_By_Type">
+          <DataField>Service_Count_By_Type</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
   </DataSets>
   <ReportSections>
     <ReportSection>
@@ -4558,8 +4622,189 @@ sum
               </Border>
             </Style>
           </Tablix>
+          <Tablix Name="Tablix3">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn>
+                  <Width>4.75105cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>3.45354cm</Width>
+                </TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.6cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox6">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Service Type</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox6</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#2b70b1</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox12">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Total Count</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox12</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#2b70b1</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.6cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Service_Type">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Service_Type.Value</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Service_Type</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>= Iif ( RunningValue ( Fields!Service_Type.Value , Count , "DataSet4") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Service_Count_By_Type">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Service_Count_By_Type.Value</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Service_Count_By_Type</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>= Iif ( RunningValue ( Fields!Service_Type.Value , Count , "DataSet4") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="Details1" />
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            <DataSetName>DataSet4</DataSetName>
+            <Top>9.45099cm</Top>
+            <Left>0.00001cm</Left>
+            <Height>1.2cm</Height>
+            <Width>8.20459cm</Width>
+            <ZIndex>2</ZIndex>
+            <Style>
+              <Border>
+                <Style>None</Style>
+              </Border>
+            </Style>
+          </Tablix>
         </ReportItems>
-        <Height>3.5863in</Height>
+        <Height>4.62039in</Height>
         <Style />
       </Body>
       <Width>10.90552in</Width>
@@ -4601,7 +4846,7 @@ sum
               </Paragraphs>
               <rd:DefaultName>Textbox8</rd:DefaultName>
               <Height>1.60542cm</Height>
-              <Width>7.7601cm</Width>
+              <Width>8.20459cm</Width>
               <Style>
                 <Border>
                   <Style>None</Style>
@@ -4616,9 +4861,9 @@ sum
               <Source>Embedded</Source>
               <Value>Logo_AnglicareSA</Value>
               <Sizing>FitProportional</Sizing>
-              <Left>20.88188cm</Left>
-              <Height>1.05021cm</Height>
-              <Width>6.81813cm</Width>
+              <Left>20.94465cm</Left>
+              <Height>1.20896cm</Height>
+              <Width>6.75536cm</Width>
               <ZIndex>1</ZIndex>
               <Style>
                 <Border>
