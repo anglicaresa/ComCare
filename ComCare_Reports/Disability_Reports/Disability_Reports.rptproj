@@ -110,12 +110,16 @@
       <FullPath>DC_Statistics.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
+      <Name>DC_Statistics_ServiceCountOverTime.rdl</Name>
+      <FullPath>DC_Statistics_ServiceCountOverTime.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
       <Name>DC_TimeSheet_Vs_Schedule.rdl</Name>
       <FullPath>DC_TimeSheet_Vs_Schedule.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>DC_Statistics_ServiceCountOverTime.rdl</Name>
-      <FullPath>DC_Statistics_ServiceCountOverTime.rdl</FullPath>
+      <Name>DC_Statistics_ServiceOrderOfStart_PerClient.rdl</Name>
+      <FullPath>DC_Statistics_ServiceOrderOfStart_PerClient.rdl</FullPath>
     </ProjectItem>
   </Reports>
   <Configurations>

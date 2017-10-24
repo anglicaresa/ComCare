@@ -949,7 +949,7 @@ the event Field is were a service has been started or ended, each time this occu
             <DataSetName>DataSet1</DataSetName>
             <Top>25.429cm</Top>
             <Height>2.85391cm</Height>
-            <Width>16.84789cm</Width>
+            <Width>16.8479cm</Width>
             <ZIndex>1</ZIndex>
             <Style>
               <Border>
@@ -975,7 +975,7 @@ the event Field is were a service has been started or ended, each time this occu
                 <Paragraph>
                   <TextRuns>
                     <TextRun>
-                      <Value>Statictics, Service count over time</Value>
+                      <Value>Statistics, Service count over time</Value>
                       <Style>
                         <FontSize>20pt</FontSize>
                         <FontWeight>Bold</FontWeight>

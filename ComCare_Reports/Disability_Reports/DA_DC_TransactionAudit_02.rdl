@@ -582,7 +582,7 @@ select * from @BillContFilt</CommandText>
                   <Width>3.77cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>1.865cm</Width>
+                  <Width>3.4525cm</Width>
                 </TablixColumn>
                 <TablixColumn>
                   <Width>1.91792cm</Width>
@@ -1152,7 +1152,7 @@ select * from @BillContFilt</CommandText>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Client Not Home</Value>
+                                  <Value>Visit Canceled Reason</Value>
                                   <Style>
                                     <Color>White</Color>
                                   </Style>
@@ -2163,7 +2163,7 @@ IIF
             <FixedRowHeaders>true</FixedRowHeaders>
             <DataSetName>DataSet1</DataSetName>
             <Height>2.38208cm</Height>
-            <Width>44.01126cm</Width>
+            <Width>45.59876cm</Width>
             <Style>
               <Border>
                 <Style>None</Style>
@@ -2174,10 +2174,10 @@ IIF
         <Height>0.93783in</Height>
         <Style />
       </Body>
-      <Width>17.32727in</Width>
+      <Width>17.95227in</Width>
       <Page>
         <PageHeader>
-          <Height>2.135cm</Height>
+          <Height>1.95862cm</Height>
           <PrintOnFirstPage>true</PrintOnFirstPage>
           <PrintOnLastPage>true</PrintOnLastPage>
           <ReportItems>
@@ -2185,7 +2185,7 @@ IIF
               <Source>Embedded</Source>
               <Value>Logo_AnglicareSA</Value>
               <Sizing>FitProportional</Sizing>
-              <Left>33.12395cm</Left>
+              <Left>34.39395cm</Left>
               <Height>1.95862cm</Height>
               <Width>10.88731cm</Width>
               <Style>
@@ -2260,7 +2260,7 @@ IIF
               </Paragraphs>
               <rd:DefaultName>Textbox38</rd:DefaultName>
               <Height>1.95862cm</Height>
-              <Width>33.12395cm</Width>
+              <Width>34.39395cm</Width>
               <ZIndex>1</ZIndex>
               <Style>
                 <Border>

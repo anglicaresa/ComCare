@@ -109,7 +109,7 @@ select * from
 		,J001.Units_of_Service
 		,IIF (J011.Description is NULL,'No Contract',J011.Description) 'contract_type'
 		,J004.Description 'task_Description'
-		,iif(cast(J001.Client_Not_Home as int) = 1 or J001.Visit_Cancel_Reason_ID = 1,1,0)'Client_Not_Home'
+		,J014.Description 'Client_Not_Home'
 		,IIF (J002.Client_ID IS NULL, IIF(J066.taskTypeCode is null,0,5), 1) 'Has_Charge_Item'
 		,convert (int ,'0') 'In_WiA_Only'
 		,J002.Line_Description 'Charge_Item_Line_Description'
@@ -240,7 +240,7 @@ left outer join
 	left outer join dbo.FC_Funder_Contract J011 ON J011.Funder_Contract_ID = J010.Funder_Contract_ID
 
 	Left outer join @NoChargeTasks J066 on J066.taskTypeCode = J001.Task_Type_Code-------------------NEW
-
+	Left outer join dbo.Visit_Cancel_Reason J014 on J014.Visit_Cancel_Reason_ID = J001.Visit_Cancel_Reason_ID
 	Where 
 		1=1
 		and (J002.RN &lt; 2 or J002.RN is null)
@@ -285,7 +285,7 @@ select Distinct * from
 		,J001.Units_of_Service
 		,IIF (J011.Description is NULL,'No Contract',J011.Description) 'contract_type'
 		,J004.Description 'task_Description'
-		,iif(cast(J001.Client_Not_Home as int) = 1 or J001.Visit_Cancel_Reason_ID = 1,1,0)'Client_Not_Home'
+		,J014.Description 'Client_Not_Home'
 		,IIF (J002.Client_ID IS NULL, IIF(J066.taskTypeCode is null,0,5), 1) 'Has_Charge_Item'
 		,IIF (J001.Client_ID IS NULL, 1, 0) 'In_WiA_Only'
 		,J002.Line_Description 'Charge_Item_Line_Description'
@@ -457,6 +457,7 @@ select Distinct * from
 	LEFT OUTER JOIN dbo.FC_Funder_Contract J011 ON J011.Funder_Contract_ID = J010.Funder_Contract_ID
 
 	Left outer join @NoChargeTasks J066 on J066.taskTypeCode = J001.Task_Type_Code
+	Left outer join dbo.Visit_Cancel_Reason J014 on J014.Visit_Cancel_Reason_ID = J001.Visit_Cancel_Reason_ID
 	Where 
 		1=1
 		and (J002.RN &lt; 2 or J002.RN is null)
@@ -658,7 +659,7 @@ order by
         </Field>
         <Field Name="Client_Not_Home">
           <DataField>Client_Not_Home</DataField>
-          <rd:TypeName>System.Int32</rd:TypeName>
+          <rd:TypeName>System.String</rd:TypeName>
         </Field>
         <Field Name="Has_Charge_Item">
           <DataField>Has_Charge_Item</DataField>
@@ -758,7 +759,7 @@ where
                   <Width>8.61188cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>1.865cm</Width>
+                  <Width>3.47896cm</Width>
                 </TablixColumn>
                 <TablixColumn>
                   <Width>1.91792cm</Width>
@@ -1559,7 +1560,7 @@ where
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Client Not Home</Value>
+                                  <Value>Visit Canceled Reason</Value>
                                   <Style>
                                     <Color>White</Color>
                                   </Style>
@@ -2226,18 +2227,7 @@ IIF
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>=
-IIF
-(
-	Fields!Has_Charge_Item.Value = 2
-	,"---"
-	,IIF
-	(
-		Fields!Client_Not_Home.Value = 1 or Fields!Client_Not_Home.Value = "1"
-		,"True"
-		,"False"
-	)
-)</Value>
+                                  <Value>=Fields!Client_Not_Home.Value</Value>
                                   <Style>
                                     <Color>=Switch
 (
@@ -2832,7 +2822,7 @@ IIF
             <FixedRowHeaders>true</FixedRowHeaders>
             <DataSetName>DataSet1</DataSetName>
             <Height>2.38208cm</Height>
-            <Width>62.33209cm</Width>
+            <Width>63.94605cm</Width>
             <Style>
               <Border>
                 <Style>None</Style>
@@ -2843,7 +2833,7 @@ IIF
         <Height>0.93783in</Height>
         <Style />
       </Body>
-      <Width>24.54019in</Width>
+      <Width>25.17561in</Width>
       <Page>
         <PageHeader>
           <Height>1.95863cm</Height>
@@ -2855,9 +2845,9 @@ IIF
               <Value>Logo_AnglicareSA</Value>
               <Sizing>FitProportional</Sizing>
               <Top>0.00001cm</Top>
-              <Left>50.18771cm</Left>
+              <Left>53.30979cm</Left>
               <Height>1.95862cm</Height>
-              <Width>12.14438cm</Width>
+              <Width>10.63626cm</Width>
               <Style>
                 <Border>
                   <Style>None</Style>
@@ -2931,7 +2921,7 @@ IIF
               <rd:DefaultName>Textbox38</rd:DefaultName>
               <Top>0.00001cm</Top>
               <Height>1.95862cm</Height>
-              <Width>40.1877cm</Width>
+              <Width>41.80167cm</Width>
               <ZIndex>1</ZIndex>
               <Style>
                 <Border>

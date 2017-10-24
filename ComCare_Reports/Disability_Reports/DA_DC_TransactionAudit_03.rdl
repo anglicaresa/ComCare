@@ -788,7 +788,7 @@ select * from @BillContFilt</CommandText>
                   <Width>4.03458cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>1.865cm</Width>
+                  <Width>3.4525cm</Width>
                 </TablixColumn>
                 <TablixColumn>
                   <Width>2.05021cm</Width>
@@ -1485,7 +1485,7 @@ select * from @BillContFilt</CommandText>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Client Not Home</Value>
+                                  <Value>Visit Canceled Reason</Value>
                                   <Style>
                                     <Color>White</Color>
                                   </Style>
@@ -2670,7 +2670,7 @@ Switch
             <FixedRowHeaders>true</FixedRowHeaders>
             <DataSetName>DataSet1</DataSetName>
             <Height>2.38208cm</Height>
-            <Width>50.37355cm</Width>
+            <Width>51.96105cm</Width>
             <Style>
               <Border>
                 <Style>None</Style>
@@ -2681,7 +2681,7 @@ Switch
         <Height>0.93783in</Height>
         <Style />
       </Body>
-      <Width>19.83211in</Width>
+      <Width>20.45711in</Width>
       <Page>
         <PageHeader>
           <Height>1.95862cm</Height>
@@ -2692,7 +2692,7 @@ Switch
               <Source>Embedded</Source>
               <Value>Logo_AnglicareSA</Value>
               <Sizing>FitProportional</Sizing>
-              <Left>39.15583cm</Left>
+              <Left>40.74332cm</Left>
               <Height>1.95862cm</Height>
               <Width>11.21773cm</Width>
               <Style>
@@ -2767,7 +2767,7 @@ Switch
               </Paragraphs>
               <rd:DefaultName>Textbox38</rd:DefaultName>
               <Height>1.95862cm</Height>
-              <Width>32.01271cm</Width>
+              <Width>33.6002cm</Width>
               <ZIndex>1</ZIndex>
               <Style>
                 <Border>
