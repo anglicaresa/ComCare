@@ -261,6 +261,7 @@ select * from
 				end
 			) AS 'RN'
 		from (select * from dbo.WI_Activity where cast(Activity_Date as date) between @StartDate and @EndDate) Wi_A
+		left outer join dbo.Task_Schedule_Allocation TSA on TSA.Schedule_Sequence_No = Wi_A.Schedule_Sequence_No and TSA.Client_ID = Wi_A.Client_ID
 		Left outer join dbo.Actual_Service Ac_S 
 		ON 
 			1=1
@@ -272,6 +273,11 @@ select * from
 			1=1
 			and Wi_A.Cancellation_Date is NULL
 			and Wi_A.Client_ID IS NOT NULL		
+			and 
+			(
+				1 = iif(Ac_S.Client_ID is null and Wi_A.Activity_Date Between TSA.Start_Date and iif(TSA.End_Date is null, cast('2200-01-01' as date),TSA.End_Date),1,0) 
+				or Ac_S.Client_ID is not null
+			)
 	)J001
 
 	Left outer join

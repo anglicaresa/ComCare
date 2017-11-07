@@ -53,7 +53,7 @@ From
 		
 	Where 
 			PR.To_Date is null
-			and SD.Client_ID = 10073393
+	--		and SD.Client_ID = 10073393
 			and PR.Display_Indicator = 1
 			and O.Organisation_Name in (@Org_Name)
 )JX001
@@ -69,10 +69,10 @@ insert into @ServiceCollection_Table_Joined
 select distinct
 	T1.Client_ID
 	,Services_=STUFF((select ', ' + ST.Service_ from @ServiceCollection_Table ST where ST.Client_ID = T1.Client_ID For XML Path('')),1,1,'')
-	,Services_=STUFF((select ', ' + ST.FunderProgram from @ServiceCollection_Table ST where ST.Client_ID = T1.Client_ID For XML Path('')),1,1,'')
+	,FunderProgram=STUFF((select ', ' + ST.FunderProgram from @ServiceCollection_Table ST where ST.Client_ID = T1.Client_ID For XML Path('')),1,1,'')
 	from @ServiceCollection_Table T1
 
-select * from @ServiceCollection_Table_Joined
+--select * from @ServiceCollection_Table_Joined
 --*/
 
 
@@ -124,7 +124,7 @@ INNER JOIN
 	Where PR.To_Date is null and PR.Display_Indicator  = 1
 ) J008 ON J008.Client_ID = J001.Client_ID
 
-Left outer Join dbo.FB_Client_Contract_Bill_Item J010 on J010.Client_CB_ID = J001.Client_CB_ID
+Left outer Join dbo.FB_Client_Contract_Bill_Item J010 on J010.Client_CB_ID = J001.Client_CB_ID and J010.Effective_To_Date is null
 Left outer join dbo.FB_Contract_Billing_Item J011 on J011.Contract_Billing_Item_ID = J010.Contract_Billing_Item_ID
 Left outer join @ServiceCollection_Table_Joined J012 on J012.Client_ID = J001.Client_ID
 
@@ -140,7 +140,7 @@ Inner join
 
 where
 	1=1
-	and J001.Client_ID = 10073393
+--	and J001.Client_ID = 10073393
 	and J001.Billing_End_Date is null
 	and J008.Organisation_Name = @Org_Name
 --	and IIF (J006.Description is NULL,'No Contract',J006.Description) in (@FunderContractFilt)

@@ -1,8 +1,10 @@
 
-declare @Start_Date date = cast('2017-05-15' as date)
-declare @End_Date date = cast('2017-05-15' as date)
-DECLARE @OrgName AS Varchar(64) = 'Home Care north'
+declare @Start_Date date = cast('2017-06-01' as date)
+declare @End_Date date = cast('2017-06-30' as date)
+--DECLARE @OrgName AS Varchar(64) = 'Home Care north'
+DECLARE @OrgName AS Varchar(64) = 'Disabilities Children'
 
+declare @ProvID int= 10076222
 --select * from dbo.Actual_Service
 /*
 select * from dbo.Organisation
@@ -255,11 +257,12 @@ inner join
 
 
 where
-	J001.Organisation_Name = @OrgName
+	1=1
+--	J001.Organisation_Name = @OrgName
 	and (J010.RN < 2 or J010.RN is null)
 	and cast(J007.Activity_Date as date) between @Start_Date and @End_Date
 
---	and J006.Provider_ID = 10013562
+	and J006.Provider_ID = @ProvID
 
 Group by
 	J001.Organisation_Name

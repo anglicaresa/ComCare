@@ -56,7 +56,7 @@ Declare @Organisation_Name_ varchar(40)
 set @Organisation_Name_ = 'Disabilities Children'
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
-SELECT
+SELECT distinct
 
 J001.Client_ID AS 'Client_ID'
 ,LAG(J001.Client_ID) Over 
@@ -224,9 +224,10 @@ WHERE
 
 	and J001.Deceased_Date IS NULL
 --	and J013.Service_Type IN (@ServiceType)
-	and J001.Client_ID = @Client_ID_
+	and J013.Service_Type like '%OATS%'
+--	and J001.Client_ID = @Client_ID_
 	-- NOTE service date = null is inside the subquiry
-
+/*
 GROUP BY
 J001.Client_ID
 ,J001.Title
@@ -247,6 +248,6 @@ J001.Client_ID
 ,convert(Varchar(16) ,J002.Phone)
 ,J001.Ethnicity
 --,Count(J013.Service_Type) Over (Partition by J001.Client_ID)
-
+*/
 ORDER BY
 	J001.Client_ID

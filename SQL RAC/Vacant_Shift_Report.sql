@@ -54,8 +54,8 @@ APPSQL-3\COMCAREPROD.comcareprod
 --------------------------------------------------------------
 --test settings
 
-declare @stringDate varchar(32) = '2017-04-04'
-declare @stringDate2 varchar(32) = '2017-04-17'--'2017-01-20'
+declare @stringDate varchar(32) = '2017-10-23'
+declare @stringDate2 varchar(32) = '2017-11-03'--'2017-01-20'
 declare @Start_Date date = convert(date, @stringDate)
 declare @End_Date date = convert(date, @stringDate2)
 declare @Centre varchar(32) = 'Dutton Court'
@@ -459,3 +459,6 @@ order by
 
 --reset of defults
 SET DATEFIRST 7
+
+
+
