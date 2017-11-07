@@ -1023,9 +1023,16 @@ IIF
                       </Style>
                     </TextRun>
                     <TextRun>
-                      <Value xml:space="preserve"> </Value>
+                      <Value> | report Created on </Value>
                       <Style>
                         <FontWeight>Normal</FontWeight>
+                      </Style>
+                    </TextRun>
+                    <TextRun>
+                      <Value>= Now()</Value>
+                      <Style>
+                        <FontWeight>Bold</FontWeight>
+                        <Format>d/MM/yyyy h:mm tt</Format>
                       </Style>
                     </TextRun>
                   </TextRuns>

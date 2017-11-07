@@ -112,7 +112,7 @@ INNER JOIN
 	Where PR.To_Date is null and PR.Display_Indicator  = 1
 ) J008 ON J008.Client_ID = J001.Client_ID
 
-Left outer Join dbo.FB_Client_Contract_Bill_Item J010 on J010.Client_CB_ID = J001.Client_CB_ID
+Left outer Join dbo.FB_Client_Contract_Bill_Item J010 on J010.Client_CB_ID = J001.Client_CB_ID and J010.Effective_To_Date is null
 Left outer join dbo.FB_Contract_Billing_Item J011 on J011.Contract_Billing_Item_ID = J010.Contract_Billing_Item_ID
 Left outer join @ServiceCollection_Table_Joined J012 on J012.Client_ID = J001.Client_ID
 

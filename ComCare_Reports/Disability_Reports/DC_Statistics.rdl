@@ -140,12 +140,26 @@ Inner Join
 (
 	Select
 		SD.Client_ID
-		,ST.Description 'Service_Type'
+		,iif(ST.Description = 'OATS', ST_ALT.Task_Description, ST.Description) as 'Service_Type'
 	From dbo.Service_Delivery SD
 		left outer join dbo.Service_Type ST On ST.Service_Type_Code = SD.Service_Type_Code
+		left outer join 
+		(
+			select
+				tt.Description as 'Task_Description'
+				,tt.Service_Type_Code as 'Service_Type_Code'
+				,tt.task_type_code as 'Task_Type_Code'
+				,ROW_NUMBER() Over
+				(
+					Partition BY tt.Service_Type_Code Order By tt.Task_Type_Code ASC
+				) as 'RN'
+			from dbo.Task_Type tt
+		)ST_ALT On ST_ALT.Service_Type_Code = SD.Service_Type_Code
 	Where 
-		1=1
-		AND SD.To_Date IS NULL
+	1=1
+	AND SD.To_Date IS NULL
+	AND ST_ALT.RN = 1
+	OR ST.Description = 'OATS'
 )J013 on J013.Client_ID = J001.Client_ID
 
 LEFT OUTER JOIN 

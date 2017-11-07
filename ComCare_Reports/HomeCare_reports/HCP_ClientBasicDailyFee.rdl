@@ -758,7 +758,7 @@ where
                 <Paragraph>
                   <TextRuns>
                     <TextRun>
-                      <Value>Home Care Pacage Clients - Basic Daily Fee</Value>
+                      <Value>Home Care Package Clients - Basic Daily Fee</Value>
                       <Style>
                         <FontSize>16pt</FontSize>
                         <FontWeight>Bold</FontWeight>
@@ -774,6 +774,19 @@ where
                       <Value>=Join(Parameters!FunderContract.Value,", ")</Value>
                       <Style>
                         <FontWeight>Bold</FontWeight>
+                      </Style>
+                    </TextRun>
+                    <TextRun>
+                      <Value> | report Created on </Value>
+                      <Style>
+                        <FontWeight>Normal</FontWeight>
+                      </Style>
+                    </TextRun>
+                    <TextRun>
+                      <Value>= Now()</Value>
+                      <Style>
+                        <FontWeight>Bold</FontWeight>
+                        <Format>d/MM/yyyy h:mm tt</Format>
                       </Style>
                     </TextRun>
                   </TextRuns>
