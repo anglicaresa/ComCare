@@ -38,6 +38,10 @@
       <FullPath>ComCareBookingReport.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
+      <Name>HCP_Actual_Vs_Estimate_Travel_KMs.rdl</Name>
+      <FullPath>HCP_Actual_Vs_Estimate_Travel_KMs.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
       <Name>HCP_Admin_Discharge.rdl</Name>
       <FullPath>HCP_Admin_Discharge.rdl</FullPath>
     </ProjectItem>
@@ -126,8 +130,8 @@
       <FullPath>HCP_VisitTime_V_PackageStartTime.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>HCP_Actual_Vs_Estimate_Travel_KMs.rdl</Name>
-      <FullPath>HCP_Actual_Vs_Estimate_Travel_KMs.rdl</FullPath>
+      <Name>HCP_HomeVisitingSafetyChecklist_Exist.rdl</Name>
+      <FullPath>HCP_HomeVisitingSafetyChecklist_Exist.rdl</FullPath>
     </ProjectItem>
   </Reports>
   <Configurations>
