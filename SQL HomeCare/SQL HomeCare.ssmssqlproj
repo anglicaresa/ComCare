@@ -15,6 +15,18 @@
           <ConnectionProtocol>NotSpecified</ConnectionProtocol>
           <ApplicationName>Microsoft SQL Server Management Studio - Query</ApplicationName>
         </ConnectionNode>
+        <ConnectionNode Name="appsql-3\Train:ANGLICARE-SA\abhi.ryan">
+          <Created>2017-12-07T10:07:57.0789597+10:30</Created>
+          <Type>SQL</Type>
+          <Server>appsql-3\Train</Server>
+          <UserName />
+          <Authentication>Windows Authentication</Authentication>
+          <InitialDB>ComCareTRAIN</InitialDB>
+          <LoginTimeout>15</LoginTimeout>
+          <ExecutionTimeout>0</ExecutionTimeout>
+          <ConnectionProtocol>NotSpecified</ConnectionProtocol>
+          <ApplicationName>Microsoft SQL Server Management Studio - Query</ApplicationName>
+        </ConnectionNode>
         <ConnectionNode Name="Devsql-1\WHOUSE:ANGLICARE-SA\abhi.ryan">
           <Created>2017-02-27T10:41:28.9215413+10:30</Created>
           <Type>SQL</Type>
@@ -102,6 +114,12 @@
           <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
           <AssociatedConnUserName />
           <FullPath>HCP_GoalOfCare.sql</FullPath>
+        </FileNode>
+        <FileNode Name="HCP_HomeVisitingSafetyChecklist_Exist.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>appsql-3\comcareprod</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>HCP_HomeVisitingSafetyChecklist_Exist.sql</FullPath>
         </FileNode>
         <FileNode Name="HCP_LevelChanges.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:appsql-3\comcareprod:True</AssociatedConnectionMoniker>

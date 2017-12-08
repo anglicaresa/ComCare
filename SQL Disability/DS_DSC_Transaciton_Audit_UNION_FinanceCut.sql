@@ -2,9 +2,9 @@
 
 
 
-Declare @Client_ID_ as INT = 10072849
-DECLARE @StartDate Date = '2017-06-03'
-DECLARE @EndDate Date = '2017-06-03'
+Declare @Client_ID_ as INT = 10070950
+DECLARE @StartDate Date = '2017-11-10'
+DECLARE @EndDate Date = '2017-11-10'
 declare @Organisation VarChar(64) = 'Disabilities Children'
 declare @DuplicateChargeItem as int = 0
 declare @FiltType int = 0
@@ -158,6 +158,8 @@ select * from
 			,JX004.Billing_End_Date
 			,JX004.Contract_Billing_ID
 			,JX004.Client_CB_ID
+			,JX006.Effective_From_Date 'Billed_to_efFrom'
+			,JX006.Effective_To_Date 'Billed_to_efTo'
 			,JX005.Description 'Contract_Billing_Group'
 			,JX008.Organisation_Name
 			,JX010.Effective_From_Date
@@ -188,6 +190,7 @@ select * from
 		and J001.Visit_Date between J009.Billing_Start_Date and IIF(J009.Billing_End_Date is null,Cast('2200-01-01' as date),J009.Billing_End_Date)
 		and J001.Visit_Date between J009.From_Date and IIF(J009.To_Date is null,Cast('2200-01-01' as date),J009.To_Date)
 		and J001.Visit_Date between J009.Effective_From_Date and IIF(J009.Effective_to_Date is null,Cast('2200-01-01' as date),J009.Effective_to_Date)
+		and J001.Visit_Date between J009.Billed_to_efFrom and IIF(J009.Billed_to_efTo is null,Cast('2200-01-01' as date),J009.Billed_to_efTo)
 
 	left outer join dbo.FC_Contract_Area_Product J010 ON J010.CAP_ID = J001.CAP_ID
 	left outer join dbo.FC_Funder_Contract J011 ON J011.Funder_Contract_ID = J010.Funder_Contract_ID
@@ -195,7 +198,7 @@ select * from
 	Where 
 		1=1
 		and @DuplicateChargeItem = 0
---		and J001.Client_ID = @Client_ID_
+		and J001.Client_ID = @Client_ID_
 		and J006.Organisation_Name = @Organisation
 		and 1 = Case 
 				when cast(J001.Visit_Date AS date) between @StartDate and @EndDate then 1
@@ -217,7 +220,7 @@ where
 ---------------------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------------------
-
+--/*
 Union
 
 ---------------------------------------------------------------------------------------------------------------------------------
@@ -367,6 +370,8 @@ select * from
 			,JX004.Billing_End_Date
 			,JX004.Contract_Billing_ID
 			,JX004.Client_CB_ID
+			,JX006.Effective_From_Date 'Billed_to_efFrom'
+			,JX006.Effective_To_Date 'Billed_to_efTo'
 			,JX005.Description 'Contract_Billing_Group'
 			,JX008.Organisation_Name
 			,JX010.Effective_From_Date
@@ -397,6 +402,7 @@ select * from
 		and J001.BKP_date between J009.Billing_Start_Date and IIF(J009.Billing_End_Date is null,Cast('2200-01-01' as date),J009.Billing_End_Date)
 		and J001.BKP_date between J009.From_Date and IIF(J009.To_Date is null,Cast('2200-01-01' as date),J009.To_Date)
 		and J001.BKP_date between J009.Effective_From_Date and IIF(J009.Effective_to_Date is null,Cast('2200-01-01' as date),J009.Effective_to_Date)
+		and J001.BKP_date between J009.Billed_to_efFrom and IIF(J009.Billed_to_efTo is null,Cast('2200-01-01' as date),J009.Billed_to_efTo)
 
 	Left Outer Join dbo.FC_Contract_Area_Product J010 ON J010.CAP_ID = J001.CAP_ID
 	LEFT OUTER JOIN dbo.FC_Funder_Contract J011 ON J011.Funder_Contract_ID = J010.Funder_Contract_ID
@@ -404,7 +410,7 @@ select * from
 	Where 
 		1=1
 		and @DuplicateChargeItem = 0
---		and J001.Client_ID = @Client_ID_
+		and J001.Client_ID = @Client_ID_
 		and J006.Organisation_Name = @Organisation
 		and 1 = iif(J001.RN > 1 and J001.WiA_Provider_ID = 0, 0, 1)
 		and convert(date, J001.WiA_Schedule_Time) between @StartDate and @EndDate
@@ -493,6 +499,8 @@ select * from
 			,JX004.Billing_End_Date
 			,JX004.Contract_Billing_ID
 			,JX005.Description 'ContractBillingGroup'
+			,JX006.Effective_From_Date 'Billed_to_efFrom'
+			,JX006.Effective_To_Date 'Billed_to_efTo'
 			,JX008.Organisation_Name
 			,JX104.Effective_From_Date
 			,JX104.Effective_to_Date
@@ -509,10 +517,11 @@ select * from
 		and J009.Contract_Billing_Item_ID = J002.Contract_Billing_Item_ID
 		and J002.Visit_Date between J009.Billing_Start_Date and IIF(J009.Billing_End_Date is null,Cast('2200-01-01' as date),J009.Billing_End_Date)
 		and J002.Visit_Date between J009.Effective_From_Date and IIF(J009.Effective_to_Date is null,Cast('2200-01-01' as date),J009.Effective_to_Date)
+		and J002.Visit_Date between J009.Billed_to_efFrom and IIF(J009.Billed_to_efTo is null,Cast('2200-01-01' as date),J009.Billed_to_efTo)
 
 	where
 	J002.RN > 1
---	and J002.Client_ID = @Client_ID_
+	and J002.Client_ID = @Client_ID_
 	and convert(date, J002.Visit_Date) between @StartDate and @EndDate
 	and J006.Organisation_Name = @Organisation
 
@@ -580,7 +589,7 @@ select * from
 
 	Where 
 		1=1
---		and J001.Client_ID = @Client_ID_
+		and J001.Client_ID = @Client_ID_
 		and @DuplicateChargeItem = 0
 
 		AND (IIF (J012.Description is NULL,'No Contract',J012.Description) in (select * from @ContractType))
@@ -593,6 +602,6 @@ select * from
 				end
 
 )t4
-
+--*/
 order by
 1,3,5,8,2,12
