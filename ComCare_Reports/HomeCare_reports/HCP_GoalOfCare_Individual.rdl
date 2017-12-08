@@ -6,7 +6,7 @@
     <DataSource Name="DataSource1">
       <DataSourceReference>ComCareProd Reports</DataSourceReference>
       <rd:SecurityType>None</rd:SecurityType>
-      <rd:DataSourceID>db54ed35-6d57-436d-8553-76d49abb861d</rd:DataSourceID>
+      <rd:DataSourceID>02da619e-cbd5-4f29-a56f-da2a13ad691b</rd:DataSourceID>
     </DataSource>
   </DataSources>
   <DataSets>
@@ -14,152 +14,102 @@
       <Query>
         <DataSourceName>DataSource1</DataSourceName>
         <QueryParameters>
-          <QueryParameter Name="@OrgName">
-            <Value>=Parameters!OrgName.Value</Value>
-          </QueryParameter>
-          <QueryParameter Name="@Filt_YesNoBoth">
-            <Value>=Parameters!Filt_YesNoBoth.Value</Value>
-          </QueryParameter>
-          <QueryParameter Name="@Filt_Funder">
-            <Value>=Parameters!Filt_Funder.Value</Value>
+          <QueryParameter Name="@Client_ID">
+            <Value>=Parameters!Client_ID.Value</Value>
           </QueryParameter>
         </QueryParameters>
-        <CommandText>Declare @DQ_Name VarChar(128) = 'Community / Home Visiting Safety Checklist'
-Declare @ClientTable table 
+        <CommandText>SELECT Distinct
+	J001.Title
+	,J001.Last_Name
+	,J001.Given_Names
+	,J001.Client_ID
+	,J004.Description 'Type'
+	,J003.GOC_Defined_Date
+	,J003.Outcome_Date
+	,J007.Description 'Status'
+	,J003.Objective
+	,J003.How_This_Will_Be_Achieved
+	,J003.How_Was_It_Achieved
+	,J003.Outcome_Details
+FROM
 (
-	Client_ID int
-	,Preferred_Name Varchar(128)
-	,Last_Name Varchar(128)
-	,Deceased_Date Date
-	,Organisation_Name Varchar(128)
-	,CHSP VarChar(4)
-)
-insert into @ClientTable
-select distinct
-	J001.Client_ID
-	,J004.Preferred_Name
-	,J004.Last_Name
-	,CONVERT(date,J004.Deceased_Date) 'Deceased_Date'
-	,J001.Organisation_Name
-	,iif(J006.Description like 'CHSP%','yes','no')
-From 
-(
-	Select Distinct
-		SD.Client_ID
-		,O.Organisation_Name
-	from Service_Delivery SD
-	join Period_of_Residency PR on PR.Person_ID = SD.Client_ID
-	join Address A on A.Address_ID = PR.Address_ID
-	Join Service_Provision SP on A.Suburb_ID = SP.Suburb_ID and SP.Service_Type_Code = SD.Service_Type_Code
-	Join Organisation O on Sp.Centre_ID = O.Organisation_ID
-	Where 
-		PR.To_Date is null 
-		and PR.Display_Indicator  = 1
-		and O.Organisation_Name in (@OrgName)
-)J001
+	Select     
+		CL.Client_ID
+		,P.Last_Name
+		,P.Given_Names
+		,P.Preferred_Name
+		,T.Description 'Title'
+	from Client CL
+	Inner Join Person P on Cl.Client_ID = P.Person_ID
+	Inner Join Title T on P.Title_Code = T.Title_Code
+	where
+		CL.Client_ID = @Client_ID
 
-inner join dbo.Person J004 on J004.Person_ID = J001.Client_ID
-left outer join dbo.FB_Client_Contract_Billing J005 on J005.Client_ID = J001.Client_ID and GetDate() between J005.Billing_Start_Date and iif(J005.Billing_End_Date is null,datefromParts(2200,01,01),J005.Billing_End_Date)
-left outer join dbo.FC_Funder_Contract J006 on J006.Funder_Contract_ID = J005.Funder_Contract_ID
-where
+) J001
+
+LEFT OUTER JOIN dbo.FC_Client_Contract J002 ON J002.Client_ID = J001.Client_ID
+LEFT OUTER JOIN dbo.FC_Client_Goal_of_Care J003 ON J003.Client_Contract_ID = J002.Client_Contract_ID
+LEFT OUTER JOIN dbo.FC_Goal_of_Care_Type J004 ON J004.GOC_Type_ID = J003.GOC_Type_ID
+LEFT OUTER JOIN dbo.Service_Delivery J005 ON J005.Client_ID = J001.Client_ID
+Left outer join dbo.FC_Goal_Of_Care_Status J007 on J007.GOC_Status_ID = J003.GOC_Status_ID
+WHERE
 	1=1
-	and J004.Deceased_Date is null
-	and J006.Description is not null
---	and J001.Client_ID = @Client_ID
-Order by
-	3,2,1
---------------------------------------------------------------
---------------------------------------------------------------
---select * from @ClientTable
---------------------------------------------------------------
---------------------------------------------------------------
-select distinct
-	J101.Organisation_Name
-	,J101.Client_ID 'Client_ID'
-	,J101.Last_Name +', '+J101.Preferred_Name 'Client_Name'
-	,iif(J001.Date_DQ is null,'No','Yes')'Has_DQ'
-	,J001.Date_DQ
-	,J101.CHSP
-	,J101.RN
-from 
-(
-	select
-	*
-	,ROW_NUMBER()over(partition by Client_ID order by Client_ID)'RN'
-	from @ClientTable
-)J101
-Left outer join
-(
-	select distinct
-		DQ_E_Q.Respondent_ID
-		,DQ_Q.Questionnaire_Code
-		,cast(DQ_E_Q.Questionnaire_Date as date)'Date_DQ'
-		,ROW_NUMBER()Over(Partition by DQ_Q.Description,DQ_E_Q.Respondent_ID order by DQ_E_Q.Questionnaire_Date Desc)'RN'
-	from dbo.DQ_Questionnaire DQ_Q
-	left outer join dbo.DQ_Entity_Questionnaire DQ_E_Q on DQ_E_Q.Questionnaire_Code = DQ_Q.Questionnaire_Code
-	where 
-	1=1
-	and DQ_Q.Description = @DQ_Name
-)J001 on J001.Respondent_ID = J101.Client_ID and J001.RN = 1
-Left outer join dbo.DQ_Questionnaire_Question J002 on J002.Questionnaire_Code = J001.Questionnaire_Code
-where 
-	1=1
-	and 1 = Case
-		when @Filt_YesNoBoth = 0 then 1
-		when @Filt_YesNoBoth = 1 and J001.Date_DQ is null then 1
-		when @Filt_YesNoBoth = 2 and J001.Date_DQ is not null then 1
-		else 0
-		end
-	and 1 = Case
-		when @Filt_Funder = 0 and J101.RN = 1 then 1
-		when @Filt_Funder = 1 and J101.CHSP = 'no' then 1
-		when @Filt_Funder = 2 and J101.CHSP = 'yes' then 1
-		else 0
-		end
-order by
-1,3,6</CommandText>
+	AND J004.Description IS not NULL 
+
+
+ORDER BY
+1,2,3,4</CommandText>
       </Query>
       <Fields>
-        <Field Name="Organisation_Name">
-          <DataField>Organisation_Name</DataField>
+        <Field Name="Title">
+          <DataField>Title</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Last_Name">
+          <DataField>Last_Name</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Given_Names">
+          <DataField>Given_Names</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
         <Field Name="Client_ID">
           <DataField>Client_ID</DataField>
           <rd:TypeName>System.Int32</rd:TypeName>
         </Field>
-        <Field Name="Client_Name">
-          <DataField>Client_Name</DataField>
+        <Field Name="Type">
+          <DataField>Type</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
-        <Field Name="Has_DQ">
-          <DataField>Has_DQ</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-        <Field Name="Date_DQ">
-          <DataField>Date_DQ</DataField>
+        <Field Name="GOC_Defined_Date">
+          <DataField>GOC_Defined_Date</DataField>
           <rd:TypeName>System.DateTime</rd:TypeName>
         </Field>
-        <Field Name="CHSP">
-          <DataField>CHSP</DataField>
+        <Field Name="Outcome_Date">
+          <DataField>Outcome_Date</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="Status">
+          <DataField>Status</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
-        <Field Name="RN">
-          <DataField>RN</DataField>
-          <rd:TypeName>System.Int64</rd:TypeName>
+        <Field Name="Client_Name">
+          <Value>=Fields!Title.Value + " " + Fields!Last_Name.Value + ", " + Fields!Given_Names.Value</Value>
         </Field>
-      </Fields>
-    </DataSet>
-    <DataSet Name="DataSet2">
-      <Query>
-        <DataSourceName>DataSource1</DataSourceName>
-        <CommandText>Select Organisation_Name From [dbo].Organisation
-where
-left([Organisation_Name], 9) = 'Home Care'</CommandText>
-      </Query>
-      <Fields>
-        <Field Name="Organisation_Name">
-          <DataField>Organisation_Name</DataField>
+        <Field Name="Objective">
+          <DataField>Objective</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="How_This_Will_Be_Achieved">
+          <DataField>How_This_Will_Be_Achieved</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="How_Was_It_Achieved">
+          <DataField>How_Was_It_Achieved</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Outcome_Details">
+          <DataField>Outcome_Details</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
       </Fields>
@@ -169,41 +119,121 @@ left([Organisation_Name], 9) = 'Home Care'</CommandText>
     <ReportSection>
       <Body>
         <ReportItems>
-          <Tablix Name="Tablix1">
+          <Tablix Name="Tablix4">
             <TablixBody>
               <TablixColumns>
                 <TablixColumn>
-                  <Width>5.80729cm</Width>
+                  <Width>6.33333cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>2.58471cm</Width>
+                  <Width>2.10312cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>5.63446cm</Width>
+                  <Width>8.07713cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>2.47354cm</Width>
+                  <Width>7.44771cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>2.5cm</Width>
+                  <Width>1.67979cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>2.05891cm</Width>
                 </TablixColumn>
               </TablixColumns>
               <TablixRows>
+                <TablixRow>
+                  <Height>0.8825cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox43">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Client: </Value>
+                                  <Style>
+                                    <FontSize>12pt</FontSize>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                                <TextRun>
+                                  <Value>=Fields!Client_Name.Value</Value>
+                                  <Style>
+                                    <FontSize>12pt</FontSize>
+                                    <FontWeight>Normal</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                                <TextRun>
+                                  <Value xml:space="preserve"> </Value>
+                                  <Style>
+                                    <FontSize>12pt</FontSize>
+                                    <FontWeight>Normal</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                                <TextRun>
+                                  <Value>=Fields!Client_ID.Value</Value>
+                                  <Style>
+                                    <FontSize>12pt</FontSize>
+                                    <FontWeight>Normal</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox43</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                        <ColSpan>6</ColSpan>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                  </TablixCells>
+                </TablixRow>
                 <TablixRow>
                   <Height>0.6cm</Height>
                   <TablixCells>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Textbox1">
+                        <Textbox Name="Textbox40">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Organisation Name</Value>
+                                  <Value>Goal of Care Type: </Value>
                                   <Style>
                                     <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                                <TextRun>
+                                  <Value>=replace(Fields!Type.Value,chr(10),"")</Value>
+                                  <Style>
+                                    <FontWeight>Normal</FontWeight>
                                     <Color>White</Color>
                                   </Style>
                                 </TextRun>
@@ -211,13 +241,57 @@ left([Organisation_Name], 9) = 'Home Care'</CommandText>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Textbox1</rd:DefaultName>
+                          <rd:DefaultName>Textbox40</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
                               <Style>Solid</Style>
                             </Border>
-                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <BackgroundColor>#1e65a6</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                        <ColSpan>6</ColSpan>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.6cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox60">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Objective</Value>
+                                  <Style>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox60</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#4082bf</BackgroundColor>
                             <PaddingLeft>2pt</PaddingLeft>
                             <PaddingRight>2pt</PaddingRight>
                             <PaddingTop>2pt</PaddingTop>
@@ -228,16 +302,15 @@ left([Organisation_Name], 9) = 'Home Care'</CommandText>
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Textbox3">
+                        <Textbox Name="Textbox77">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Client ID</Value>
+                                  <Value>Defined</Value>
                                   <Style>
-                                    <FontWeight>Bold</FontWeight>
                                     <Color>White</Color>
                                   </Style>
                                 </TextRun>
@@ -245,13 +318,13 @@ left([Organisation_Name], 9) = 'Home Care'</CommandText>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Textbox3</rd:DefaultName>
+                          <rd:DefaultName>Textbox77</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
                               <Style>Solid</Style>
                             </Border>
-                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <BackgroundColor>#4082bf</BackgroundColor>
                             <PaddingLeft>2pt</PaddingLeft>
                             <PaddingRight>2pt</PaddingRight>
                             <PaddingTop>2pt</PaddingTop>
@@ -262,16 +335,15 @@ left([Organisation_Name], 9) = 'Home Care'</CommandText>
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Textbox5">
+                        <Textbox Name="Textbox61">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Client Name</Value>
+                                  <Value>How This Will Be Achieved</Value>
                                   <Style>
-                                    <FontWeight>Bold</FontWeight>
                                     <Color>White</Color>
                                   </Style>
                                 </TextRun>
@@ -279,13 +351,13 @@ left([Organisation_Name], 9) = 'Home Care'</CommandText>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Textbox5</rd:DefaultName>
+                          <rd:DefaultName>Textbox61</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
                               <Style>Solid</Style>
                             </Border>
-                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <BackgroundColor>#4082bf</BackgroundColor>
                             <PaddingLeft>2pt</PaddingLeft>
                             <PaddingRight>2pt</PaddingRight>
                             <PaddingTop>2pt</PaddingTop>
@@ -296,16 +368,15 @@ left([Organisation_Name], 9) = 'Home Care'</CommandText>
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Textbox10">
+                        <Textbox Name="Textbox62">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Checklist exists</Value>
+                                  <Value>How Was It Achieved</Value>
                                   <Style>
-                                    <FontWeight>Bold</FontWeight>
                                     <Color>White</Color>
                                   </Style>
                                 </TextRun>
@@ -313,13 +384,13 @@ left([Organisation_Name], 9) = 'Home Care'</CommandText>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Textbox10</rd:DefaultName>
+                          <rd:DefaultName>Textbox62</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
                               <Style>Solid</Style>
                             </Border>
-                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <BackgroundColor>#4082bf</BackgroundColor>
                             <PaddingLeft>2pt</PaddingLeft>
                             <PaddingRight>2pt</PaddingRight>
                             <PaddingTop>2pt</PaddingTop>
@@ -330,16 +401,15 @@ left([Organisation_Name], 9) = 'Home Care'</CommandText>
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Textbox12">
+                        <Textbox Name="Textbox63">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Date Completed</Value>
+                                  <Value>Statua</Value>
                                   <Style>
-                                    <FontWeight>Bold</FontWeight>
                                     <Color>White</Color>
                                   </Style>
                                 </TextRun>
@@ -347,13 +417,46 @@ left([Organisation_Name], 9) = 'Home Care'</CommandText>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Textbox12</rd:DefaultName>
+                          <rd:DefaultName>Textbox63</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
                               <Style>Solid</Style>
                             </Border>
-                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <BackgroundColor>#4082bf</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox82">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Outcome</Value>
+                                  <Style>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox82</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#4082bf</BackgroundColor>
                             <PaddingLeft>2pt</PaddingLeft>
                             <PaddingRight>2pt</PaddingRight>
                             <PaddingTop>2pt</PaddingTop>
@@ -369,21 +472,21 @@ left([Organisation_Name], 9) = 'Home Care'</CommandText>
                   <TablixCells>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Organisation_Name">
+                        <Textbox Name="Objective">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>=Fields!Organisation_Name.Value</Value>
+                                  <Value>=Replace(Fields!Objective.Value,chr(10),"")</Value>
                                   <Style />
                                 </TextRun>
                               </TextRuns>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Organisation_Name</rd:DefaultName>
+                          <rd:DefaultName>Objective</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -399,104 +502,14 @@ left([Organisation_Name], 9) = 'Home Care'</CommandText>
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Client_ID">
+                        <Textbox Name="GOC_Defined_Date">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>=Fields!Client_ID.Value</Value>
-                                  <Style />
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Client_ID</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Client_Name">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=Fields!Client_Name.Value</Value>
-                                  <Style />
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Client_Name</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Has_DQ">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=Fields!Has_DQ.Value</Value>
-                                  <Style />
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Has_DQ</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Date_DQ">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=Fields!Date_DQ.Value</Value>
+                                  <Value>=Fields!GOC_Defined_Date.Value</Value>
                                   <Style>
                                     <Format>d</Format>
                                   </Style>
@@ -505,7 +518,129 @@ left([Organisation_Name], 9) = 'Home Care'</CommandText>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Date_DQ</rd:DefaultName>
+                          <rd:DefaultName>GOC_Defined_Date</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="How_This_Will_Be_Achieved">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Replace(Fields!How_This_Will_Be_Achieved.Value,chr(10),"")</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>How_This_Will_Be_Achieved</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="How_Was_It_Achieved">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Replace(Fields!How_Was_It_Achieved.Value,chr(10),"")</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>How_Was_It_Achieved</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Status">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Status.Value</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Status</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Outcome_Date">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Outcome_Date.Value</Value>
+                                  <Style>
+                                    <Format>d</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Outcome_Date</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -530,25 +665,62 @@ left([Organisation_Name], 9) = 'Home Care'</CommandText>
                 <TablixMember />
                 <TablixMember />
                 <TablixMember />
+                <TablixMember />
               </TablixMembers>
             </TablixColumnHierarchy>
             <TablixRowHierarchy>
               <TablixMembers>
                 <TablixMember>
-                  <KeepWithGroup>After</KeepWithGroup>
                   <RepeatOnNewPage>true</RepeatOnNewPage>
                 </TablixMember>
                 <TablixMember>
-                  <Group Name="Details" />
+                  <Group Name="Client_Name">
+                    <GroupExpressions>
+                      <GroupExpression>=Fields!Client_Name.Value</GroupExpression>
+                    </GroupExpressions>
+                  </Group>
+                  <SortExpressions>
+                    <SortExpression>
+                      <Value>=Fields!Client_Name.Value</Value>
+                    </SortExpression>
+                  </SortExpressions>
+                  <TablixMembers>
+                    <TablixMember>
+                      <Group Name="Type">
+                        <GroupExpressions>
+                          <GroupExpression>=Fields!Type.Value</GroupExpression>
+                        </GroupExpressions>
+                      </Group>
+                      <SortExpressions>
+                        <SortExpression>
+                          <Value>=Fields!Type.Value</Value>
+                        </SortExpression>
+                      </SortExpressions>
+                      <TablixMembers>
+                        <TablixMember>
+                          <KeepWithGroup>After</KeepWithGroup>
+                          <RepeatOnNewPage>true</RepeatOnNewPage>
+                        </TablixMember>
+                        <TablixMember>
+                          <KeepWithGroup>After</KeepWithGroup>
+                          <RepeatOnNewPage>true</RepeatOnNewPage>
+                        </TablixMember>
+                        <TablixMember>
+                          <Group Name="Details" />
+                          <TablixMembers>
+                            <TablixMember />
+                          </TablixMembers>
+                        </TablixMember>
+                      </TablixMembers>
+                    </TablixMember>
+                  </TablixMembers>
                 </TablixMember>
               </TablixMembers>
             </TablixRowHierarchy>
-            <RepeatColumnHeaders>true</RepeatColumnHeaders>
             <RepeatRowHeaders>true</RepeatRowHeaders>
             <DataSetName>DataSet1</DataSetName>
-            <Top>0cm</Top>
-            <Height>1.2cm</Height>
-            <Width>19cm</Width>
+            <Height>2.6825cm</Height>
+            <Width>27.7cm</Width>
             <Style>
               <Border>
                 <Style>None</Style>
@@ -556,16 +728,29 @@ left([Organisation_Name], 9) = 'Home Care'</CommandText>
             </Style>
           </Tablix>
         </ReportItems>
-        <Height>0.47244in</Height>
+        <Height>1.0561in</Height>
         <Style />
       </Body>
-      <Width>7.48031in</Width>
+      <Width>10.90551in</Width>
       <Page>
         <PageHeader>
-          <Height>1.51554cm</Height>
+          <Height>1.2245cm</Height>
           <PrintOnFirstPage>true</PrintOnFirstPage>
           <PrintOnLastPage>true</PrintOnLastPage>
           <ReportItems>
+            <Image Name="Logo">
+              <Source>Embedded</Source>
+              <Value>Logo_AnglicareSA</Value>
+              <Sizing>FitProportional</Sizing>
+              <Left>23.9613cm</Left>
+              <Height>1.2245cm</Height>
+              <Width>3.7387cm</Width>
+              <Style>
+                <Border>
+                  <Style>None</Style>
+                </Border>
+              </Style>
+            </Image>
             <Textbox Name="textbox1">
               <CanGrow>true</CanGrow>
               <KeepTogether>true</KeepTogether>
@@ -573,9 +758,9 @@ left([Organisation_Name], 9) = 'Home Care'</CommandText>
                 <Paragraph>
                   <TextRuns>
                     <TextRun>
-                      <Value>Community / Home Visiting Safety Checklist Status </Value>
+                      <Value>Goal Of Care</Value>
                       <Style>
-                        <FontSize>14pt</FontSize>
+                        <FontSize>24pt</FontSize>
                         <FontWeight>Bold</FontWeight>
                         <Color>#004b8e</Color>
                       </Style>
@@ -585,29 +770,14 @@ left([Organisation_Name], 9) = 'Home Care'</CommandText>
                 </Paragraph>
               </Paragraphs>
               <rd:DefaultName>textbox1</rd:DefaultName>
-              <Height>0.59667in</Height>
-              <Width>3.30394in</Width>
+              <Height>0.48209in</Height>
+              <Width>2.46434in</Width>
+              <ZIndex>1</ZIndex>
               <Style>
-                <PaddingLeft>2pt</PaddingLeft>
                 <PaddingRight>2pt</PaddingRight>
-                <PaddingTop>2pt</PaddingTop>
                 <PaddingBottom>2pt</PaddingBottom>
               </Style>
             </Textbox>
-            <Image Name="Logo">
-              <Source>Embedded</Source>
-              <Value>Logo_AnglicareSA</Value>
-              <Sizing>FitProportional</Sizing>
-              <Left>14.02646cm</Left>
-              <Height>1.51554cm</Height>
-              <Width>4.97354cm</Width>
-              <ZIndex>1</ZIndex>
-              <Style>
-                <Border>
-                  <Style>None</Style>
-                </Border>
-              </Style>
-            </Image>
           </ReportItems>
           <Style>
             <Border>
@@ -616,51 +786,10 @@ left([Organisation_Name], 9) = 'Home Care'</CommandText>
           </Style>
         </PageHeader>
         <PageFooter>
-          <Height>0.8715cm</Height>
+          <Height>0.83975cm</Height>
           <PrintOnFirstPage>true</PrintOnFirstPage>
           <PrintOnLastPage>true</PrintOnLastPage>
           <ReportItems>
-            <Textbox Name="Textbox7">
-              <CanGrow>true</CanGrow>
-              <KeepTogether>true</KeepTogether>
-              <Paragraphs>
-                <Paragraph>
-                  <TextRuns>
-                    <TextRun>
-                      <Value>="Report created on: " + Format(Today(), "dd/MM/yyyy")</Value>
-                      <Style />
-                    </TextRun>
-                  </TextRuns>
-                  <Style />
-                </Paragraph>
-              </Paragraphs>
-              <rd:DefaultName>Textbox1</rd:DefaultName>
-              <Top>0.2715cm</Top>
-              <Height>0.6cm</Height>
-              <Width>8.392cm</Width>
-              <Style>
-                <Border>
-                  <Style>None</Style>
-                </Border>
-                <PaddingLeft>2pt</PaddingLeft>
-                <PaddingRight>2pt</PaddingRight>
-                <PaddingTop>2pt</PaddingTop>
-                <PaddingBottom>2pt</PaddingBottom>
-              </Style>
-            </Textbox>
-            <Line Name="Line2">
-              <Top>0.1445cm</Top>
-              <Height>0cm</Height>
-              <Width>19cm</Width>
-              <ZIndex>1</ZIndex>
-              <Style>
-                <Border>
-                  <Color>#004b8e</Color>
-                  <Style>Solid</Style>
-                  <Width>2pt</Width>
-                </Border>
-              </Style>
-            </Line>
             <Textbox Name="Textbox158">
               <CanGrow>true</CanGrow>
               <KeepTogether>true</KeepTogether>
@@ -678,10 +807,51 @@ left([Organisation_Name], 9) = 'Home Care'</CommandText>
                 </Paragraph>
               </Paragraphs>
               <rd:DefaultName>Textbox157</rd:DefaultName>
-              <Top>0.2715cm</Top>
-              <Left>14.02646cm</Left>
+              <Top>0.23974cm</Top>
+              <Left>23.9613cm</Left>
               <Height>0.6cm</Height>
-              <Width>4.97354cm</Width>
+              <Width>3.7387cm</Width>
+              <Style>
+                <Border>
+                  <Style>None</Style>
+                </Border>
+                <PaddingLeft>2pt</PaddingLeft>
+                <PaddingRight>2pt</PaddingRight>
+                <PaddingTop>2pt</PaddingTop>
+                <PaddingBottom>2pt</PaddingBottom>
+              </Style>
+            </Textbox>
+            <Line Name="Line2">
+              <Top>0.11274cm</Top>
+              <Height>0cm</Height>
+              <Width>27.7cm</Width>
+              <ZIndex>1</ZIndex>
+              <Style>
+                <Border>
+                  <Color>#004b8e</Color>
+                  <Style>Solid</Style>
+                  <Width>2pt</Width>
+                </Border>
+              </Style>
+            </Line>
+            <Textbox Name="Textbox1">
+              <CanGrow>true</CanGrow>
+              <KeepTogether>true</KeepTogether>
+              <Paragraphs>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>="Report created on: " + Format(Today(), "dd/MM/yyyy")</Value>
+                      <Style />
+                    </TextRun>
+                  </TextRuns>
+                  <Style />
+                </Paragraph>
+              </Paragraphs>
+              <rd:DefaultName>Textbox1</rd:DefaultName>
+              <Top>0.23974cm</Top>
+              <Height>0.6cm</Height>
+              <Width>6.33333cm</Width>
               <ZIndex>2</ZIndex>
               <Style>
                 <Border>
@@ -700,8 +870,8 @@ left([Organisation_Name], 9) = 'Home Care'</CommandText>
             </Border>
           </Style>
         </PageFooter>
-        <PageHeight>29.7cm</PageHeight>
-        <PageWidth>21cm</PageWidth>
+        <PageHeight>21cm</PageHeight>
+        <PageWidth>29.7cm</PageWidth>
         <LeftMargin>1cm</LeftMargin>
         <RightMargin>1cm</RightMargin>
         <TopMargin>1cm</TopMargin>
@@ -712,68 +882,9 @@ left([Organisation_Name], 9) = 'Home Care'</CommandText>
     </ReportSection>
   </ReportSections>
   <ReportParameters>
-    <ReportParameter Name="OrgName">
+    <ReportParameter Name="Client_ID">
       <DataType>String</DataType>
-      <Prompt>Organisation</Prompt>
-      <ValidValues>
-        <DataSetReference>
-          <DataSetName>DataSet2</DataSetName>
-          <ValueField>Organisation_Name</ValueField>
-          <LabelField>Organisation_Name</LabelField>
-        </DataSetReference>
-      </ValidValues>
-      <MultiValue>true</MultiValue>
-    </ReportParameter>
-    <ReportParameter Name="Filt_YesNoBoth">
-      <DataType>Integer</DataType>
-      <DefaultValue>
-        <Values>
-          <Value>=0</Value>
-        </Values>
-      </DefaultValue>
-      <Prompt>Has Check List</Prompt>
-      <ValidValues>
-        <ParameterValues>
-          <ParameterValue>
-            <Value>=0</Value>
-            <Label>Not Filtered</Label>
-          </ParameterValue>
-          <ParameterValue>
-            <Value>=1</Value>
-            <Label>No</Label>
-          </ParameterValue>
-          <ParameterValue>
-            <Value>=2</Value>
-            <Label>Yes</Label>
-          </ParameterValue>
-        </ParameterValues>
-      </ValidValues>
-      <UsedInQuery>True</UsedInQuery>
-    </ReportParameter>
-    <ReportParameter Name="Filt_Funder">
-      <DataType>Integer</DataType>
-      <DefaultValue>
-        <Values>
-          <Value>=0</Value>
-        </Values>
-      </DefaultValue>
-      <Prompt>Funder Type Filter</Prompt>
-      <ValidValues>
-        <ParameterValues>
-          <ParameterValue>
-            <Value>=0</Value>
-            <Label>Both</Label>
-          </ParameterValue>
-          <ParameterValue>
-            <Value>=1</Value>
-            <Label>Home Care Package</Label>
-          </ParameterValue>
-          <ParameterValue>
-            <Value>=2</Value>
-            <Label>CHSP</Label>
-          </ParameterValue>
-        </ParameterValues>
-      </ValidValues>
+      <Prompt>Client ID</Prompt>
     </ReportParameter>
   </ReportParameters>
   <ReportParametersLayout>
@@ -784,17 +895,7 @@ left([Organisation_Name], 9) = 'Home Care'</CommandText>
         <CellDefinition>
           <ColumnIndex>0</ColumnIndex>
           <RowIndex>0</RowIndex>
-          <ParameterName>OrgName</ParameterName>
-        </CellDefinition>
-        <CellDefinition>
-          <ColumnIndex>1</ColumnIndex>
-          <RowIndex>0</RowIndex>
-          <ParameterName>Filt_YesNoBoth</ParameterName>
-        </CellDefinition>
-        <CellDefinition>
-          <ColumnIndex>2</ColumnIndex>
-          <RowIndex>0</RowIndex>
-          <ParameterName>Filt_Funder</ParameterName>
+          <ParameterName>Client_ID</ParameterName>
         </CellDefinition>
       </CellDefinitions>
     </GridLayoutDefinition>
@@ -1311,7 +1412,7 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA///gyWADqVGJ0AAAAABJRU5ErkJggg==</ImageData>
     </EmbeddedImage>
   </EmbeddedImages>
-  <Language>en-au</Language>
+  <Language>en-AU</Language>
   <rd:ReportUnitType>Cm</rd:ReportUnitType>
-  <rd:ReportID>33caf8df-90f1-48b9-bbca-db46bf4b82f7</rd:ReportID>
+  <rd:ReportID>5fc56d78-d3e0-452b-bc53-ae23ae3635a4</rd:ReportID>
 </Report>

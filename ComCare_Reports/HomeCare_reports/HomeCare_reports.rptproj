@@ -86,6 +86,10 @@
       <FullPath>HCP_GoalOfCare.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
+      <Name>HCP_HomeVisitingSafetyChecklist_Exist.rdl</Name>
+      <FullPath>HCP_HomeVisitingSafetyChecklist_Exist.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
       <Name>HCP_Level_Change.rdl</Name>
       <FullPath>HCP_Level_Change.rdl</FullPath>
     </ProjectItem>
@@ -130,8 +134,8 @@
       <FullPath>HCP_VisitTime_V_PackageStartTime.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>HCP_HomeVisitingSafetyChecklist_Exist.rdl</Name>
-      <FullPath>HCP_HomeVisitingSafetyChecklist_Exist.rdl</FullPath>
+      <Name>HCP_GoalOfCare_Individual.rdl</Name>
+      <FullPath>HCP_GoalOfCare_Individual.rdl</FullPath>
     </ProjectItem>
   </Reports>
   <Configurations>
