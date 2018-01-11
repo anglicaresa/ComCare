@@ -357,12 +357,12 @@ IIF
           <Value>= IIF
 (
 	(
-		((Len(Fields!Temp_String.Value)) &gt; 15)
-		AND (Code.IsStringInt(Right(Fields!Temp_String.Value,1)))
-		AND (Code.IsStringInt(GetChar(Right(Fields!Temp_String.Value,7),1)))
-		AND (Code.IsStringInt(GetChar(Right(Fields!Temp_String.Value,15),1)))
+		((Len(Fields!Origin_ItemNumber.Value)) &gt; 15)
+		AND (Code.IsStringInt(Right(Fields!Origin_ItemNumber.Value,1)))
+		AND (Code.IsStringInt(GetChar(Right(Fields!Origin_ItemNumber.Value,7),1)))
+		AND (Code.IsStringInt(GetChar(Right(Fields!Origin_ItemNumber.Value,15),1)))
 	)
-	,Replace(Right(Fields!Temp_String.Value,15),"_"," ")
+	,Replace(Right(Fields!Origin_ItemNumber.Value,15),"_"," ")
 	,"Not on record"
 )</Value>
         </Field>
@@ -2092,29 +2092,14 @@ IIF
   <ReportParameters>
     <ReportParameter Name="StartDate">
       <DataType>DateTime</DataType>
-      <DefaultValue>
-        <Values>
-          <Value>=DateADD("d",-28,today())</Value>
-        </Values>
-      </DefaultValue>
       <Prompt>Start Date</Prompt>
     </ReportParameter>
     <ReportParameter Name="EndDate">
       <DataType>DateTime</DataType>
-      <DefaultValue>
-        <Values>
-          <Value>=today()</Value>
-        </Values>
-      </DefaultValue>
       <Prompt>End Date</Prompt>
     </ReportParameter>
     <ReportParameter Name="Client_ID_">
       <DataType>Integer</DataType>
-      <DefaultValue>
-        <Values>
-          <Value>10070013</Value>
-        </Values>
-      </DefaultValue>
       <Prompt>Client ID </Prompt>
     </ReportParameter>
     <ReportParameter Name="SubTitle">

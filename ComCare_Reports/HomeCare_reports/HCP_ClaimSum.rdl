@@ -28,7 +28,22 @@
           </QueryParameter>
         </QueryParameters>
         <CommandText>Declare @StartDate Date = DATEFROMPARTS(@ClaimYear,@ClaimPeriod_Start,1)
-Declare @EndDate Date = DateADD(Day,-1,DATEFROMPARTS(@ClaimYear,@ClaimPeriod_End+1,1))
+Declare @EndDate Date = iif( @ClaimPeriod_End = 12, DATEFROMPARTS(@ClaimYear,@ClaimPeriod_End,31), DateADD(Day,-1,DATEFROMPARTS(@ClaimYear,@ClaimPeriod_End+1,1)))
+
+Declare @SupIDs table ( SupID int)
+insert into @SupIDs values 
+	(5) --Base Subsidy
+	,(6) --Income Tested
+	,(7) --Financial Hardship (Billing Linked)
+	,(9) --Dementia and Cognition and Veterans
+	,(30) --Financial Hardship
+	,(1) --Oxygen
+	,(36) --Means Tested
+	,(31) --Client Contribution 50% Reduction
+	,(32)--Client Contribution 100% Reduction
+	,(33)--Client Contribution 25% Reduction
+	,(34)--Client Contribution 75% Reduction
+	,(35)--Client contribution 0% Reduction
 
 Declare @ClaimSum_01 Table
 (
@@ -90,7 +105,7 @@ select
 	,J005.Period 'Period_INT'
 	,J001.Funded_Indicator
 	,J001.Program_Level_ID 'LevelOfCare'
-	,DateADD(Day,-1,DATEFROMPARTS(J005.Claim_Year,J005.Period+1,1))'LastDayOfPeriod'
+	,iif(J005.Period = 12 ,DATEFROMPARTS(J005.Claim_Year,J005.Period,31),DateADD(Day,-1,DATEFROMPARTS(J005.Claim_Year,J005.Period+1,1)))'LastDayOfPeriod'
 	,DATEFROMPARTS(J005.Claim_Year,J005.Period,1)'FirstDayOfPeriod'
 
 from dbo.FC_Funder_Contract J002
@@ -132,7 +147,7 @@ select distinct
 	,J001.FunderProgram
 	,J009.Description
 	,J009.FC_Supplement_Type_ID
-	,cast(J009.Affect_Funder_Claim + cast(iif(J005.Override_Rate is null, J007.Supplement_Rate,J005.Override_Rate)as Varchar(16))as decimal(10,2))'Supplement_Rate'
+	,cast(iif(J009.Affect_Funder_Claim = '&amp;','+',J009.Affect_Funder_Claim) + cast(iif(J005.Override_Rate is null, J007.Supplement_Rate,J005.Override_Rate)as Varchar(16))as decimal(10,2))'Supplement_Rate'
 	,iif(J005.Override_Rate is null, J007.Effective_From_Date,J005.Effective_From_Date)'From_Date'
 	,iif(J005.Override_Rate is null, J007.Effective_To_Date,J005.Effective_To_Date)'To_Date'
 	,J007.Program_Level_ID 'LevelOfCare'
@@ -158,7 +173,7 @@ where
 	and (J007.Effective_To_Date &gt; J001.Effective_From_Date or J007.Effective_To_Date is null)
 	and (J005.Effective_To_Date &gt; J001.Effective_From_Date or J005.Effective_To_Date is null)
 	and (J005.Effective_From_Date &lt; iif (J001.Effective_To_Date is null, DATEFROMPARTS(2200,01,01) ,J001.Effective_To_Date))
-	and (J009.FC_Supplement_Type_ID = 5 or J009.FC_Supplement_Type_ID = 6 or J009.FC_Supplement_Type_ID = 7 or J009.FC_Supplement_Type_ID = 9 or J009.FC_Supplement_Type_ID = 30 or J009.FC_Supplement_Type_ID = 1)
+	and (cast(J009.FC_Supplement_Type_ID as int) in (select * from @SupIDs))
 
 order by 1,3,4
 
@@ -205,6 +220,11 @@ Select-- distinct
 	T02.*
 	,Cast(T02.BaseSubsidy_Rate * T02.RateMult as decimal(12,4)) 'Cal_BaseSubsidy'
 	,Cast(T02.IncomeTested_Rate * T02.RateMult as decimal(12,4)) 'Cal_IncomeTested'
+	,Cast(T02.MeansTested_Rate * T02.RateMult as decimal(12,4)) 'Cal_MeansTested'
+	,Cast(
+			(
+				T02.CC_0_Rate + T02.CC_100_Rate + T02.CC_25_Rate + T02.CC_50_Rate + T02.CC_75_Rate
+			) * T02.RateMult as decimal(12,4)) 'Cal_ClientContribution'
 	,Cast(T02.Dementia_Veterans_Rate * T02.RateMult as decimal(12,4)) 'Cal_Dementia_Veterans'
 	,Cast(T02.Financial_Hardship_Rate * T02.RateMult as decimal(12,4)) 'Cal_Financial_Hardship'
 	,Cast(T02.Oxygen_Rate * T02.RateMult as decimal(12,4)) 'Cal_Oxygen'
@@ -226,6 +246,20 @@ From
 			,J002.Last_Modified_Date 'BaseSubsidy_Rate_ModDate'
 			,iif(J001.FirstDayOfPeriod &gt; J003.Sup_To_Date ,0.0 ,iif(J003.Supplement_Rate is null,0.0,J003.Supplement_Rate)) 'IncomeTested_Rate'
 			,J003.Last_Modified_Date 'IncomeTested_Rate_ModDate'
+
+			,iif(J001.FirstDayOfPeriod &gt; J008.Sup_To_Date ,0.0 ,iif(J008.Supplement_Rate is null,0.0,J008.Supplement_Rate)) 'MeansTested_Rate'
+			,J008.Last_Modified_Date 'MeansTested_Rate_ModDate'
+
+			,iif(J001.FirstDayOfPeriod &gt; J009.Sup_To_Date ,0.0 ,iif(J009.Supplement_Rate is null,0.0,J009.Supplement_Rate)) 'CC_50_Rate'
+			,J009.Last_Modified_Date 'CC_50_Rate_ModDate'
+			,iif(J001.FirstDayOfPeriod &gt; J010.Sup_To_Date ,0.0 ,iif(J010.Supplement_Rate is null,0.0,J010.Supplement_Rate)) 'CC_100_Rate'
+			,J010.Last_Modified_Date 'CC_100_Rate_ModDate'
+			,iif(J001.FirstDayOfPeriod &gt; J011.Sup_To_Date ,0.0 ,iif(J011.Supplement_Rate is null,0.0,J011.Supplement_Rate)) 'CC_75_Rate'
+			,J011.Last_Modified_Date 'CC_75_Rate_ModDate'
+			,iif(J001.FirstDayOfPeriod &gt; J012.Sup_To_Date ,0.0 ,iif(J012.Supplement_Rate is null,0.0,J012.Supplement_Rate)) 'CC_25_Rate'
+			,J012.Last_Modified_Date 'CC_25_Rate_ModDate'
+			,iif(J001.FirstDayOfPeriod &gt; J013.Sup_To_Date ,0.0 ,iif(J013.Supplement_Rate is null,0.0,J013.Supplement_Rate)) 'CC_0_Rate'
+			,J013.Last_Modified_Date 'CC_0_Rate_ModDate'
 			,iif(J001.FirstDayOfPeriod &gt; J004.Sup_To_Date ,0.0 ,iif(J004.Supplement_Rate is null,0.0,J004.Supplement_Rate)) 'Dementia_Veterans_Rate'
 			,J004.Last_Modified_Date 'Dementia_Veterans_Rate_ModDate'
 			,iif(J001.FirstDayOfPeriod &gt; J005.Sup_To_Date ,0.0 ,iif(J005.Supplement_Rate is null,0.0,J005.Supplement_Rate)) 'Financial_Hardship_Rate'
@@ -235,6 +269,12 @@ From
 
 			,iif(J001.FirstDayOfPeriod &gt; J002.Sup_To_Date ,0.0 ,iif(J002.Supplement_Rate is null,0.0,J002.Supplement_Rate))
 			+iif(J001.FirstDayOfPeriod &gt; J003.Sup_To_Date ,0.0 ,iif(J003.Supplement_Rate is null,0.0,J003.Supplement_Rate))
+			+iif(J001.FirstDayOfPeriod &gt; J008.Sup_To_Date ,0.0 ,iif(J008.Supplement_Rate is null,0.0,J008.Supplement_Rate))
+			+iif(J001.FirstDayOfPeriod &gt; J009.Sup_To_Date ,0.0 ,iif(J009.Supplement_Rate is null,0.0,J009.Supplement_Rate))
+			+iif(J001.FirstDayOfPeriod &gt; J010.Sup_To_Date ,0.0 ,iif(J010.Supplement_Rate is null,0.0,J010.Supplement_Rate))
+			+iif(J001.FirstDayOfPeriod &gt; J011.Sup_To_Date ,0.0 ,iif(J011.Supplement_Rate is null,0.0,J011.Supplement_Rate))
+			+iif(J001.FirstDayOfPeriod &gt; J012.Sup_To_Date ,0.0 ,iif(J012.Supplement_Rate is null,0.0,J012.Supplement_Rate))
+			+iif(J001.FirstDayOfPeriod &gt; J013.Sup_To_Date ,0.0 ,iif(J013.Supplement_Rate is null,0.0,J013.Supplement_Rate))
 			+iif(J001.FirstDayOfPeriod &gt; J004.Sup_To_Date ,0.0 ,iif(J004.Supplement_Rate is null,0.0,J004.Supplement_Rate))
 			+iif(J001.FirstDayOfPeriod &gt; J005.Sup_To_Date ,0.0 ,iif(J005.Supplement_Rate is null,0.0,J005.Supplement_Rate))
 			+iif(J001.FirstDayOfPeriod &gt; J006.Sup_To_Date ,0.0 ,iif(J006.Supplement_Rate is null,0.0,J006.Supplement_Rate))'Sum_Rate'
@@ -304,6 +344,78 @@ From
 			and J001.FunderProgram = J006.FunderProgram
 			and J001.LevelOfCare = J006.LevelOfCare
 			and J001.LastDayOfPeriod between J006.From_Date and iif(J006.To_Date is null, DATEFROMPARTS(2200,01,01),J006.To_Date)
+
+		Left outer join
+		(
+			Select
+			*
+			From @SubsRate SR
+			where SR.FC_Supplement_Type_ID = 36 --Means Tested
+		)J008 on 
+			J001.Client_ID = J008.Client_ID 
+			and J001.FunderProgram = J008.FunderProgram
+			and J001.LevelOfCare = J008.LevelOfCare
+			and J001.LastDayOfPeriod between J008.From_Date and iif(J008.To_Date is null, DATEFROMPARTS(2200,01,01),J008.To_Date)
+
+		Left outer join
+		(
+			Select
+			*
+			From @SubsRate SR
+			where SR.FC_Supplement_Type_ID = 31 --Client Contribution 50% Reduction
+		)J009 on 
+			J001.Client_ID = J009.Client_ID 
+			and J001.FunderProgram = J009.FunderProgram
+			and J001.LevelOfCare = J009.LevelOfCare
+			and J001.LastDayOfPeriod between J009.From_Date and iif(J009.To_Date is null, DATEFROMPARTS(2200,01,01),J009.To_Date)
+
+		Left outer join
+		(
+			Select
+			*
+			From @SubsRate SR
+			where SR.FC_Supplement_Type_ID = 32 --Client Contribution 100% Reduction
+		)J010 on 
+			J001.Client_ID = J010.Client_ID 
+			and J001.FunderProgram = J010.FunderProgram
+			and J001.LevelOfCare = J010.LevelOfCare
+			and J001.LastDayOfPeriod between J010.From_Date and iif(J010.To_Date is null, DATEFROMPARTS(2200,01,01),J010.To_Date)
+		
+		Left outer join
+		(
+			Select
+			*
+			From @SubsRate SR
+			where SR.FC_Supplement_Type_ID = 33 --Client Contribution 25% Reduction
+		)J011 on 
+			J001.Client_ID = J011.Client_ID 
+			and J001.FunderProgram = J011.FunderProgram
+			and J001.LevelOfCare = J011.LevelOfCare
+			and J001.LastDayOfPeriod between J011.From_Date and iif(J011.To_Date is null, DATEFROMPARTS(2200,01,01),J011.To_Date)
+
+		Left outer join
+		(
+			Select
+			*
+			From @SubsRate SR
+			where SR.FC_Supplement_Type_ID = 34 --Client Contribution 75% Reduction
+		)J012 on 
+			J001.Client_ID = J012.Client_ID 
+			and J001.FunderProgram = J012.FunderProgram
+			and J001.LevelOfCare = J012.LevelOfCare
+			and J001.LastDayOfPeriod between J012.From_Date and iif(J012.To_Date is null, DATEFROMPARTS(2200,01,01),J012.To_Date)
+
+		Left outer join
+		(
+			Select
+			*
+			From @SubsRate SR
+			where SR.FC_Supplement_Type_ID = 35 --Client Contribution 0% Reduction
+		)J013 on 
+			J001.Client_ID = J013.Client_ID 
+			and J001.FunderProgram = J013.FunderProgram
+			and J001.LevelOfCare = J013.LevelOfCare
+			and J001.LastDayOfPeriod between J013.From_Date and iif(J013.To_Date is null, DATEFROMPARTS(2200,01,01),J013.To_Date)
 
 		Left outer Join @Hosp J007 on J007.Client_ID = J001.Client_ID and J007.Period_INT = J001.Period_INT
 
@@ -421,25 +533,61 @@ From
           <DataField>IncomeTested_Rate_ModDate</DataField>
           <rd:TypeName>System.DateTime</rd:TypeName>
         </Field>
+        <Field Name="MeansTested_Rate">
+          <DataField>MeansTested_Rate</DataField>
+          <rd:TypeName>System.Decimal</rd:TypeName>
+        </Field>
+        <Field Name="CC_50_Rate">
+          <DataField>CC_50_Rate</DataField>
+          <rd:TypeName>System.Decimal</rd:TypeName>
+        </Field>
+        <Field Name="MeansTested_Rate_ModDate">
+          <DataField>MeansTested_Rate_ModDate</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
         <Field Name="Financial_Hardship_Rate">
           <DataField>Financial_Hardship_Rate</DataField>
           <rd:TypeName>System.Decimal</rd:TypeName>
         </Field>
+        <Field Name="CC_50_Rate_ModDate">
+          <DataField>CC_50_Rate_ModDate</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
         <Field Name="Oxygen_Rate">
           <DataField>Oxygen_Rate</DataField>
+          <rd:TypeName>System.Decimal</rd:TypeName>
+        </Field>
+        <Field Name="CC_100_Rate">
+          <DataField>CC_100_Rate</DataField>
           <rd:TypeName>System.Decimal</rd:TypeName>
         </Field>
         <Field Name="Sum_Rate">
           <DataField>Sum_Rate</DataField>
           <rd:TypeName>System.Decimal</rd:TypeName>
         </Field>
+        <Field Name="CC_100_Rate_ModDate">
+          <DataField>CC_100_Rate_ModDate</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="CC_75_Rate">
+          <DataField>CC_75_Rate</DataField>
+          <rd:TypeName>System.Decimal</rd:TypeName>
+        </Field>
         <Field Name="Dementia_Veterans_Rate_ModDate">
           <DataField>Dementia_Veterans_Rate_ModDate</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="CC_75_Rate_ModDate">
+          <DataField>CC_75_Rate_ModDate</DataField>
           <rd:TypeName>System.DateTime</rd:TypeName>
         </Field>
         <Field Name="HospInPeriod">
           <DataField>HospInPeriod</DataField>
           <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="CC_25_Rate">
+          <DataField>CC_25_Rate</DataField>
+          <rd:TypeName>System.Decimal</rd:TypeName>
         </Field>
         <Field Name="Financial_Hardship_Rate_ModDate">
           <DataField>Financial_Hardship_Rate_ModDate</DataField>
@@ -449,9 +597,21 @@ From
           <DataField>RateMult</DataField>
           <rd:TypeName>System.Decimal</rd:TypeName>
         </Field>
+        <Field Name="CC_25_Rate_ModDate">
+          <DataField>CC_25_Rate_ModDate</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
         <Field Name="Cal_BaseSubsidy">
           <DataField>Cal_BaseSubsidy</DataField>
           <rd:TypeName>System.Decimal</rd:TypeName>
+        </Field>
+        <Field Name="CC_0_Rate">
+          <DataField>CC_0_Rate</DataField>
+          <rd:TypeName>System.Decimal</rd:TypeName>
+        </Field>
+        <Field Name="CC_0_Rate_ModDate">
+          <DataField>CC_0_Rate_ModDate</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
         </Field>
         <Field Name="Oxygen_Rate_ModDate">
           <DataField>Oxygen_Rate_ModDate</DataField>
@@ -459,6 +619,10 @@ From
         </Field>
         <Field Name="Cal_IncomeTested">
           <DataField>Cal_IncomeTested</DataField>
+          <rd:TypeName>System.Decimal</rd:TypeName>
+        </Field>
+        <Field Name="Cal_MeansTested">
+          <DataField>Cal_MeansTested</DataField>
           <rd:TypeName>System.Decimal</rd:TypeName>
         </Field>
         <Field Name="Cal_Dementia_Veterans">
@@ -471,6 +635,10 @@ From
         </Field>
         <Field Name="Cal_Oxygen">
           <DataField>Cal_Oxygen</DataField>
+          <rd:TypeName>System.Decimal</rd:TypeName>
+        </Field>
+        <Field Name="Cal_ClientContribution">
+          <DataField>Cal_ClientContribution</DataField>
           <rd:TypeName>System.Decimal</rd:TypeName>
         </Field>
       </Fields>
@@ -629,10 +797,19 @@ where
                   <Width>3.02917cm</Width>
                 </TablixColumn>
                 <TablixColumn>
+                  <Width>3.26729cm</Width>
+                </TablixColumn>
+                <TablixColumn>
                   <Width>2.5cm</Width>
                 </TablixColumn>
                 <TablixColumn>
                   <Width>3.00271cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>2.5cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>3.79646cm</Width>
                 </TablixColumn>
                 <TablixColumn>
                   <Width>3.66417cm</Width>
@@ -1203,6 +1380,40 @@ where
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
+                        <Textbox Name="Textbox29">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Client Contribution Calc</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox29</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
                         <Textbox Name="Textbox24">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
@@ -1272,6 +1483,74 @@ Rate Edit Date</Value>
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
+                        <Textbox Name="Textbox14">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Means Tested Calc</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox14</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox25">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Means Tested Rate  Edit Date</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox25</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
                         <Textbox Name="Textbox4">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
@@ -1314,14 +1593,7 @@ Rate Edit Date</Value>
                               <TextRuns>
                                 <TextRun>
                                   <Value>Dementia &amp; Veterans
-</Value>
-                                  <Style>
-                                    <FontWeight>Bold</FontWeight>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                                <TextRun>
-                                  <Value>Rate Edit Date</Value>
+Rate Edit Date</Value>
                                   <Style>
                                     <FontWeight>Bold</FontWeight>
                                     <Color>White</Color>
@@ -1855,7 +2127,6 @@ Rate Edit Date</Value>
                             <PaddingBottom>2pt</PaddingBottom>
                           </Style>
                         </Textbox>
-                        <rd:Selected>true</rd:Selected>
                       </CellContents>
                     </TablixCell>
                     <TablixCell>
@@ -1984,6 +2255,36 @@ Rate Edit Date</Value>
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
+                        <Textbox Name="Cal_ClientContribution">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Cal_ClientContribution.Value</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Cal_ClientContribution</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
                         <Textbox Name="Cal_IncomeTested">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
@@ -2033,6 +2334,68 @@ Rate Edit Date</Value>
                             </Paragraph>
                           </Paragraphs>
                           <rd:DefaultName>IncomeTested_Rate_ModDate</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Cal_MeansTested">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Cal_MeansTested.Value</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Cal_MeansTested</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="MeansTested_Rate_ModDate">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!MeansTested_Rate_ModDate.Value</Value>
+                                  <Style>
+                                    <Format>d</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>MeansTested_Rate_ModDate</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -2268,6 +2631,9 @@ Rate Edit Date</Value>
                 <TablixMember />
                 <TablixMember />
                 <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
               </TablixMembers>
             </TablixColumnHierarchy>
             <TablixRowHierarchy>
@@ -2282,7 +2648,7 @@ Rate Edit Date</Value>
             </TablixRowHierarchy>
             <DataSetName>DataSet1</DataSetName>
             <Height>1.64979cm</Height>
-            <Width>72.64709cm</Width>
+            <Width>82.21084cm</Width>
             <Style>
               <Border>
                 <Style>None</Style>
@@ -2293,7 +2659,7 @@ Rate Edit Date</Value>
         <Height>0.64952in</Height>
         <Style />
       </Body>
-      <Width>28.60122in</Width>
+      <Width>32.36647in</Width>
       <Page>
         <PageHeader>
           <Height>1.19098cm</Height>
@@ -2346,7 +2712,7 @@ Rate Edit Date</Value>
               <Source>Embedded</Source>
               <Value>Logo_AnglicareSA</Value>
               <Sizing>FitProportional</Sizing>
-              <Left>63.69187cm</Left>
+              <Left>73.25563cm</Left>
               <Height>1.19098cm</Height>
               <Width>8.95521cm</Width>
               <ZIndex>1</ZIndex>
