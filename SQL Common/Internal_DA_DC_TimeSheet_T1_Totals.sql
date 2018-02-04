@@ -1,8 +1,8 @@
 --select * from [az-sqlbi01].dwhb.extract.hrtim_tsheet_entry T1Ext where T1Ext.EMPLOYEE_ID = 3837 and TimeSheet_Date = cast('2017-05-15' as datetime)
-
+--select * from [az-sqlbi01].dwhb.extract.hrtim_tsheet_entry T1Ext where T1Ext.EMPLOYEE_ID = 7409 and TimeSheet_Date > cast('2018-01-01' as datetime)
 --/*
-declare @Start_Date date = cast('2017-07-01' as date)
-declare @End_Date date = cast('2017-07-30' as date)
+declare @Start_Date date = cast('2018-01-01' as date)
+declare @End_Date date = cast('2018-01-14' as date)
 --*/
 
 
@@ -31,7 +31,10 @@ from
 		and T1Ext.UNIT_TYPE = 'H'
 --		and T1Ext.EMPLOYEE_ID in (@Employee_ID)
 
-		and T1Ext.EMPLOYEE_ID = 3837
+		and T1Ext.EMPLOYEE_ID = 7409
 )T1
 
 order by 1, 2
+
+
+select distinct ENTRY_TYPE from [az-sqlbi01].dwhb.extract.hrtim_tsheet_entry

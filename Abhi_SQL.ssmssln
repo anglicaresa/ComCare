@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# SQL Server Management Studio Solution File, Format Version 13.00
+# SQL Server Management Studio Solution File, Format Version 14.00
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{4F2E2C19-372F-40D8-9FA7-9D2138C6997A}") = "SQL Disability", "SQL Disability\SQL Disability.ssmssqlproj", "{7F9AB24C-60ED-4E51-9D7D-3A3397A5276F}"
@@ -13,6 +13,8 @@ Project("{4F2E2C19-372F-40D8-9FA7-9D2138C6997A}") = "SQL RAC", "SQL RAC\SQL RAC.
 EndProject
 Project("{4F2E2C19-372F-40D8-9FA7-9D2138C6997A}") = "SQL TestBedMain", "SQL TestBedMain\SQL TestBedMain.ssmssqlproj", "{E45EDB05-0F46-42AF-9D3B-478AD4B4EA3F}"
 EndProject
+Project("{4F2E2C19-372F-40D8-9FA7-9D2138C6997A}") = "SQL_AD_Queue", "SQL_AD_Queue\SQL_AD_Queue.ssmssqlproj", "{D39847EE-402B-468E-9E54-D5A031DD8DF7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Default|Default = Default|Default
@@ -22,8 +24,9 @@ Global
 		{827E1E91-8DC2-4978-B74D-CEB2962BEDC5}.Default|Default.ActiveCfg = Default
 		{C8381300-F95E-4EFE-B490-6DE19E365FEC}.Default|Default.ActiveCfg = Default
 		{9A646D0D-7335-4814-9109-01D91A7DEFFE}.Default|Default.ActiveCfg = Default
-		{237196E9-432D-4FEB-9622-8C2BD221502F}.Default|Default.ActiveCfg = Default
 		{E45EDB05-0F46-42AF-9D3B-478AD4B4EA3F}.Default|Default.ActiveCfg = Default
+		{D39847EE-402B-468E-9E54-D5A031DD8DF7}.Default|Default.ActiveCfg = Default
+		{BF8DE251-58F0-40B3-9BAF-7424E7C183D7}.Default|Default.ActiveCfg = Default
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

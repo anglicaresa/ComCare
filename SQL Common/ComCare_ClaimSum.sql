@@ -24,12 +24,12 @@ insert into @TransactionType
 --declare @Client_ID int = 10013840
 --declare @Client_ID int = 10021555
 --declare @Client_ID int = 10020984
-declare @Client_ID int = 10022981
+declare @Client_ID int = 10010223
 
 --declare @FiltIncomeTested int = 1
 declare @ClaimYear int = 2017
-declare @ClaimPeriod_Start int = 9
-declare @ClaimPeriod_End int = 9
+declare @ClaimPeriod_Start int = 12
+declare @ClaimPeriod_End int = 12
 
 Declare @FunderContract_ID Table 
 (
@@ -51,7 +51,23 @@ where
 
 --------------<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<here down
 Declare @StartDate Date = DATEFROMPARTS(@ClaimYear,@ClaimPeriod_Start,1)
-Declare @EndDate Date = DateADD(Day,-1,DATEFROMPARTS(@ClaimYear,@ClaimPeriod_End+1,1))
+Declare @EndDate Date = iif( @ClaimPeriod_End = 12, DATEFROMPARTS(@ClaimYear,@ClaimPeriod_End,31), DateADD(Day,-1,DATEFROMPARTS(@ClaimYear,@ClaimPeriod_End+1,1)))
+
+Declare @SupIDs table ( SupID int)
+insert into @SupIDs values 
+	(5) --Base Subsidy
+	,(6) --Income Tested
+	,(7) --Financial Hardship (Billing Linked)
+	,(9) --Dementia and Cognition and Veterans
+	,(30) --Financial Hardship
+	,(1) --Oxygen
+	,(36) --Means Tested
+	,(31) --Client Contribution 50% Reduction
+	,(32)--Client Contribution 100% Reduction
+	,(33)--Client Contribution 25% Reduction
+	,(34)--Client Contribution 75% Reduction
+	,(35)--Client contribution 0% Reduction
+--select * from @SupIDs
 
 Declare @ClaimSum_01 Table
 (
@@ -113,8 +129,9 @@ select
 	,J005.Period 'Period_INT'
 	,J001.Funded_Indicator
 	,J001.Program_Level_ID 'LevelOfCare'
-	,DateADD(Day,-1,DATEFROMPARTS(J005.Claim_Year,J005.Period+1,1))'LastDayOfPeriod'
+	,iif(J005.Period = 12 ,DATEFROMPARTS(J005.Claim_Year,J005.Period,31),DateADD(Day,-1,DATEFROMPARTS(J005.Claim_Year,J005.Period+1,1)))'LastDayOfPeriod'
 	,DATEFROMPARTS(J005.Claim_Year,J005.Period,1)'FirstDayOfPeriod'
+	--,J005.
 
 from dbo.FC_Funder_Contract J002
 left outer join dbo.FC_Client_Contract J001 on J002.funder_Contract_ID = J001.funder_Contract_ID
@@ -150,12 +167,13 @@ Declare @SubsRate Table
 	,Last_mod_Type VarChar(32)
 )
 insert into @SubsRate
+
 select distinct
 	J001.Client_ID 'Client_ID'
 	,J001.FunderProgram
 	,J009.Description
-	,J009.FC_Supplement_Type_ID
-	,cast(J009.Affect_Funder_Claim + cast(iif(J005.Override_Rate is null, J007.Supplement_Rate,J005.Override_Rate)as Varchar(16))as decimal(10,2))'Supplement_Rate'
+	,cast(J009.FC_Supplement_Type_ID as int)'FC_Supplement_Type_ID'
+	,cast(iif(J009.Affect_Funder_Claim = '&','+',J009.Affect_Funder_Claim) + cast(iif(J005.Override_Rate is null, J007.Supplement_Rate,J005.Override_Rate)as Varchar(16))as decimal(10,2))'Supplement_Rate'
 	,iif(J005.Override_Rate is null, J007.Effective_From_Date,J005.Effective_From_Date)'From_Date'
 	,iif(J005.Override_Rate is null, J007.Effective_To_Date,J005.Effective_To_Date)'To_Date'
 	,J007.Program_Level_ID 'LevelOfCare'
@@ -171,8 +189,10 @@ inner join dbo.FC_Client_Supplement J005 on J005.client_Contract_ID = J001.clien
 inner join dbo.FC_Supplement_Rate J007 on J007.FC_Supplement_ID = J005.FC_Supplement_ID and J007.Program_Level_ID = J001.LevelOfCare
 left outer join dbo.FC_Supplement J008 on J008.FC_Supplement_ID = J005.FC_Supplement_ID
 left outer join dbo.FC_Supplement_Type J009 on J009.FC_Supplement_Type_ID = J008.FC_Supplement_Type_ID and J009.Effective_To_Date is null
-
-
+/*
+select * from dbo.FC_Client_Supplement where override_rate is not null
+select * from dbo.FC_Supplement_Type
+*/
 
 where
 	J003.Description  = 'Home Care Package'
@@ -181,7 +201,7 @@ where
 	and (J007.Effective_To_Date > J001.Effective_From_Date or J007.Effective_To_Date is null)
 	and (J005.Effective_To_Date > J001.Effective_From_Date or J005.Effective_To_Date is null)
 	and (J005.Effective_From_Date < iif (J001.Effective_To_Date is null, DATEFROMPARTS(2200,01,01) ,J001.Effective_To_Date))
-	and (J009.FC_Supplement_Type_ID = 5 or J009.FC_Supplement_Type_ID = 6 or J009.FC_Supplement_Type_ID = 7 or J009.FC_Supplement_Type_ID = 9 or J009.FC_Supplement_Type_ID = 30 or J009.FC_Supplement_Type_ID = 1)
+	and (cast(J009.FC_Supplement_Type_ID as int) in (select * from @SupIDs))
 
 order by 1,3,4
 
@@ -220,7 +240,7 @@ left outer join
 where
 	1=1
 	and J002.RN = 1
-	
+
 --select * from @Hosp
 -----------------------------------------------------------------------------------------------------------------------------
 --/* Need to handle the vairous dates for rate changes. done
@@ -228,6 +248,11 @@ Select-- distinct
 	T02.*
 	,Cast(T02.BaseSubsidy_Rate * T02.RateMult as decimal(12,4)) 'Cal_BaseSubsidy'
 	,Cast(T02.IncomeTested_Rate * T02.RateMult as decimal(12,4)) 'Cal_IncomeTested'
+	,Cast(T02.MeansTested_Rate * T02.RateMult as decimal(12,4)) 'Cal_MeansTested'
+	,Cast(
+			(
+				T02.CC_0_Rate + T02.CC_100_Rate + T02.CC_25_Rate + T02.CC_50_Rate + T02.CC_75_Rate
+			) * T02.RateMult as decimal(12,4)) 'Cal_ClientContribution'
 	,Cast(T02.Dementia_Veterans_Rate * T02.RateMult as decimal(12,4)) 'Cal_Dementia_Veterans'
 	,Cast(T02.Financial_Hardship_Rate * T02.RateMult as decimal(12,4)) 'Cal_Financial_Hardship'
 	,Cast(T02.Oxygen_Rate * T02.RateMult as decimal(12,4)) 'Cal_Oxygen'
@@ -249,6 +274,20 @@ From
 			,J002.Last_Modified_Date 'BaseSubsidy_Rate_ModDate'
 			,iif(J001.FirstDayOfPeriod > J003.Sup_To_Date ,0.0 ,iif(J003.Supplement_Rate is null,0.0,J003.Supplement_Rate)) 'IncomeTested_Rate'
 			,J003.Last_Modified_Date 'IncomeTested_Rate_ModDate'
+
+			,iif(J001.FirstDayOfPeriod > J008.Sup_To_Date ,0.0 ,iif(J008.Supplement_Rate is null,0.0,J008.Supplement_Rate)) 'MeansTested_Rate'
+			,J008.Last_Modified_Date 'MeansTested_Rate_ModDate'
+
+			,iif(J001.FirstDayOfPeriod > J009.Sup_To_Date ,0.0 ,iif(J009.Supplement_Rate is null,0.0,J009.Supplement_Rate)) 'CC_50_Rate'
+			,J009.Last_Modified_Date 'CC_50_Rate_ModDate'
+			,iif(J001.FirstDayOfPeriod > J010.Sup_To_Date ,0.0 ,iif(J010.Supplement_Rate is null,0.0,J010.Supplement_Rate)) 'CC_100_Rate'
+			,J010.Last_Modified_Date 'CC_100_Rate_ModDate'
+			,iif(J001.FirstDayOfPeriod > J011.Sup_To_Date ,0.0 ,iif(J011.Supplement_Rate is null,0.0,J011.Supplement_Rate)) 'CC_75_Rate'
+			,J011.Last_Modified_Date 'CC_75_Rate_ModDate'
+			,iif(J001.FirstDayOfPeriod > J012.Sup_To_Date ,0.0 ,iif(J012.Supplement_Rate is null,0.0,J012.Supplement_Rate)) 'CC_25_Rate'
+			,J012.Last_Modified_Date 'CC_25_Rate_ModDate'
+			,iif(J001.FirstDayOfPeriod > J013.Sup_To_Date ,0.0 ,iif(J013.Supplement_Rate is null,0.0,J013.Supplement_Rate)) 'CC_0_Rate'
+			,J013.Last_Modified_Date 'CC_0_Rate_ModDate'
 			,iif(J001.FirstDayOfPeriod > J004.Sup_To_Date ,0.0 ,iif(J004.Supplement_Rate is null,0.0,J004.Supplement_Rate)) 'Dementia_Veterans_Rate'
 			,J004.Last_Modified_Date 'Dementia_Veterans_Rate_ModDate'
 			,iif(J001.FirstDayOfPeriod > J005.Sup_To_Date ,0.0 ,iif(J005.Supplement_Rate is null,0.0,J005.Supplement_Rate)) 'Financial_Hardship_Rate'
@@ -258,6 +297,12 @@ From
 
 			,iif(J001.FirstDayOfPeriod > J002.Sup_To_Date ,0.0 ,iif(J002.Supplement_Rate is null,0.0,J002.Supplement_Rate))
 			+iif(J001.FirstDayOfPeriod > J003.Sup_To_Date ,0.0 ,iif(J003.Supplement_Rate is null,0.0,J003.Supplement_Rate))
+			+iif(J001.FirstDayOfPeriod > J008.Sup_To_Date ,0.0 ,iif(J008.Supplement_Rate is null,0.0,J008.Supplement_Rate))
+			+iif(J001.FirstDayOfPeriod > J009.Sup_To_Date ,0.0 ,iif(J009.Supplement_Rate is null,0.0,J009.Supplement_Rate))
+			+iif(J001.FirstDayOfPeriod > J010.Sup_To_Date ,0.0 ,iif(J010.Supplement_Rate is null,0.0,J010.Supplement_Rate))
+			+iif(J001.FirstDayOfPeriod > J011.Sup_To_Date ,0.0 ,iif(J011.Supplement_Rate is null,0.0,J011.Supplement_Rate))
+			+iif(J001.FirstDayOfPeriod > J012.Sup_To_Date ,0.0 ,iif(J012.Supplement_Rate is null,0.0,J012.Supplement_Rate))
+			+iif(J001.FirstDayOfPeriod > J013.Sup_To_Date ,0.0 ,iif(J013.Supplement_Rate is null,0.0,J013.Supplement_Rate))
 			+iif(J001.FirstDayOfPeriod > J004.Sup_To_Date ,0.0 ,iif(J004.Supplement_Rate is null,0.0,J004.Supplement_Rate))
 			+iif(J001.FirstDayOfPeriod > J005.Sup_To_Date ,0.0 ,iif(J005.Supplement_Rate is null,0.0,J005.Supplement_Rate))
 			+iif(J001.FirstDayOfPeriod > J006.Sup_To_Date ,0.0 ,iif(J006.Supplement_Rate is null,0.0,J006.Supplement_Rate))'Sum_Rate'
@@ -327,6 +372,78 @@ From
 			and J001.FunderProgram = J006.FunderProgram
 			and J001.LevelOfCare = J006.LevelOfCare
 			and J001.LastDayOfPeriod between J006.From_Date and iif(J006.To_Date is null, DATEFROMPARTS(2200,01,01),J006.To_Date)
+
+		Left outer join
+		(
+			Select
+			*
+			From @SubsRate SR
+			where SR.FC_Supplement_Type_ID = 36 --Means Tested
+		)J008 on 
+			J001.Client_ID = J008.Client_ID 
+			and J001.FunderProgram = J008.FunderProgram
+			and J001.LevelOfCare = J008.LevelOfCare
+			and J001.LastDayOfPeriod between J008.From_Date and iif(J008.To_Date is null, DATEFROMPARTS(2200,01,01),J008.To_Date)
+
+		Left outer join
+		(
+			Select
+			*
+			From @SubsRate SR
+			where SR.FC_Supplement_Type_ID = 31 --Client Contribution 50% Reduction
+		)J009 on 
+			J001.Client_ID = J009.Client_ID 
+			and J001.FunderProgram = J009.FunderProgram
+			and J001.LevelOfCare = J009.LevelOfCare
+			and J001.LastDayOfPeriod between J009.From_Date and iif(J009.To_Date is null, DATEFROMPARTS(2200,01,01),J009.To_Date)
+
+		Left outer join
+		(
+			Select
+			*
+			From @SubsRate SR
+			where SR.FC_Supplement_Type_ID = 32 --Client Contribution 100% Reduction
+		)J010 on 
+			J001.Client_ID = J010.Client_ID 
+			and J001.FunderProgram = J010.FunderProgram
+			and J001.LevelOfCare = J010.LevelOfCare
+			and J001.LastDayOfPeriod between J010.From_Date and iif(J010.To_Date is null, DATEFROMPARTS(2200,01,01),J010.To_Date)
+		
+		Left outer join
+		(
+			Select
+			*
+			From @SubsRate SR
+			where SR.FC_Supplement_Type_ID = 33 --Client Contribution 25% Reduction
+		)J011 on 
+			J001.Client_ID = J011.Client_ID 
+			and J001.FunderProgram = J011.FunderProgram
+			and J001.LevelOfCare = J011.LevelOfCare
+			and J001.LastDayOfPeriod between J011.From_Date and iif(J011.To_Date is null, DATEFROMPARTS(2200,01,01),J011.To_Date)
+
+		Left outer join
+		(
+			Select
+			*
+			From @SubsRate SR
+			where SR.FC_Supplement_Type_ID = 34 --Client Contribution 75% Reduction
+		)J012 on 
+			J001.Client_ID = J012.Client_ID 
+			and J001.FunderProgram = J012.FunderProgram
+			and J001.LevelOfCare = J012.LevelOfCare
+			and J001.LastDayOfPeriod between J012.From_Date and iif(J012.To_Date is null, DATEFROMPARTS(2200,01,01),J012.To_Date)
+
+		Left outer join
+		(
+			Select
+			*
+			From @SubsRate SR
+			where SR.FC_Supplement_Type_ID = 35 --Client Contribution 0% Reduction
+		)J013 on 
+			J001.Client_ID = J013.Client_ID 
+			and J001.FunderProgram = J013.FunderProgram
+			and J001.LevelOfCare = J013.LevelOfCare
+			and J001.LastDayOfPeriod between J013.From_Date and iif(J013.To_Date is null, DATEFROMPARTS(2200,01,01),J013.To_Date)
 
 		Left outer Join @Hosp J007 on J007.Client_ID = J001.Client_ID and J007.Period_INT = J001.Period_INT
 

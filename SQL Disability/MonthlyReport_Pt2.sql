@@ -2,12 +2,12 @@
 use ComCareProd
 -----------------------------------------
 Declare @Client_ID_ as INT
-set @Client_ID_ = 10070013
+set @Client_ID_ = 10085082
 
-DECLARE @StartDate AS DATETIME
-DECLARE @EndDate AS DATETIME
-SET @StartDate = dateadd(day,datediff(day,380,GETDATE()),0)
-SET @EndDate = dateadd(day,datediff(day,0,GETDATE()),0)
+DECLARE @StartDate AS DATETIME = '2017-07-20'
+DECLARE @EndDate AS DATETIME = '2017-07-20'
+--SET @StartDate = dateadd(day,datediff(day,380,GETDATE()),0)
+--SET @EndDate = dateadd(day,datediff(day,0,GETDATE()),0)
 PRINT @StartDate
 PRINT @EndDate
 

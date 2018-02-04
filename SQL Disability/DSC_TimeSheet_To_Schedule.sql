@@ -116,7 +116,7 @@ select * from
 		where
 			1=1
 			and cast(awt.Activity_Date as date) between @StartDate and @EndDate
-			and awt.WI_Record_ID is not null
+			--and awt.WI_Record_ID is not null
 			and awt.Provider_ID in (select * from @Provs)
 		
 	)J001

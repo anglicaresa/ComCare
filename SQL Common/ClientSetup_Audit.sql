@@ -17,7 +17,7 @@ select 'No Contract' Description where 1=1
 union
 select
 	Description
-from [dbo].[FC_Funder_Contract]
+from dbo.FC_Funder_Contract
 where 
 	1=1
 	AND (Description like 'DC %' )
@@ -25,7 +25,7 @@ where
 order by 1
 
 declare @Org_name Varchar(128) = 'Disabilities Children'
-
+--declare @Org_name Varchar(128) = 'Home Care East'
 
 
 

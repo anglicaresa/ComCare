@@ -3,11 +3,11 @@
 
 
 Declare @Client_ID_ as INT = 10070950
-DECLARE @StartDate Date = '2017-11-10'
-DECLARE @EndDate Date = '2017-11-10'
+DECLARE @StartDate Date = '2017-08-01'
+DECLARE @EndDate Date = '2017-08-05'
 declare @Organisation VarChar(64) = 'Disabilities Children'
 declare @DuplicateChargeItem as int = 0
-declare @FiltType int = 0
+declare @FiltType int = 1
 
 Declare @ContractType Table (ContractType varchar(64))
 Insert INTO @ContractType 
@@ -47,6 +47,7 @@ declare @Min_Date date =
 ---------------------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------------------
 --------------------------------Base Query from Actual_Service => Actual_Service_Charge_Item
+--/*
 select * from
 (
 	select distinct
@@ -58,6 +59,8 @@ select * from
 		,J001.Visit_Duration 'Actual_Duration'
 		,IIF (J011.Description is NULL,'No Contract',J011.Description) 'contract_type'
 		,J004.Description 'task_Description'
+		,J001.Task_Type_Code 'Actual_TaskCode'
+		,J033.Schedule_Task_Type 'Schedule_TaskCode'
 		,J014.Description 'Client_Not_Home'
 		,IIF (J002.Client_ID IS NULL, 0, 1) 'Has_Charge_Item'
 		,convert (int ,'0') 'In_WiA_Only'
@@ -99,6 +102,7 @@ select * from
 			,ACSI.Line_Description
 		from dbo.Actual_Service_Charge_Item ACSI
 		where ACSI.Visit_Date between @StartDate and @EndDate
+		or 1 = IIF(@FiltType = 1 and (cast(ACSI.Visit_Date AS date) between @Min_Date and @Max_Date),1,0)
 	)J002 ON
 			J002.Client_ID = J001.Client_ID
 			and J002.Visit_Date = J001.Visit_Date
@@ -119,11 +123,12 @@ select * from
 			,iif(Wi_A.ReSchedule is not null and Wi_A.Activity_Start_time is not null, 'True', 'Flase') 'WiA_Schedule_TimeKILL'
 			,AWT.Allocated_Task_ID 'Allocated_Task_ID'
 			,Wi_A.Round_Allocation_ID 'Round_Allocation_ID'
+			,Wi_A.Schedule_Task_Type
 		from dbo.wi_activity Wi_A
 		left outer join dbo.activity_work_table AWT on AWT.Allocated_Task_ID = Wi_A.Round_Allocation_ID and AWT.activity_date = Wi_A.activity_date
 
 		Where
-		 convert (date, Wi_A.Activity_Date) between dateadd(Day,-7,@StartDate) and dateadd(day,+7,@EndDate)
+		 convert (date, Wi_A.Activity_Date) between dateadd(Day,-3,@StartDate) and dateadd(day,+3,@EndDate)
 		 or 1 = IIF(@FiltType = 1 and (cast(Wi_A.Activity_Date AS date) between @Min_Date and @Max_Date),1,0)
 
 	)J033 ON 
@@ -198,7 +203,7 @@ select * from
 	Where 
 		1=1
 		and @DuplicateChargeItem = 0
-		and J001.Client_ID = @Client_ID_
+--		and J001.Client_ID = @Client_ID_
 		and J006.Organisation_Name = @Organisation
 		and 1 = Case 
 				when cast(J001.Visit_Date AS date) between @StartDate and @EndDate then 1
@@ -220,9 +225,9 @@ where
 ---------------------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------------------
---/*
-Union
 
+Union
+--*/
 ---------------------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------------------
@@ -241,6 +246,8 @@ select * from
 		,J001.AcS_Visit_Duration as 'Actual_Duration'
 		,IIF (J011.Description is NULL,'No Contract',J011.Description) 'contract_type'
 		,J004.Description 'task_Description'
+		,J001.Actual_TaskCode
+		,J001.Schedule_TaskCode
 		,J014.Description 'Client_Not_Home'
 		,IIF (J002.Client_ID IS NULL, 0, 1) 'Has_Charge_Item'
 		,IIF (J001.Client_ID_Ac_S IS NULL, 1, 0) 'In_WiA_Only'
@@ -287,6 +294,8 @@ select * from
 			,Wi_A.CAP_ID 'CAP_ID'
 			,Wi_A.Absence_Code
 			,IIF(Ac_S.Visit_Date is null,Wi_A.Activity_Date,Ac_S.Visit_Date)'BKP_date'
+			,Wi_A.Schedule_Task_Type 'Schedule_TaskCode'
+			,Ac_S.Task_Type_Code 'Actual_TaskCode'
 			,ROW_NUMBER () -- sort by importance of 'covered' 'absent' and 'Un-Alocated'.
 			over 
 			(
@@ -303,7 +312,10 @@ select * from
 			* 
 			from dbo.WI_Activity Wi_A1 
 			where 
-				convert(date, Wi_A1.Activity_Date) between dateadd(Day,-3,@StartDate) and dateadd(day,+3,@EndDate)
+				(
+					convert(date, Wi_A1.Activity_Date) between dateadd(Day,-3,@StartDate) and dateadd(day,+3,@EndDate)
+				--	or 1 = IIF(@FiltType = 1 and (cast(Wi_A1.Activity_Date AS date) between @Min_Date and @Max_Date),1,0)
+				)
 				and @DuplicateChargeItem = 0
 				
 		) Wi_A
@@ -410,12 +422,12 @@ select * from
 	Where 
 		1=1
 		and @DuplicateChargeItem = 0
-		and J001.Client_ID = @Client_ID_
+--		and J001.Client_ID = @Client_ID_
 		and J006.Organisation_Name = @Organisation
 		and 1 = iif(J001.RN > 1 and J001.WiA_Provider_ID = 0, 0, 1)
 		and convert(date, J001.WiA_Schedule_Time) between @StartDate and @EndDate
 		and 1 = Case 
-				when @FiltType = 0 and cast(J001.WiA_Schedule_Time AS date) between @StartDate and @EndDate then 1
+				when cast(J001.WiA_Schedule_Time AS date) between @StartDate and @EndDate then 1
 				When @FiltType = 1 and cast(J001.Billed_Date as date) between  @StartDate and @EndDate then 1
 				else 0
 				end
@@ -430,7 +442,7 @@ select * from
 ---------------------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------------------
-
+--/*
 Union
 
 ---------------------------------------------------------------------------------------------------------------------------------
@@ -450,6 +462,8 @@ select * from
 		,null 'Actual_Duration'
 		,'Inconclusive' 'contract_type'
 		,'---' 'task_Description'
+		,null 'Actual_TaskCode'
+		,null 'Schedule_TaskCode'
 		,null 'Client_Not_Home'
 		,2 'Has_Charge_Item'
 		,null 'In_WiA_Only'
@@ -521,7 +535,7 @@ select * from
 
 	where
 	J002.RN > 1
-	and J002.Client_ID = @Client_ID_
+--	and J002.Client_ID = @Client_ID_
 	and convert(date, J002.Visit_Date) between @StartDate and @EndDate
 	and J006.Organisation_Name = @Organisation
 
@@ -551,6 +565,8 @@ select * from
 		,null 'Actual_Duration'
 		,J012.Description 'contract_type'
 		,'Finance Adjustment' 'task_Description'
+		,null 'Actual_TaskCode'
+		,null 'Schedule_TaskCode'
 		,null 'Client_Not_Home'
 		,6 'Has_Charge_Item'
 		,null 'In_WiA_Only'
@@ -589,7 +605,7 @@ select * from
 
 	Where 
 		1=1
-		and J001.Client_ID = @Client_ID_
+--		and J001.Client_ID = @Client_ID_
 		and @DuplicateChargeItem = 0
 
 		AND (IIF (J012.Description is NULL,'No Contract',J012.Description) in (select * from @ContractType))
