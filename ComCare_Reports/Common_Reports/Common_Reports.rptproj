@@ -55,6 +55,10 @@
       <FullPath>DataValidation_FC_Transaction.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
+      <Name>Disability_TimeSheet_PerProviderPerPeriod_Vs_T1.rdl</Name>
+      <FullPath>Disability_TimeSheet_PerProviderPerPeriod_Vs_T1.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
       <Name>TimeSheet_PerProviderPerDay_Vs_T1.rdl</Name>
       <FullPath>TimeSheet_PerProviderPerDay_Vs_T1.rdl</FullPath>
     </ProjectItem>

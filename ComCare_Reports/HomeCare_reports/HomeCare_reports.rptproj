@@ -26,6 +26,14 @@
   <DataSets />
   <Reports>
     <ProjectItem>
+      <Name>CHSP_ClientReview_Audit.rdl</Name>
+      <FullPath>CHSP_ClientReview_Audit.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
+      <Name>CHSP_ClientReview_Monthly.rdl</Name>
+      <FullPath>CHSP_ClientReview_Monthly.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
       <Name>CHSP_TransactionAudit_01.rdl</Name>
       <FullPath>CHSP_TransactionAudit_01.rdl</FullPath>
     </ProjectItem>
@@ -46,6 +54,10 @@
       <FullPath>HCP_Admin_Discharge.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
+      <Name>HCP_Agency_TimeSheet.rdl</Name>
+      <FullPath>HCP_Agency_TimeSheet.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
       <Name>HCP_BilledToReport.rdl</Name>
       <FullPath>HCP_BilledToReport.rdl</FullPath>
     </ProjectItem>
@@ -60,6 +72,14 @@
     <ProjectItem>
       <Name>HCP_Cancellation_Records.rdl</Name>
       <FullPath>HCP_Cancellation_Records.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
+      <Name>HCP_CHSP_Client_Task_Profile.rdl</Name>
+      <FullPath>HCP_CHSP_Client_Task_Profile.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
+      <Name>HCP_CHSP_ClientSetupAudit.rdl</Name>
+      <FullPath>HCP_CHSP_ClientSetupAudit.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
       <Name>HCP_ClaimSum.rdl</Name>
@@ -84,6 +104,10 @@
     <ProjectItem>
       <Name>HCP_GoalOfCare.rdl</Name>
       <FullPath>HCP_GoalOfCare.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
+      <Name>HCP_GoalOfCare_Individual.rdl</Name>
+      <FullPath>HCP_GoalOfCare_Individual.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
       <Name>HCP_HomeVisitingSafetyChecklist_Exist.rdl</Name>
@@ -134,8 +158,12 @@
       <FullPath>HCP_VisitTime_V_PackageStartTime.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>HCP_GoalOfCare_Individual.rdl</Name>
-      <FullPath>HCP_GoalOfCare_Individual.rdl</FullPath>
+      <Name>HCP_Client_Stats.rdl</Name>
+      <FullPath>HCP_Client_Stats.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
+      <Name>CHSP_Client_Stats.rdl</Name>
+      <FullPath>CHSP_Client_Stats.rdl</FullPath>
     </ProjectItem>
   </Reports>
   <Configurations>

@@ -17,11 +17,22 @@
           <QueryParameter Name="@OrgName">
             <Value>=Parameters!OrgName.Value</Value>
           </QueryParameter>
-          <QueryParameter Name="@SpecialNeedList">
-            <Value>=Parameters!SpecialNeedList.Value</Value>
-          </QueryParameter>
         </QueryParameters>
-        <CommandText>
+        <CommandText>Declare @OmitionList_Codes Table (Code int)
+insert into @OmitionList_Codes 
+	values (12),(5),(20),(26),(23),(24),(25);
+
+Declare @SpecialNeedList table (Characteristic varchar(256))
+insert into @SpecialNeedList
+select 
+	Jx001.Description
+FROM dbo.Characteristic Jx001 
+where 
+	Jx001.Client_CHaracteristic = 1 
+	and Jx001.Characteristic_Code not in (select * from @OmitionList_Codes)
+order by 
+	Jx001.Characteristic_Code
+
 
 SELECT distinct
 	J005.Organisation_Name
@@ -62,7 +73,7 @@ INNER JOIN
 WHERE
 	1=1
 	and J005.Organisation_Name in (@OrgName)
-	and J003.Description in (@SpecialNeedList)
+	and J003.Description in (select * from @SpecialNeedList)
 ORDER BY
 1,2</CommandText>
       </Query>
@@ -367,7 +378,6 @@ Iif
               </TablixMembers>
             </TablixRowHierarchy>
             <DataSetName>DataSet1</DataSetName>
-            <Left>0cm</Left>
             <Height>2.19688cm</Height>
             <Width>19cm</Width>
             <Style>
@@ -562,24 +572,6 @@ Iif
       </ValidValues>
       <MultiValue>true</MultiValue>
     </ReportParameter>
-    <ReportParameter Name="SpecialNeedList">
-      <DataType>String</DataType>
-      <DefaultValue>
-        <DataSetReference>
-          <DataSetName>DataSet2</DataSetName>
-          <ValueField>Description</ValueField>
-        </DataSetReference>
-      </DefaultValue>
-      <Prompt>Special Need List</Prompt>
-      <ValidValues>
-        <DataSetReference>
-          <DataSetName>DataSet2</DataSetName>
-          <ValueField>Description</ValueField>
-          <LabelField>Description</LabelField>
-        </DataSetReference>
-      </ValidValues>
-      <MultiValue>true</MultiValue>
-    </ReportParameter>
   </ReportParameters>
   <ReportParametersLayout>
     <GridLayoutDefinition>
@@ -590,11 +582,6 @@ Iif
           <ColumnIndex>0</ColumnIndex>
           <RowIndex>0</RowIndex>
           <ParameterName>OrgName</ParameterName>
-        </CellDefinition>
-        <CellDefinition>
-          <ColumnIndex>1</ColumnIndex>
-          <RowIndex>0</RowIndex>
-          <ParameterName>SpecialNeedList</ParameterName>
         </CellDefinition>
       </CellDefinitions>
     </GridLayoutDefinition>

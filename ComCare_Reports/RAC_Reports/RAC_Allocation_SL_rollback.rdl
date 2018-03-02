@@ -114,7 +114,7 @@ LEFT OUTER JOIN dbo.[Service_Delivery_Work_Team] J009 ON J009.[Centre_ID] = J008
 WHERE
 
 J004.[Centre_ID] = @Code and
-J006.Provider_Class_Code in(@Provider_Classification)
+J006.Provider_Class_Code in (@Provider_Classification)
 and J001.[Activity_Date] BETWEEN @Start_Date AND @End_Date
  and J001.[Schedule_Duration] is not null
 and J009.Team_No in(@Team_No)
@@ -212,6 +212,32 @@ Time,Last_Name</CommandText>
         <Field Name="Schedule_Duration">
           <DataField>Schedule_Duration</DataField>
           <rd:TypeName>System.Int16</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="DataSet2">
+      <Query>
+        <DataSourceName>DataSource1</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@RAC_Site">
+            <Value>=Parameters!RAC_Site.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>select distinct
+	J003.Provider_Class_Code
+from dbo.Organisation J001
+inner join dbo.Service_Delivery_Work_Team J002 on J002.Centre_ID = J001.Organisation_ID
+left outer join dbo.Service_Provision_Position J003 on J003.Centre_ID = J002.Centre_ID and J003.Team_No = J002.Team_No
+inner join dbo.Provider_Classification J004 on J004.Provider_Class_Code = J003.Provider_Class_Code
+
+where
+	1=1
+	and J001.Organisation_ID = @RAC_Site</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="Provider_Class_Code">
+          <DataField>Provider_Class_Code</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
         </Field>
       </Fields>
     </DataSet>
@@ -1620,7 +1646,7 @@ or Fields!Absence.Value like "RW*"
             <Style />
           </Tablix>
         </ReportItems>
-        <Height>3.78353cm</Height>
+        <Height>3.14856cm</Height>
         <Style />
       </Body>
       <Width>24.20938cm</Width>
@@ -1656,48 +1682,11 @@ or Fields!Absence.Value like "RW*"
       <DataType>String</DataType>
       <Prompt>Provider Classification</Prompt>
       <ValidValues>
-        <ParameterValues>
-          <ParameterValue>
-            <Value>PCW</Value>
-            <Label>PCW</Label>
-          </ParameterValue>
-          <ParameterValue>
-            <Value>HW</Value>
-            <Label>HW</Label>
-          </ParameterValue>
-          <ParameterValue>
-            <Value>CK1</Value>
-            <Label>CK1</Label>
-          </ParameterValue>
-          <ParameterValue>
-            <Value>CK2</Value>
-            <Label>CK2</Label>
-          </ParameterValue>
-          <ParameterValue>
-            <Value>RNIC</Value>
-            <Label>RNIC</Label>
-          </ParameterValue>
-          <ParameterValue>
-            <Value>RN</Value>
-            <Label>RN</Label>
-          </ParameterValue>
-          <ParameterValue>
-            <Value>CN</Value>
-            <Label>CN</Label>
-          </ParameterValue>
-          <ParameterValue>
-            <Value>EN</Value>
-            <Label>EN</Label>
-          </ParameterValue>
-          <ParameterValue>
-            <Value>LA</Value>
-            <Label>LA</Label>
-          </ParameterValue>
-          <ParameterValue>
-            <Value>LE</Value>
-            <Label>LE</Label>
-          </ParameterValue>
-        </ParameterValues>
+        <DataSetReference>
+          <DataSetName>DataSet2</DataSetName>
+          <ValueField>Provider_Class_Code</ValueField>
+          <LabelField>Provider_Class_Code</LabelField>
+        </DataSetReference>
       </ValidValues>
       <MultiValue>true</MultiValue>
     </ReportParameter>
