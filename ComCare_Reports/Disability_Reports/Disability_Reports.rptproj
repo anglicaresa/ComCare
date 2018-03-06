@@ -50,6 +50,10 @@
       <FullPath>DA_DC_ClientContactDetails.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
+      <Name>DA_DC_Export_Preview.rdl</Name>
+      <FullPath>DA_DC_Export_Preview.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
       <Name>DA_DC_IndirctActivity_Report.rdl</Name>
       <FullPath>DA_DC_IndirctActivity_Report.rdl</FullPath>
     </ProjectItem>
@@ -120,10 +124,6 @@
     <ProjectItem>
       <Name>DC_TimeSheet_Vs_Schedule.rdl</Name>
       <FullPath>DC_TimeSheet_Vs_Schedule.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>DA_DC_Export_Preview.rdl</Name>
-      <FullPath>DA_DC_Export_Preview.rdl</FullPath>
     </ProjectItem>
   </Reports>
   <Configurations>

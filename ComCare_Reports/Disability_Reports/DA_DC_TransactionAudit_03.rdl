@@ -56,7 +56,9 @@ select * from
 (
 	select distinct
 		J001.Client_ID
+		,J222.Last_Name + ', ' + J222.Preferred_Name 'Client_Name'
 		,J001.Provider_ID
+		,J333.Last_Name + ', ' + J333.Preferred_Name 'Provider_Name'
 		,IIF(J033.WiA_Schedule_TimeKILL = 'true', null, Cast (J033.Schedule_Time as Datetime)) 'Schedule_Visit_Time'	
 		,J033.Scheduled_Duration
 		,(Cast (cast(J001.Visit_Date as date) as Datetime) + Cast (Cast (J001.Visit_Time as Time) as Datetime)) 'Actual_Visit_Time'
@@ -205,6 +207,10 @@ select * from
 	left outer join dbo.FC_Contract_Area_Product J010 ON J010.CAP_ID = J001.CAP_ID
 	left outer join dbo.FC_Funder_Contract J011 ON J011.Funder_Contract_ID = J010.Funder_Contract_ID
 	Left outer join dbo.Visit_Cancel_Reason J014 on J014.Visit_Cancel_Reason_ID = J001.Visit_Cancel_Reason_ID
+
+	Left outer join dbo.Person J222 on J222.Person_ID = J001.Client_ID
+	Left outer join dbo.Person J333 on J333.Person_ID = J001.Provider_ID
+
 	Where 
 		1=1
 		and @DuplicateChargeItem = 0
@@ -239,9 +245,12 @@ Union
 ---------------------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------In Wi_Activity ONLY
+
 select
 	t2.Client_ID
+	,t2.Client_Name
 	,t2.Provider_ID
+	,t2.Provider_Name
 	,t2.Schedule_Visit_Time
 	,t2.Scheduled_Duration
 	,t2.Actual_Visit_Time
@@ -268,7 +277,9 @@ from
 	* 
 	,ROW_NUMBER()over(partition by 
 			st1.Client_ID
+			,st1.Client_Name
 			,st1.Provider_ID
+			,st1.Provider_Name
 			,cast(st1.Schedule_Visit_Time as date)
 --			,st1.Scheduled_Duration
 			,st1.Actual_Visit_Time
@@ -304,7 +315,9 @@ from
 	(
 		select distinct
 			J001.Client_ID
+			,J222.Last_Name + ', ' + J222.Preferred_Name 'Client_Name'
 			,J001.WiA_Provider_ID 'Provider_ID'
+			,J333.Last_Name + ', ' + J333.Preferred_Name 'Provider_Name'
 			,IIF(J001.WiA_Schedule_TimeKILL = 'true', null, Cast (J001.WiA_Schedule_Time as Datetime)) 'Schedule_Visit_Time'	
 			,J001.WiA_Scheduled_Duration 'Scheduled_Duration'
 			,(Cast (J001.AcS_Activity_Start_Time as Datetime)) 'Actual_Visit_Time'
@@ -490,6 +503,10 @@ from
 		Left Outer Join dbo.FC_Contract_Area_Product J010 ON J010.CAP_ID = J001.CAP_ID
 		LEFT OUTER JOIN dbo.FC_Funder_Contract J011 ON J011.Funder_Contract_ID = J010.Funder_Contract_ID
 		Left outer join dbo.Visit_Cancel_Reason J014 on J014.Visit_Cancel_Reason_ID = J001.Visit_Cancel_Reason_ID
+
+		Left outer join dbo.Person J222 on J222.Person_ID = J001.Client_ID
+		Left outer join dbo.Person J333 on J333.Person_ID = J001.WiA_Provider_ID
+
 		Where 
 			1=1
 			and @DuplicateChargeItem = 0
@@ -526,7 +543,9 @@ select * from
 (
 	select
 		J002.Client_ID
+		,J222.Last_Name + ', ' + J222.Preferred_Name 'Client_Name'
 		,J002.Provider_ID
+		,J333.Last_Name + ', ' + J333.Preferred_Name 'Provider_Name'
 		,cast(J002.Visit_Date as datetime) 'Schedule_Visit_Time'
 		,null 'Scheduled_Duration'
 		,null 'Actual_Visit_Time'
@@ -605,6 +624,9 @@ select * from
 		and J002.Visit_Date between J009.Effective_From_Date and IIF(J009.Effective_to_Date is null,Cast('2200-01-01' as date),J009.Effective_to_Date)
 		and J002.Visit_Date between J009.Billed_to_efFrom and IIF(J009.Billed_to_efTo is null,Cast('2200-01-01' as date),J009.Billed_to_efTo)
 
+	Left outer join dbo.Person J222 on J222.Person_ID = J002.Client_ID
+	Left outer join dbo.Person J333 on J333.Person_ID = J002.Provider_ID
+
 	where
 	J002.RN &gt; 1
 --	and J002.Client_ID = @Client_ID_
@@ -630,7 +652,9 @@ select * from
 (
 	select distinct
 		J001.Client_ID
+		,J222.Last_Name + ', ' + J222.Preferred_Name 'Client_Name'
 		,null 'Provider_ID'
+		,null 'Provider_Name'
 		,null 'Schedule_Visit_Time'
 		,null 'Scheduled_Duration'
 		,Cast(J010.Effective_From_Date as Date) 'Actual_Visit_Time'
@@ -676,6 +700,8 @@ select * from
 	left outer join dbo.GST_Type J014 on J014.GST_Type_Code = J010.GST_Type_Code
 	left outer join dbo.FB_Client_CB_Transaction J015 on J015.Client_CB_ID = J010.Client_CB_ID and J015.Client_CB_Adj_ID = J010.Client_CB_Adj_ID
 
+	Left outer join dbo.Person J222 on J222.Person_ID = J001.Client_ID
+
 	Where 
 		1=1
 --		and J001.Client_ID = @Client_ID_
@@ -693,12 +719,16 @@ select * from
 )t4
 --*/
 order by
-1,3,5,8,2,12</CommandText>
+1,5,7,10,3,14</CommandText>
       </Query>
       <Fields>
         <Field Name="Client_ID">
           <DataField>Client_ID</DataField>
           <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="Client_Name">
+          <DataField>Client_Name</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
         </Field>
         <Field Name="Provider_ID">
           <DataField>Provider_ID</DataField>
@@ -707,6 +737,10 @@ order by
         <Field Name="Schedule_Visit_Time">
           <DataField>Schedule_Visit_Time</DataField>
           <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="Provider_Name">
+          <DataField>Provider_Name</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
         </Field>
         <Field Name="Scheduled_Duration">
           <DataField>Scheduled_Duration</DataField>
@@ -842,6 +876,9 @@ select * from @BillContFilt</CommandText>
                   <Width>2.02375cm</Width>
                 </TablixColumn>
                 <TablixColumn>
+                  <Width>5.56917cm</Width>
+                </TablixColumn>
+                <TablixColumn>
                   <Width>3.63771cm</Width>
                 </TablixColumn>
                 <TablixColumn>
@@ -852,6 +889,9 @@ select * from @BillContFilt</CommandText>
                 </TablixColumn>
                 <TablixColumn>
                   <Width>2.05021cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>5.72792cm</Width>
                 </TablixColumn>
                 <TablixColumn>
                   <Width>1.5475cm</Width>
@@ -919,6 +959,42 @@ select * from @BillContFilt</CommandText>
                             </Paragraph>
                           </Paragraphs>
                           <rd:DefaultName>Textbox27</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BottomBorder>
+                              <Style>None</Style>
+                            </BottomBorder>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox14">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value />
+                                  <Style>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox14</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -1067,6 +1143,42 @@ select * from @BillContFilt</CommandText>
                             </Paragraph>
                           </Paragraphs>
                           <rd:DefaultName>Textbox31</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BottomBorder>
+                              <Style>None</Style>
+                            </BottomBorder>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox42">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value />
+                                  <Style>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox42</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -1591,6 +1703,42 @@ select * from @BillContFilt</CommandText>
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
+                        <Textbox Name="Textbox24">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Client Name</Value>
+                                  <Style>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox24</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Style>None</Style>
+                            </TopBorder>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
                         <Textbox Name="Textbox3">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
@@ -1720,6 +1868,42 @@ select * from @BillContFilt</CommandText>
                             </Paragraph>
                           </Paragraphs>
                           <rd:DefaultName>Textbox9</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Style>None</Style>
+                            </TopBorder>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox43">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Provider Name</Value>
+                                  <Style>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox43</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -2300,6 +2484,50 @@ Switch
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
+                        <Textbox Name="Client_Name">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Client_Name.Value</Value>
+                                  <Style>
+                                    <Color>=
+Switch
+(
+	InStr(Fields!FundingProgram.Value ,"DCSI")&gt;0,"Green"
+	,Fields!Has_Charge_Item.Value = 2 ,"Blue"
+	,Fields!Has_Charge_Item.Value = 1,"Black"
+	,Fields!Has_Charge_Item.Value = 0,"Red"
+	,Fields!Has_Charge_Item.Value = 6,"Gray"
+	
+)</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Client_Name</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
                         <Textbox Name="Schedule_Visit_Time">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
@@ -2357,6 +2585,7 @@ Switch
                             <PaddingBottom>2pt</PaddingBottom>
                           </Style>
                         </Textbox>
+                        <rd:Selected>true</rd:Selected>
                       </CellContents>
                     </TablixCell>
                     <TablixCell>
@@ -2487,6 +2716,48 @@ Switch
                             </Paragraph>
                           </Paragraphs>
                           <rd:DefaultName>Provider_ID</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Provider_Name">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Provider_Name.Value</Value>
+                                  <Style>
+                                    <Color>=
+Switch
+(
+	InStr(Fields!FundingProgram.Value ,"DCSI")&gt;0,"Green"
+	,Fields!Has_Charge_Item.Value = 2 ,"Blue"
+	,Fields!Has_Charge_Item.Value = 1,"Black"
+	,Fields!Has_Charge_Item.Value = 0,"Red"
+	,Fields!Has_Charge_Item.Value = 6,"Gray"
+	
+)</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Provider_Name</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -3151,6 +3422,8 @@ Switch
                 <TablixMember />
                 <TablixMember />
                 <TablixMember />
+                <TablixMember />
+                <TablixMember />
               </TablixMembers>
             </TablixColumnHierarchy>
             <TablixRowHierarchy>
@@ -3203,7 +3476,7 @@ Switch
             <FixedRowHeaders>true</FixedRowHeaders>
             <DataSetName>DataSet1</DataSetName>
             <Height>2.38208cm</Height>
-            <Width>65.91626cm</Width>
+            <Width>77.21334cm</Width>
             <Style>
               <Border>
                 <Style>None</Style>
@@ -3214,7 +3487,7 @@ Switch
         <Height>0.93783in</Height>
         <Style />
       </Body>
-      <Width>25.95128in</Width>
+      <Width>30.39895in</Width>
       <Page>
         <PageHeader>
           <Height>1.95862cm</Height>
@@ -3225,7 +3498,7 @@ Switch
               <Source>Embedded</Source>
               <Value>Logo_AnglicareSA</Value>
               <Sizing>FitProportional</Sizing>
-              <Left>58.33688cm</Left>
+              <Left>69.63396cm</Left>
               <Height>1.95862cm</Height>
               <Width>7.57938cm</Width>
               <Style>
@@ -3307,7 +3580,7 @@ Switch
               </Paragraphs>
               <rd:DefaultName>Textbox38</rd:DefaultName>
               <Height>1.95862cm</Height>
-              <Width>40.30645cm</Width>
+              <Width>38.05624cm</Width>
               <ZIndex>1</ZIndex>
               <Style>
                 <Border>
