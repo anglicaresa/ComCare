@@ -23,9 +23,6 @@
           <QueryParameter Name="@EndDate">
             <Value>=Parameters!EndDate.Value</Value>
           </QueryParameter>
-          <QueryParameter Name="@FiltType">
-            <Value>=Parameters!FiltType.Value</Value>
-          </QueryParameter>
           <QueryParameter Name="@DuplicateChargeItem">
             <Value>=Parameters!DuplicateChargeItem.Value</Value>
           </QueryParameter>
@@ -33,23 +30,7 @@
             <Value>=Parameters!ContractType.Value</Value>
           </QueryParameter>
         </QueryParameters>
-        <CommandText>declare @Max_Date date =
-( 
-	select Max (J001.Visit_Date) from dbo.Actual_Service J001
-	where
-		Cast(J001.Visit_Date as date) between @StartDate and @EndDate
-		or J001.Billed_Date between @StartDate and @EndDate
-)
-
-declare @Min_Date date =
-( 
-	select Min (J001.Visit_Date) from dbo.Actual_Service J001
-	where
-		Cast(J001.Visit_Date as date) between @StartDate and @EndDate
-		or J001.Billed_Date between @StartDate and @EndDate
-)
-
----------------------------------------------------------------------------------------------------------------------------------
+        <CommandText>---------------------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------------------
 --------------------------------Base Query from Actual_Service =&gt; Actual_Service_Charge_Item
 select * from
@@ -92,7 +73,6 @@ select * from
 		where 
 		(
 			convert(date, A_S.Visit_Date) between @StartDate and @EndDate
-			or 1 = iif( @FiltType = 1 and (A_S.Billed_Date between @StartDate and @EndDate), 1, 0 )
 		)
 		and @DuplicateChargeItem = 0
 	)J001
@@ -109,7 +89,6 @@ select * from
 			,ACSI.Line_Description
 		from dbo.Actual_Service_Charge_Item ACSI
 		where ACSI.Visit_Date between @StartDate and @EndDate
-		or 1 = IIF(@FiltType = 1 and (cast(ACSI.Visit_Date AS date) between @Min_Date and @Max_Date),1,0)
 	)J002 ON
 			J002.Client_ID = J001.Client_ID
 			and J002.Visit_Date = J001.Visit_Date
@@ -136,7 +115,6 @@ select * from
 
 		Where
 		 convert (date, Wi_A.Activity_Date) between dateadd(Day,-3,@StartDate) and dateadd(day,+3,@EndDate)
-		 or 1 = IIF(@FiltType = 1 and (cast(Wi_A.Activity_Date AS date) between @Min_Date and @Max_Date),1,0)
 
 	)J033 ON 
 		J033.Client_ID = J001.Client_ID 
@@ -218,7 +196,6 @@ select * from
 		and J006.Organisation_Name = @Organisation
 		and 1 = Case 
 				when cast(J001.Visit_Date AS date) between @StartDate and @EndDate then 1
-				When @FiltType = 1 and cast(J001.Billed_Date as date) between  @StartDate and @EndDate then 1
 				else 0
 				end
 		and (J009.Contract_Billing_Group &lt;&gt; 'DCSI' or J009.Contract_Billing_Group is null)
@@ -398,7 +375,6 @@ from
 				where 
 					(
 						convert(date, Wi_A1.Activity_Date) between dateadd(Day,-3,@StartDate) and dateadd(day,+3,@EndDate)
-					--	or 1 = IIF(@FiltType = 1 and (cast(Wi_A1.Activity_Date AS date) between @Min_Date and @Max_Date),1,0)
 					)
 					and @DuplicateChargeItem = 0
 				
@@ -413,7 +389,7 @@ from
 				and Wi_A.Round_Allocation_ID = Ac_S.Allocated_Task_ID
 			where
 				1=1
-				and Wi_A.Cancellation_Date is NULL
+			--	and Wi_A.Cancellation_Date is NULL
 				and Wi_A.Client_ID IS NOT NULL
 				and 
 				(
@@ -516,7 +492,6 @@ from
 			and convert(date, J001.WiA_Schedule_Time) between @StartDate and @EndDate
 			and 1 = Case 
 					when cast(J001.WiA_Schedule_Time AS date) between @StartDate and @EndDate then 1
-					When @FiltType = 1 and cast(J001.Billed_Date as date) between  @StartDate and @EndDate then 1
 					else 0
 					end
 			and (J009.Contract_Billing_Group Not like '%DCSI%' or J009.Contract_Billing_Group is null)
@@ -712,7 +687,6 @@ select * from
 
 		and 1 = Case 
 				when cast(J010.Effective_From_Date AS date) between @StartDate and @EndDate then 1
-				When @FiltType = 1 and cast(J015.Processing_Date as date) between  @StartDate and @EndDate then 1
 				else 0
 				end
 
@@ -2585,7 +2559,6 @@ Switch
                             <PaddingBottom>2pt</PaddingBottom>
                           </Style>
                         </Textbox>
-                        <rd:Selected>true</rd:Selected>
                       </CellContents>
                     </TablixCell>
                     <TablixCell>
@@ -3476,7 +3449,7 @@ Switch
             <FixedRowHeaders>true</FixedRowHeaders>
             <DataSetName>DataSet1</DataSetName>
             <Height>2.38208cm</Height>
-            <Width>77.21334cm</Width>
+            <Width>77.21335cm</Width>
             <Style>
               <Border>
                 <Style>None</Style>
@@ -3487,7 +3460,7 @@ Switch
         <Height>0.93783in</Height>
         <Style />
       </Body>
-      <Width>30.39895in</Width>
+      <Width>30.39896in</Width>
       <Page>
         <PageHeader>
           <Height>1.95862cm</Height>
@@ -3718,26 +3691,6 @@ Switch
         </Values>
       </DefaultValue>
       <Prompt>Show Duplicate Charge Item Only</Prompt>
-      <ValidValues>
-        <ParameterValues>
-          <ParameterValue>
-            <Value>=1</Value>
-            <Label>Yes</Label>
-          </ParameterValue>
-          <ParameterValue>
-            <Value>=0</Value>
-            <Label>No</Label>
-          </ParameterValue>
-        </ParameterValues>
-      </ValidValues>
-    </ReportParameter>
-    <ReportParameter Name="FiltType">
-      <DataType>String</DataType>
-      <DefaultValue>
-        <Values>
-          <Value>=0</Value>
-        </Values>
-      </DefaultValue>
       <Hidden>true</Hidden>
       <ValidValues>
         <ParameterValues>
@@ -3751,7 +3704,6 @@ Switch
           </ParameterValue>
         </ParameterValues>
       </ValidValues>
-      <UsedInQuery>True</UsedInQuery>
     </ReportParameter>
   </ReportParameters>
   <ReportParametersLayout>
@@ -3793,11 +3745,6 @@ Switch
           <ColumnIndex>2</ColumnIndex>
           <RowIndex>1</RowIndex>
           <ParameterName>DuplicateChargeItem</ParameterName>
-        </CellDefinition>
-        <CellDefinition>
-          <ColumnIndex>3</ColumnIndex>
-          <RowIndex>1</RowIndex>
-          <ParameterName>FiltType</ParameterName>
         </CellDefinition>
       </CellDefinitions>
     </GridLayoutDefinition>

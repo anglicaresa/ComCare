@@ -23,6 +23,9 @@
           <QueryParameter Name="@FiltType">
             <Value>=Parameters!FiltType.Value</Value>
           </QueryParameter>
+          <QueryParameter Name="@Min_Date">
+            <Value>=Parameters!Min_Date.Value</Value>
+          </QueryParameter>
           <QueryParameter Name="@DuplicateChargeItem">
             <Value>=Parameters!DuplicateChargeItem.Value</Value>
           </QueryParameter>
@@ -53,6 +56,7 @@ declare @Max_Date date =
 		and J001.Task_Type_Code in (select * from @taskTypeCodes)
 )
 */
+/*
 declare @Min_Date date =
 ( 
 	select Min (J001.Visit_Date) from dbo.Actual_Service J001
@@ -3137,9 +3141,9 @@ Switch
               <Source>Embedded</Source>
               <Value>Logo_AnglicareSA</Value>
               <Sizing>FitProportional</Sizing>
-              <Left>65.41417cm</Left>
+              <Left>60.18895cm</Left>
               <Height>1.95862cm</Height>
-              <Width>7.57938cm</Width>
+              <Width>12.8046cm</Width>
               <Style>
                 <Border>
                   <Style>None</Style>
@@ -3357,6 +3361,7 @@ Switch
         </Values>
       </DefaultValue>
       <Prompt>Show Duplicate Charge Item Only</Prompt>
+      <Hidden>true</Hidden>
       <ValidValues>
         <ParameterValues>
           <ParameterValue>
@@ -3392,11 +3397,21 @@ Switch
       </ValidValues>
       <UsedInQuery>True</UsedInQuery>
     </ReportParameter>
+    <ReportParameter Name="Min_Date">
+      <DataType>DateTime</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>=DateAdd(DateInterval.Day, -28, Parameters!StartDate.Value)</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Late Processed date</Prompt>
+      <UsedInQuery>True</UsedInQuery>
+    </ReportParameter>
   </ReportParameters>
   <ReportParametersLayout>
     <GridLayoutDefinition>
       <NumberOfColumns>4</NumberOfColumns>
-      <NumberOfRows>2</NumberOfRows>
+      <NumberOfRows>3</NumberOfRows>
       <CellDefinitions>
         <CellDefinition>
           <ColumnIndex>0</ColumnIndex>
@@ -3437,6 +3452,11 @@ Switch
           <ColumnIndex>3</ColumnIndex>
           <RowIndex>1</RowIndex>
           <ParameterName>FiltType</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>2</RowIndex>
+          <ParameterName>Min_Date</ParameterName>
         </CellDefinition>
       </CellDefinitions>
     </GridLayoutDefinition>
