@@ -70,6 +70,10 @@
       <Name>VisitTime_Vs_ContractDates.rdl</Name>
       <FullPath>VisitTime_Vs_ContractDates.rdl</FullPath>
     </ProjectItem>
+    <ProjectItem>
+      <Name>Disability_TimeSheet_PerProviderPerPeriod_Vs_T1_ShortView.rdl</Name>
+      <FullPath>Disability_TimeSheet_PerProviderPerPeriod_Vs_T1_ShortView.rdl</FullPath>
+    </ProjectItem>
   </Reports>
   <Configurations>
     <Configuration>
