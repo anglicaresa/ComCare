@@ -969,6 +969,7 @@ as
 			When Jx009.Contract_Billing_Group is null and Jx011.Description = 'DS Overnight Respite' then 'Overnight Respite'
 			When Jx009.Contract_Billing_Group is null and Jx011.Description = 'DS Day Activities' then 'Day Activities'
 			When Jx009.Contract_Billing_Group is null and Jx011.Description = 'DS Individualised Services' then 'Individualised Services'
+			when Jx009.Contract_Billing_Group is null and Jx011.Description is null and Jx004.Indirect_Activity_Type_Code is not null and Jx004.Team is not null and Jx005.Code &lt;&gt; 76 and Jx005.Code &lt;&gt; 71 then Jx004.Team
 			When Jx009.Contract_Billing_Group is null and Jx004.Indirect_Activity_Type_Code is not null  then Jx005.CostCentre
 			else '~ No Contract Billing ~'
 			end 'Contract_Billing_Group'
@@ -1011,9 +1012,12 @@ as
 				,AWT.Actual_Intravisit_Travel_Km
 				,iif(AWT.Company_Vehicle = 0, AWT.Travel_Km, 0.00)'Travel_Km'
 				,iif(AWT.Indirect_Activity_Type_Code is null,'Task','InternalTask')'Activity_type'
+				,SDWT.Description 'Team'
 			--	,iif(TT.Service_Type_Code = 'HCP ',1,0)'HCP_flag'
 			from dbo.Activity_Work_Table AWT
-			left outer join dbo.Task_Type TT on TT.Task_Type_Code = AWT.Task_Type_Code 
+			left outer join dbo.Task_Type TT on TT.Task_Type_Code = AWT.Task_Type_Code
+			left outer join dbo.Service_Provision_Position SPP on SPP.Service_Prov_Position_ID = AWT.Service_Prov_Position_ID
+			left outer join dbo.Service_Delivery_Work_Team SDWT on SDWT.Team_No = SPP.Team_No and SDWT.Centre_ID = SPP.Centre_ID
 			where
 				1=1
 				and AWT.Authorisation_Date is not null
@@ -1072,8 +1076,8 @@ select distinct
 	,J101.Employee_Contract_Type
 	,iif(J001.Contract_Billing_Group is null,J002.Contract_Billing_Group,J001.Contract_Billing_Group) 'Contract_Billing_Group'
 	,J001.Schedule_Visit_Count
-	,J001.Schedule_Duration
-	,J001.Schedule_KM
+	,J001.Schedule_Duration'Schedule_Duration'
+	,J001.Schedule_KM'Schedule_KM'
 	,J002.Visit_count 'TS_Visit_count'
 	,J002.Visit_Duration 'TS_Visit_Duration'
 	,J002.Visit_KMs 'TS_Visit_KMs'
@@ -1096,10 +1100,28 @@ select distinct
 	,(NULLIF(J001.Charge_Amount,0)/ NULLIF(J001.Charge_Hours,0)) 'AvghourlyRate'
 	,(J002.Visit_Duration+J002.Internal_Task_Payed_Duration+J002.Group_Activity_Duration) 'TotalPaidHours'
 From Wt_Provider_ID_List J101
-Left outer join Wt_AggregatedTransAudit J001 on J001.Provider_ID = J101.Provider_ID and J001.Employee_Contract_Type = J101.Employee_Contract_Type
-Left outer join Wt_TimeSheet J002 on J002.Provider_ID = J101.Provider_ID and (J002.Contract_Billing_Group = J001.Contract_Billing_Group or J001.Contract_Billing_Group is null)
+left outer join
+(
+	select
+		Jx001.Provider_ID
+		,Jx001.Employee_Contract_Type
+		,Jx001.Contract_Billing_Group
+	from Wt_TimeSheet Jx001
+
+	union
+
+	select
+		Jx001.Provider_ID
+		,Jx001.Employee_Contract_Type
+		,Jx001.Contract_Billing_Group
+	from Wt_AggregatedTransAudit Jx001
+)J102 on J102.Provider_ID = J101.Provider_ID and J102.Employee_Contract_Type = J101.Employee_Contract_Type
+
+Left outer join Wt_AggregatedTransAudit J001 on J001.Provider_ID = J102.Provider_ID and J001.Employee_Contract_Type = J102.Employee_Contract_Type and J001.Contract_Billing_Group = J102.Contract_Billing_Group
+Left outer join Wt_TimeSheet J002 on J002.Provider_ID = J102.Provider_ID and J002.Employee_Contract_Type = J102.Employee_Contract_Type and J002.Contract_Billing_Group = J102.Contract_Billing_Group 
+
 where
-	J001.Provider_ID is not null or J002.Provider_ID is not null
+	(J001.Provider_ID is not null or J002.Provider_ID is not null)
 order by 2,5</CommandText>
       </Query>
       <Fields>
@@ -1924,6 +1946,111 @@ order by 1,2</CommandText>
                 </TablixColumn>
               </TablixColumns>
               <TablixRows>
+                <TablixRow>
+                  <Height>0.86458cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox40">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Time Sheet Per Provider Per Period </Value>
+                                  <Style>
+                                    <FontSize>16pt</FontSize>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>#004b8e</Color>
+                                  </Style>
+                                </TextRun>
+                                <TextRun>
+                                  <Value>covering period - </Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                                <TextRun>
+                                  <Value>=format(Parameters!Start_Date.Value, "d/MM/yyy")</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                                <TextRun>
+                                  <Value> to </Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                                <TextRun>
+                                  <Value>=format(Parameters!End_Date.Value, "d/MM/yyy")</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox40</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>None</Style>
+                            </Border>
+                            <TopBorder>
+                              <Style>Solid</Style>
+                            </TopBorder>
+                            <LeftBorder>
+                              <Style>Solid</Style>
+                              <Width>2pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Style>Solid</Style>
+                              <Width>2pt</Width>
+                            </RightBorder>
+                            <BackgroundColor>White</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                        <ColSpan>28</ColSpan>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                  </TablixCells>
+                </TablixRow>
                 <TablixRow>
                   <Height>0.6cm</Height>
                   <TablixCells>
@@ -4439,7 +4566,7 @@ iif
                                 <TextRun>
                                   <Value>=Fields!Charge_Amount.Value</Value>
                                   <Style>
-                                    <Format>'$'0.00;('$'0.00)</Format>
+                                    <Format>'$'0.00</Format>
                                     <Color>=
 iif
 ( 
@@ -5440,7 +5567,7 @@ iif
                                 <TextRun>
                                   <Value>=Sum(Fields!Charge_Amount.Value)</Value>
                                   <Style>
-                                    <Format>'$'0.00;('$'0.00)</Format>
+                                    <Format>'$'0.00</Format>
                                   </Style>
                                 </TextRun>
                               </TextRuns>
@@ -5458,6 +5585,7 @@ iif
                             <PaddingRight>2pt</PaddingRight>
                             <PaddingTop>2pt</PaddingTop>
                             <PaddingBottom>2pt</PaddingBottom>
+                            <rd:FormatSymbolCulture>en-AU</rd:FormatSymbolCulture>
                           </Style>
                         </Textbox>
                       </CellContents>
@@ -5544,7 +5672,9 @@ iif
                               <TextRuns>
                                 <TextRun>
                                   <Value>=Sum(Lookup(Fields!T1_Employee_ID.Value + Fields!Contract_Billing_Group.Value, Cstr(Fields!EMPLOYEE_ID.Value) + Fields!CostCentre.Value, Fields!pay_amount.Value, "DataSet_T1_CostedPay"))</Value>
-                                  <Style />
+                                  <Style>
+                                    <Format>'$'0.00</Format>
+                                  </Style>
                                 </TextRun>
                               </TextRuns>
                               <Style />
@@ -5567,6 +5697,7 @@ iif
                             <PaddingRight>2pt</PaddingRight>
                             <PaddingTop>2pt</PaddingTop>
                             <PaddingBottom>2pt</PaddingBottom>
+                            <rd:FormatSymbolCulture>en-AU</rd:FormatSymbolCulture>
                           </Style>
                         </Textbox>
                       </CellContents>
@@ -6445,7 +6576,7 @@ iif
                                   <Value>=Sum(Fields!Charge_Amount.Value)</Value>
                                   <Style>
                                     <FontWeight>Bold</FontWeight>
-                                    <Format>'$'0.00;('$'0.00)</Format>
+                                    <Format>'$'0.00</Format>
                                   </Style>
                                 </TextRun>
                               </TextRuns>
@@ -6561,6 +6692,7 @@ iif
                                   <Value>=Sum(Fields!pay_amount.Value, "DataSet_T1_CostedPay")</Value>
                                   <Style>
                                     <FontWeight>Bold</FontWeight>
+                                    <Format>'$'0.00;('$'0.00)</Format>
                                   </Style>
                                 </TextRun>
                               </TextRuns>
@@ -6586,6 +6718,7 @@ iif
                             <PaddingRight>2pt</PaddingRight>
                             <PaddingTop>2pt</PaddingTop>
                             <PaddingBottom>2pt</PaddingBottom>
+                            <rd:FormatSymbolCulture>en-AU</rd:FormatSymbolCulture>
                           </Style>
                         </Textbox>
                       </CellContents>
@@ -6630,6 +6763,7 @@ iif
               <TablixMembers>
                 <TablixMember />
                 <TablixMember />
+                <TablixMember />
                 <TablixMember>
                   <Group Name="Contract_Billing_Group">
                     <GroupExpressions>
@@ -6654,7 +6788,7 @@ iif
               </TablixMembers>
             </TablixRowHierarchy>
             <DataSetName>DataSet1</DataSetName>
-            <Height>3.54708cm</Height>
+            <Height>4.41166cm</Height>
             <Width>72.83107cm</Width>
             <Style>
               <Border>
@@ -7633,7 +7767,7 @@ iif
               </TablixMembers>
             </TablixRowHierarchy>
             <DataSetName>DataSet_ComCare_EmployeeList</DataSetName>
-            <Top>3.62162cm</Top>
+            <Top>4.57412cm</Top>
             <Height>2.40854cm</Height>
             <Width>27.15668cm</Width>
             <ZIndex>1</ZIndex>
@@ -7644,7 +7778,7 @@ iif
             </Style>
           </Tablix>
         </ReportItems>
-        <Height>2.37408in</Height>
+        <Height>2.74908in</Height>
         <Style />
       </Body>
       <Width>28.67365in</Width>

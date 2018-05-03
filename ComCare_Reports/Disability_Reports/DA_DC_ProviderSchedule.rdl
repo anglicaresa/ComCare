@@ -46,6 +46,7 @@ Select * from
 			when J001.Internal_Task_Code = 71 then 'Overnight Respite'
 			When J001.Internal_Task_Code = 76 then 'Overnight Respite'
 			when J001.Internal_Task_Code = 13 then 'Admin'
+			when J001.Internal_Task_Code != 0 and J004.Description is null then 'NoTeam'
 			else J004.Description 
 			end 'Team'
 		,J003.Generated_Provider_Code 'ServiceProvision'
@@ -214,7 +215,7 @@ Select * from
 --		*/
 /*
 		and J003.Provider_Class_Code in (@ClassCodeFilter)
-		and J004.Description in (@TeamFilt)
+		and iif(J004.Description is null,'NoTeam',J004.Description) in (@TeamFilt)
 --*/
 
 ) as T1
@@ -222,7 +223,7 @@ where
 	1=1
 --/*
 	and t1.Provider_Class_Code in (@ClassCodeFilter)
-	and t1.Team in (@TeamFilt)
+	and iif(t1.Team is null,'NoTeam',t1.Team) in (@TeamFilt)
 --*/
 group by 
 	T1.Centre
@@ -439,24 +440,30 @@ order by 2,1</CommandText>
         </QueryParameters>
         <CommandText>select * from
 (
-select 
-	iif('DSW'in (@ClassCodeFilter),'Overnight Respite',null) as Team 
-Union
+	select 
+		iif('DSW'in (@ClassCodeFilter),'Overnight Respite',null) as Team 
 
-select 
-	J002.Description 'Team'
+	Union
 
-from [dbo].[Organisation] J001
+	select 
+		J002.Description 'Team'
 
-inner join [dbo].[Service_Delivery_Work_Team] J002 on J002.[Centre_ID] = J001.[Organisation_ID]
-left outer join [dbo].[Service_Provision_Position] J003 on J003.[Centre_ID] = J002.[Centre_ID] and J003.Team_No = J002.Team_No
---inner join [dbo].[Provider_Classification] J004 on J004.Provider_Class_Code = J003.Provider_Class_Code
+	from [dbo].[Organisation] J001
 
-where
-	1=1
-	and J001.Organisation_Name = @Centre
-	and J002.Effective_Date_To is null
-	and J003.Provider_Class_Code in (@ClassCodeFilter)
+	inner join [dbo].[Service_Delivery_Work_Team] J002 on J002.[Centre_ID] = J001.[Organisation_ID]
+	left outer join [dbo].[Service_Provision_Position] J003 on J003.[Centre_ID] = J002.[Centre_ID] and J003.Team_No = J002.Team_No
+	--inner join [dbo].[Provider_Classification] J004 on J004.Provider_Class_Code = J003.Provider_Class_Code
+
+	where
+		1=1
+		and J001.Organisation_Name = @Centre
+		and J002.Effective_Date_To is null
+		and J003.Provider_Class_Code in (@ClassCodeFilter)
+
+	union
+	
+	select
+	'NoTeam' as 'Team'
 )T1
 where T1.Team is not null
 

@@ -26,6 +26,10 @@
   <DataSets />
   <Reports>
     <ProjectItem>
+      <Name>CHSP_Client_Stats.rdl</Name>
+      <FullPath>CHSP_Client_Stats.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
       <Name>CHSP_ClientReview_Audit.rdl</Name>
       <FullPath>CHSP_ClientReview_Audit.rdl</FullPath>
     </ProjectItem>
@@ -88,6 +92,10 @@
     <ProjectItem>
       <Name>HCP_Client_NoSrvAdv.rdl</Name>
       <FullPath>HCP_Client_NoSrvAdv.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
+      <Name>HCP_Client_Stats.rdl</Name>
+      <FullPath>HCP_Client_Stats.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
       <Name>HCP_ClientBasicDailyFee.rdl</Name>
@@ -156,14 +164,6 @@
     <ProjectItem>
       <Name>HCP_VisitTime_V_PackageStartTime.rdl</Name>
       <FullPath>HCP_VisitTime_V_PackageStartTime.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>HCP_Client_Stats.rdl</Name>
-      <FullPath>HCP_Client_Stats.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>CHSP_Client_Stats.rdl</Name>
-      <FullPath>CHSP_Client_Stats.rdl</FullPath>
     </ProjectItem>
   </Reports>
   <Configurations>
@@ -255,6 +255,54 @@
         <TargetDataSourceFolder>/</TargetDataSourceFolder>
         <TargetDatasetFolder>/</TargetDatasetFolder>
         <TargetReportPartFolder>/ComCare/DeploymentMain/ComCareDEV/HomeCare</TargetReportPartFolder>
+      </Options>
+    </Configuration>
+    <Configuration>
+      <Name>CCAz_Prod</Name>
+      <Options>
+        <OutputPath>bin</OutputPath>
+        <TargetServerVersion>SSRS2016</TargetServerVersion>
+        <TargetServerURL>http://az-sqlbi01/reportserver</TargetServerURL>
+        <TargetFolder>/ComCareReports/DeploymentMain/HomeCare</TargetFolder>
+        <TargetDataSourceFolder>/Data Sources</TargetDataSourceFolder>
+        <TargetDatasetFolder>/Data Sources</TargetDatasetFolder>
+        <TargetReportPartFolder>/ComCareReports/DeploymentMain/HomeCare</TargetReportPartFolder>
+      </Options>
+    </Configuration>
+    <Configuration>
+      <Name>CCAz_DEV</Name>
+      <Options>
+        <OutputPath>bin</OutputPath>
+        <TargetServerVersion>SSRS2016</TargetServerVersion>
+        <TargetServerURL>http://az-sqlbi01/reportserver</TargetServerURL>
+        <TargetFolder>/ComCareReports/DeploymentMain/ComCareDEV/HomeCare</TargetFolder>
+        <TargetDataSourceFolder>/Data Sources</TargetDataSourceFolder>
+        <TargetDatasetFolder>/Data Sources</TargetDatasetFolder>
+        <TargetReportPartFolder>/ComCareReports/DeploymentMain/ComCareDEV/HomeCare</TargetReportPartFolder>
+      </Options>
+    </Configuration>
+    <Configuration>
+      <Name>CCAz_Train</Name>
+      <Options>
+        <OutputPath>bin</OutputPath>
+        <TargetServerVersion>SSRS2016</TargetServerVersion>
+        <TargetServerURL>http://az-sqlbi01/reportserver</TargetServerURL>
+        <TargetFolder>/ComCareReports/DeploymentMain/ComCareTrain/HomeCare</TargetFolder>
+        <TargetDataSourceFolder>/Data Sources</TargetDataSourceFolder>
+        <TargetDatasetFolder>/Data Sources</TargetDatasetFolder>
+        <TargetReportPartFolder>/ComCareReports/DeploymentMain/ComCareTrain/HomeCare</TargetReportPartFolder>
+      </Options>
+    </Configuration>
+    <Configuration>
+      <Name>CCAz_UAT</Name>
+      <Options>
+        <OutputPath>bin</OutputPath>
+        <TargetServerVersion>SSRS2016</TargetServerVersion>
+        <TargetServerURL>http://az-sqlbi01/reportserver</TargetServerURL>
+        <TargetFolder>/ComCareReports/DeploymentMain/ComCareUAT/HomeCare</TargetFolder>
+        <TargetDataSourceFolder>/Data Sources</TargetDataSourceFolder>
+        <TargetDatasetFolder>/Data Sources</TargetDatasetFolder>
+        <TargetReportPartFolder>/ComCareReports/DeploymentMain/ComCareUAT/HomeCare</TargetReportPartFolder>
       </Options>
     </Configuration>
   </Configurations>

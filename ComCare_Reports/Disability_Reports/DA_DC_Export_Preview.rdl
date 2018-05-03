@@ -72,194 +72,259 @@ declare @Min_Date date =
 ---------------------------------------------------------------------------------------------------------------------------------
 --------------------------------Base Query from Actual_Service =&gt; Actual_Service_Charge_Item
 --/*
-select * from
+select
+	t2.Client_ID
+	,t2.Client_Name
+	,t2.Provider_ID
+	,t2.Provider_Name
+	,t2.Schedule_Visit_Time
+	,t2.Scheduled_Duration
+	,t2.Actual_Visit_Time
+	,t2.Actual_Duration
+	,t2.contract_type
+	,t2.task_Description
+	,t2.Actual_TaskCode
+	,t2.Schedule_TaskCode
+	,t2.Client_Not_Home
+	,t2.Has_Charge_Item
+	,t2.In_WiA_Only
+	,t2.Charge_Item_Line_Description
+	,t2.Amount
+	,t2.Funding_Type
+	,t2.FundingProgram
+	,t2.Billed_Date
+	,t2.AdjustmentType
+	,t2.lateData
+	,t2.AdjFix
+	--,t2.Billable_Hours
+	,null 'GST_Type'
+from
 (
-	select distinct
-		J001.Client_ID
-		,J222.Last_Name + ', ' + J222.Preferred_Name 'Client_Name'
-		,J001.Provider_ID
-		,J333.Last_Name + ', ' + J333.Preferred_Name 'Provider_Name'
-		,IIF(J033.WiA_Schedule_TimeKILL = 'true', null, Cast (J033.Schedule_Time as Datetime)) 'Schedule_Visit_Time'	
-		,J033.Scheduled_Duration
-		,(Cast (cast(J001.Visit_Date as date) as Datetime) + Cast (Cast (J001.Visit_Time as Time) as Datetime)) 'Actual_Visit_Time'
-		,J001.Visit_Duration 'Actual_Duration'
-		,IIF (J011.Description is NULL,'No Contract',J011.Description) 'contract_type'
-		,J004.Description 'task_Description'
-		,J001.Task_Type_Code 'Actual_TaskCode'
-		,J033.Schedule_Task_Type 'Schedule_TaskCode'
-		,J014.Description 'Client_Not_Home'
-		,IIF (J002.Client_ID IS NULL, 0, 1) 'Has_Charge_Item'
-		,convert (int ,'0') 'In_WiA_Only'
-		,J002.Line_Description 'Charge_Item_Line_Description'
-		,J002.Amount
-		,IIF
+	select 
+	* 
+	,ROW_NUMBER()over(partition by 
+			st1.Client_ID
+			,st1.Client_Name
+			,st1.Provider_ID
+			,st1.Provider_Name
+			,cast(st1.Schedule_Visit_Time as date)
+--			,st1.Scheduled_Duration
+			,st1.Actual_Visit_Time
+			,st1.Actual_Duration
+			,st1.contract_type
+			,st1.task_Description
+--			,st1.Actual_TaskCode
+--			,st1.Schedule_TaskCode
+			,st1.Client_Not_Home
+			,st1.Has_Charge_Item
+			,st1.In_WiA_Only
+			,st1.Charge_Item_Line_Description
+			,st1.Funding_Type
+			,st1.FundingProgram
+			,st1.Billed_Date
+			,st1.AdjustmentType
+			,st1.lateData
+			,st1.AdjFix
+			,st1.Round_Allocation_ID
+			,st1.Allocated_Task_ID
+			--,st1.Billable_Hours
+			--,null 'GST Free'
+		order by case
+			when st1.Actual_TaskCode = st1.Schedule_TaskCode and st1.Schedule_Visit_Time = st1.Actual_Visit_Time and st1.Scheduled_Duration = st1.Actual_Duration then '1'
+			when st1.Actual_TaskCode = st1.Schedule_TaskCode and st1.Schedule_Visit_Time = st1.Actual_Visit_Time then '2'
+			when st1.Actual_TaskCode = st1.Schedule_TaskCode and st1.Scheduled_Duration = st1.Actual_Duration then '3'
+			when st1.Schedule_Visit_Time = st1.Actual_Visit_Time and st1.Scheduled_Duration = st1.Actual_Duration then '4'
+			when st1.Schedule_Visit_Time = st1.Actual_Visit_Time then '5'
+			when st1.Scheduled_Duration = st1.Actual_Duration then '6'
+			else '9'
+			end
+		)'RN'
+	from
+	(
+		select distinct
+			J001.Client_ID
+			,J222.Last_Name + ', ' + J222.Preferred_Name 'Client_Name'
+			,J001.Provider_ID
+			,J333.Last_Name + ', ' + J333.Preferred_Name 'Provider_Name'
+			,IIF(J033.WiA_Schedule_TimeKILL = 'true', null, Cast (J033.Schedule_Time as Datetime)) 'Schedule_Visit_Time'	
+			,J033.Scheduled_Duration
+			,(Cast (cast(J001.Visit_Date as date) as Datetime) + Cast (Cast (J001.Visit_Time as Time) as Datetime)) 'Actual_Visit_Time'
+			,J001.Visit_Duration 'Actual_Duration'
+			,IIF (J011.Description is NULL,'No Contract',J011.Description) 'contract_type'
+			,J004.Description 'task_Description'
+			,J001.Task_Type_Code 'Actual_TaskCode'
+			,J033.Schedule_Task_Type 'Schedule_TaskCode'
+			,J014.Description 'Client_Not_Home'
+			,IIF (J002.Client_ID IS NULL, 0, 1) 'Has_Charge_Item'
+			,convert (int ,'0') 'In_WiA_Only'
+			,J002.Line_Description 'Charge_Item_Line_Description'
+			,J002.Amount
+			,IIF
+			(
+				J009.Organisation_Name = 'NDIA National Disability Insurance Agency'
+				, 'NDIS funded'
+				,IIF(J009.Client_ID IS NULL,'No Contract Billing','Self Managed')
+			) 'Funding_type'
+			,J009.FundingProgram--new
+			,J001.Billed_Date
+			,1 'AdjustmentType'
+			,IIF(cast(J001.Visit_Date as date) between @StartDate and @EndDate,0,1) 'lateData'
+			,0 'AdjFix'
+		--	,iif(J001.Scheduled_Duration is null,J001.Visit_Duration,J001.Scheduled_Duration)'Billable_Hours'
+			,J033.Round_Allocation_ID
+			,J001.Allocated_Task_ID
+			,null 'GST Free'
+		from 
 		(
-			J009.Organisation_Name = 'NDIA National Disability Insurance Agency'
-			, 'NDIS funded'
-			,IIF(J009.Client_ID IS NULL,'No Contract Billing','Self Managed')
-		) 'Funding_type'
-		,J009.FundingProgram--new
-		,J001.Billed_Date
-		,1 'AdjustmentType'
-		,IIF(cast(J001.Visit_Date as date) between @StartDate and @EndDate,0,1) 'lateData'
-		,0 'AdjFix'
-	from 
-	(
-		select 
-		* 
-		from dbo.Actual_Service A_S 
-		where 
-		A_S.Task_Type_Code in (select * from @taskTypeCodes)
-		and A_S.Billed_Date is null
-		and
+			select 
+			* 
+			from dbo.Actual_Service A_S 
+			where 
+			(
+				convert(date, A_S.Visit_Date) between @StartDate and @EndDate
+			)
+			and @DuplicateChargeItem = 0
+		)J001
+
+		Left outer Join
 		(
-			convert(date, A_S.Visit_Date) between @StartDate and @EndDate
-			or 1 = iif( @FiltType = 1 and (A_S.Visit_Date between @Min_Date and @EndDate), 1, 0 )
-		)
-		and @DuplicateChargeItem = 0
-	)J001
+			select 
+				ACSI.Client_ID	
+				,ACSI.Visit_Date
+				,ACSI.Visit_No
+				,ACSI.Provider_ID
+				,ACSI.Service_Prov_Position_ID
+				,ACSI.Amount
+				,ACSI.Line_Description
+			from dbo.Actual_Service_Charge_Item ACSI
+			where ACSI.Visit_Date between @StartDate and @EndDate
+		)J002 ON
+				J002.Client_ID = J001.Client_ID
+				and J002.Visit_Date = J001.Visit_Date
+				and J002.Visit_No = J001.Visit_No
+				and J002.Service_Prov_Position_ID = J001.Service_Prov_Position_ID
 
-	Left outer Join
-	(
-		select 
-			ACSI.Client_ID	
-			,ACSI.Visit_Date
-			,ACSI.Visit_No
-			,ACSI.Provider_ID
-			,ACSI.Service_Prov_Position_ID
-			,ACSI.Amount
-			,ACSI.Line_Description
-		from dbo.Actual_Service_Charge_Item ACSI
-		where ACSI.Visit_Date between @StartDate and @EndDate
-		or 1 = IIF(@FiltType = 1 and (cast(ACSI.Visit_Date AS date) between @Min_Date and @EndDate),1,0)
-	)J002 ON
-			J002.Client_ID = J001.Client_ID
-			and J002.Visit_Date = J001.Visit_Date
-			and J002.Visit_No = J001.Visit_No
-			and J002.Service_Prov_Position_ID = J001.Service_Prov_Position_ID
+		left outer join
+		(
+			select
+				Wi_A.Client_ID
+				,Wi_A.Wi_Record_ID 'Wi_Record_ID'
+				,Wi_A.Activity_Date
+				,Wi_A.SPPID
+				,Wi_A.Schedule_Time 'Schedule_Time'
+				,Wi_A.Schedule_Duration 'Scheduled_Duration'
+				,Wi_A.ReSchedule 'ReSchedule'
+				,Wi_A.Activity_Start_time 'Activity_Start_time'
+				,iif(Wi_A.ReSchedule is not null and Wi_A.Activity_Start_time is not null, 'True', 'Flase') 'WiA_Schedule_TimeKILL'
+				,AWT.Allocated_Task_ID 'Allocated_Task_ID'
+				,Wi_A.Round_Allocation_ID 'Round_Allocation_ID'
+				,Wi_A.Schedule_Task_Type
+			from dbo.wi_activity Wi_A
+			left outer join dbo.activity_work_table AWT on AWT.Allocated_Task_ID = Wi_A.Round_Allocation_ID and AWT.activity_date = Wi_A.activity_date
 
-	left outer join
-	(
-		select
-			Wi_A.Client_ID
-			,Wi_A.Wi_Record_ID 'Wi_Record_ID'
-			,Wi_A.Activity_Date
-			,Wi_A.SPPID
-			,Wi_A.Schedule_Time 'Schedule_Time'
-			,Wi_A.Schedule_Duration 'Scheduled_Duration'
-			,Wi_A.ReSchedule 'ReSchedule'
-			,Wi_A.Activity_Start_time 'Activity_Start_time'
-			,iif(Wi_A.ReSchedule is not null and Wi_A.Activity_Start_time is not null, 'True', 'Flase') 'WiA_Schedule_TimeKILL'
-			,AWT.Allocated_Task_ID 'Allocated_Task_ID'
-			,Wi_A.Round_Allocation_ID 'Round_Allocation_ID'
-			,Wi_A.Schedule_Task_Type
-		from dbo.wi_activity Wi_A
-		left outer join dbo.activity_work_table AWT on AWT.Allocated_Task_ID = Wi_A.Round_Allocation_ID and AWT.activity_date = Wi_A.activity_date
+			Where
+			 convert (date, Wi_A.Activity_Date) between dateadd(Day,-3,@StartDate) and dateadd(day,+3,@EndDate)
 
-		Where
-		 convert (date, Wi_A.Activity_Date) between dateadd(Day,-3,@StartDate) and dateadd(day,+3,@EndDate)
-		 or 1 = IIF(@FiltType = 1 and (cast(Wi_A.Activity_Date AS date) between @Min_Date and @EndDate),1,0)
-		 and Wi_A.Schedule_Task_Type in (Select * from @taskTypeCodes)
-
-	)J033 ON 
-		J033.Client_ID = J001.Client_ID 
-		and J033.Activity_Date = J001.Visit_Date 
-		and J033.SPPID = J001.Service_Prov_Position_ID 
-		and (J001.Allocated_Task_ID = J033.Allocated_Task_ID or J001.Allocated_Task_ID = J033.Round_Allocation_ID)
+		)J033 ON 
+			J033.Client_ID = J001.Client_ID 
+			and J033.Activity_Date = J001.Visit_Date 
+			and J033.SPPID = J001.Service_Prov_Position_ID 
+			and (J001.Allocated_Task_ID = J033.Allocated_Task_ID or J001.Allocated_Task_ID = J033.Round_Allocation_ID)
 			
-	left outer join dbo.Task_Type J004 on J004.Task_Type_Code = J001.Task_Type_Code
+		left outer join dbo.Task_Type J004 on J004.Task_Type_Code = J001.Task_Type_Code
 
-	Left outer join
-	(
-		select
-		JX001.Service_Prov_Position_ID 'SPPID'
-		,JX002.Organisation_Name
-		From dbo.Service_Provision_Position JX001
-		left outer join dbo.Organisation JX002 on JX002.Organisation_ID = JX001.Centre_ID
-	)J006 on J006.SPPID = J001.Service_Prov_Position_ID
+		Left outer join
+		(
+			select
+			JX001.Service_Prov_Position_ID 'SPPID'
+			,JX002.Organisation_Name
+			From dbo.Service_Provision_Position JX001
+			left outer join dbo.Organisation JX002 on JX002.Organisation_ID = JX001.Centre_ID
+		)J006 on J006.SPPID = J001.Service_Prov_Position_ID
 
-	left outer Join
-	(
-		select 
-			JX001.Client_ID 
-			,JX001.From_Date
-			,JX001.To_Date
-			,JX009.Description 'FundingProgram'
-			,JX002.CAP_ID
-			,JX002.Funding_Prog_Code
-			,JX014.Service_Type_Code
-			,JX011.Task_Type_Code
-			,JX004.Billing_Start_Date
-			,JX004.Billing_End_Date
-			,JX004.Contract_Billing_ID
-			,JX004.Client_CB_ID
-			,JX006.Effective_From_Date 'Billed_to_efFrom'
-			,JX006.Effective_To_Date 'Billed_to_efTo'
-			,JX005.Description 'Contract_Billing_Group'
-			,JX008.Organisation_Name
-			,JX010.Effective_From_Date
-			,JX010.Effective_to_Date
-		from dbo.Service_Delivery JX001
-		inner join dbo.FC_Contract_Area_Product JX002 on JX002.Funding_Prog_Code = JX001.Funding_Prog_Code
-		inner join dbo.Task_Type JX003 on JX003.Service_Type_Code = JX001.Service_Type_Code
-		Left outer join dbo.FB_Client_Contract_Billing JX004 on JX004.Client_ID = JX001.Client_ID and JX004.Funder_Contract_ID = JX002.Funder_Contract_ID --connect to billing item
-		left outer join dbo.FB_Contract_Billing_Group JX005 on JX005.Contract_Billing_Group_ID = JX004.Contract_Billing_Group_ID
+		left outer Join
+		(
+			select 
+				JX001.Client_ID 
+				,JX001.From_Date
+				,JX001.To_Date
+				,JX009.Description 'FundingProgram'
+				,JX002.CAP_ID
+				,JX002.Funding_Prog_Code
+				,JX014.Service_Type_Code
+				,JX011.Task_Type_Code
+				,JX004.Billing_Start_Date
+				,JX004.Billing_End_Date
+				,JX004.Contract_Billing_ID
+				,JX004.Client_CB_ID
+				,JX006.Effective_From_Date 'Billed_to_efFrom'
+				,JX006.Effective_To_Date 'Billed_to_efTo'
+				,JX005.Description 'Contract_Billing_Group'
+				,JX008.Organisation_Name
+				,JX010.Effective_From_Date
+				,JX010.Effective_to_Date
+			from dbo.Service_Delivery JX001
+			inner join dbo.FC_Contract_Area_Product JX002 on JX002.Funding_Prog_Code = JX001.Funding_Prog_Code
+			inner join dbo.Task_Type JX003 on JX003.Service_Type_Code = JX001.Service_Type_Code
+			Left outer join dbo.FB_Client_Contract_Billing JX004 on JX004.Client_ID = JX001.Client_ID and JX004.Funder_Contract_ID = JX002.Funder_Contract_ID --connect to billing item
+			left outer join dbo.FB_Contract_Billing_Group JX005 on JX005.Contract_Billing_Group_ID = JX004.Contract_Billing_Group_ID
 
-		left outer Join dbo.FB_Client_Contract_Billed_To JX006 on JX006.Client_CB_ID = JX004.Client_CB_ID
-		left outer Join dbo.FB_Client_CB_Split JX007 on JX007.Client_Contract_Billed_To_ID = JX006.Client_Contract_Billed_To_ID
-		left outer Join dbo.Organisation JX008 on JX007.Organisation_ID = JX008.Organisation_ID
+			left outer Join dbo.FB_Client_Contract_Billed_To JX006 on JX006.Client_CB_ID = JX004.Client_CB_ID
+			left outer Join dbo.FB_Client_CB_Split JX007 on JX007.Client_Contract_Billed_To_ID = JX006.Client_Contract_Billed_To_ID
+			left outer Join dbo.Organisation JX008 on JX007.Organisation_ID = JX008.Organisation_ID
 
-		left outer join dbo.Funding_Program JX009 on JX009.Funding_Prog_Code = JX001.Funding_Prog_Code
+			left outer join dbo.Funding_Program JX009 on JX009.Funding_Prog_Code = JX001.Funding_Prog_Code
 
-		left outer join dbo.FB_Client_Contract_Bill_Item JX010 on JX010.Client_CB_ID = JX004.Client_CB_ID
-		left outer join dbo.FC_Product_Mapping JX011 on JX011.task_Type_Code = JX003.Task_Type_Code
-		Left outer join dbo.FB_Contract_Billing_Item_UOM JX012 on JX012.Product_Mapping_ID = JX011.Product_Mapping_ID
-		inner join dbo.FB_Contract_Billing_Item JX013 on JX013.Contract_Billing_Item_ID = JX012.Contract_Billing_Item_ID and JX013.Contract_Billing_Item_ID = JX010.Contract_Billing_Item_ID
+			left outer join dbo.FB_Client_Contract_Bill_Item JX010 on JX010.Client_CB_ID = JX004.Client_CB_ID
+			left outer join dbo.FC_Product_Mapping JX011 on JX011.task_Type_Code = JX003.Task_Type_Code
+			Left outer join dbo.FB_Contract_Billing_Item_UOM JX012 on JX012.Product_Mapping_ID = JX011.Product_Mapping_ID
+			inner join dbo.FB_Contract_Billing_Item JX013 on JX013.Contract_Billing_Item_ID = JX012.Contract_Billing_Item_ID and JX013.Contract_Billing_Item_ID = JX010.Contract_Billing_Item_ID
 
-		left outer join dbo.Service_Type JX014 on JX014.Service_Type_Code = JX001.Service_Type_Code
+			left outer join dbo.Service_Type JX014 on JX014.Service_Type_Code = JX001.Service_Type_Code
 
-	)J009 on 
-		J009.Client_ID = J001.Client_ID
-		and J009.Task_Type_Code = J001.Task_Type_Code
-		and J009.CAP_ID = J001.CAP_ID
-		and J001.Visit_Date between J009.Billing_Start_Date and IIF(J009.Billing_End_Date is null,Cast('2200-01-01' as date),J009.Billing_End_Date)
-		and J001.Visit_Date between J009.From_Date and IIF(J009.To_Date is null,Cast('2200-01-01' as date),J009.To_Date)
-		and J001.Visit_Date between J009.Effective_From_Date and IIF(J009.Effective_to_Date is null,Cast('2200-01-01' as date),J009.Effective_to_Date)
-		and J001.Visit_Date between J009.Billed_to_efFrom and IIF(J009.Billed_to_efTo is null,Cast('2200-01-01' as date),J009.Billed_to_efTo)
+		)J009 on 
+			J009.Client_ID = J001.Client_ID
+			and J009.Task_Type_Code = J001.Task_Type_Code
+			and J009.CAP_ID = J001.CAP_ID
+			and J001.Visit_Date between J009.Billing_Start_Date and IIF(J009.Billing_End_Date is null,Cast('2200-01-01' as date),J009.Billing_End_Date)
+			and J001.Visit_Date between J009.From_Date and IIF(J009.To_Date is null,Cast('2200-01-01' as date),J009.To_Date)
+			and J001.Visit_Date between J009.Effective_From_Date and IIF(J009.Effective_to_Date is null,Cast('2200-01-01' as date),J009.Effective_to_Date)
+			and J001.Visit_Date between J009.Billed_to_efFrom and IIF(J009.Billed_to_efTo is null,Cast('2200-01-01' as date),J009.Billed_to_efTo)
 
-	left outer join dbo.FC_Contract_Area_Product J010 ON J010.CAP_ID = J001.CAP_ID
-	left outer join dbo.FC_Funder_Contract J011 ON J011.Funder_Contract_ID = J010.Funder_Contract_ID
-	Left outer join dbo.Visit_Cancel_Reason J014 on J014.Visit_Cancel_Reason_ID = J001.Visit_Cancel_Reason_ID
+		left outer join dbo.FC_Contract_Area_Product J010 ON J010.CAP_ID = J001.CAP_ID
+		left outer join dbo.FC_Funder_Contract J011 ON J011.Funder_Contract_ID = J010.Funder_Contract_ID
+		Left outer join dbo.Visit_Cancel_Reason J014 on J014.Visit_Cancel_Reason_ID = J001.Visit_Cancel_Reason_ID
 
-	Left outer join dbo.Person J222 on J222.Person_ID = J001.Client_ID
-	Left outer join dbo.Person J333 on J333.Person_ID = J001.Provider_ID
+		Left outer join dbo.Person J222 on J222.Person_ID = J001.Client_ID
+		Left outer join dbo.Person J333 on J333.Person_ID = J001.Provider_ID
 
-	Where 
-		1=1
-		and @DuplicateChargeItem = 0
---		and J001.Client_ID = @Client_ID_
-		and J006.Organisation_Name = @Organisation
-		and 1 = Case 
-				when cast(J001.Visit_Date AS date) between @StartDate and @EndDate then 1
-				When @FiltType = 1 and cast(J001.Visit_Date as date) between  @Min_Date and @EndDate then 1
-				else 0
-				end
-		and (J009.Contract_Billing_Group &lt;&gt; 'DCSI' or J009.Contract_Billing_Group is null)
---		AND (IIF (J011.Description is NULL,'No Contract',J011.Description) in (select * from @ContractType))
-		and (IIF (J011.Description is NULL,'No Contract',J011.Description) in (@ContractType))
+		Where 
+			1=1
+		--	and @DuplicateChargeItem = 0
+		--	and J001.Client_ID = @Client_ID_
+		
+			and J006.Organisation_Name = @Organisation
+			and 1 = Case 
+					when cast(J001.Visit_Date AS date) between @StartDate and @EndDate then 1
 
-) t1
-where
-	1=1
-	and t1.Billed_Date is null 
-	and t1.Actual_Visit_Time is not null
-
+					else 0
+					end
+				
+			and (J009.Contract_Billing_Group &lt;&gt; 'DCSI' or J009.Contract_Billing_Group is null)
+	--		AND (IIF (J011.Description is NULL,'No Contract',J011.Description) in (select * from @ContractType))
+			and (IIF (J011.Description is NULL,'No Contract',J011.Description) in (@ContractType))
+--*/
+	)st1
+)t2 where 
+	t2.RN &lt; 2
+	and t2.Billed_Date is null 
+	and t2.Actual_Visit_Time is not null
+--*/
 ---------------------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------------------
-
 Union
 
 ---------------------------------------------------------------------------------------------------------------------------------
@@ -294,6 +359,7 @@ select * from
 		,1 'AdjustmentType'
 		,0 'lateData'
 		,0 'AdjFix'
+		,null 'GST_Type'
 	from
 	(
 		select 
@@ -380,7 +446,33 @@ Union
 ---------------------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------------------
 -------------------------------------Adjustments
-select * from
+select 
+	T4.Client_ID
+	,T4.Client_Name
+	,T4.Provider_ID
+	,T4.Provider_Name
+	,T4.Schedule_Visit_Time
+	,T4.Scheduled_Duration
+	,T4.Actual_Visit_Time
+	,T4.Actual_Duration
+	,T4.contract_type
+	,T4.task_Description
+	,T4.Actual_TaskCode
+	,T4.Schedule_TaskCode
+	,T4.Client_Not_Home
+	,T4.Has_Charge_Item
+	,T4.In_WiA_Only
+	,T4.Charge_Item_Line_Description
+	,T4.Amount
+	,T4.Funding_Type
+	,T4.FundingProgram
+	,T4.Billed_Date
+	,T4.AdjustmentType
+	,T4.lateData
+	,T4.AdjFix
+	,T4.GST_Type
+--	,T4.RN
+from
 (
 	select distinct
 		J001.Client_ID
@@ -401,11 +493,14 @@ select * from
 		,J010.Comments 'Charge_Item_Line_Description'
 		,J010.Adjustment_Amount 'Amount'
 		,IIF(J001.Organisation_Name = 'NDIA National Disability Insurance Agency', 'NDIS funded','Self Managed') 'Funding_Type'
+--		,J001.ContractBillingGroup 'FundingProgram'
 		,null 'FundingProgram'
 		,J015.Processing_Date 'Billed_Date'
 		,iif(J011.Description like '%eduction%',-1,1)'AdjustmentType'
 		,IIF(cast(J010.Effective_From_Date AS date) between @StartDate and @EndDate,0,1) 'lateData'
 		,J010.Client_CB_Adj_ID 'AdjFix'
+		,J016.Description 'GST_Type'
+		,ROW_NUMBER()over(partition by J010.Client_CB_Adj_ID order by J001.Client_ID)'RN'
 	from
 	(
 		select distinct
@@ -431,6 +526,8 @@ select * from
 	left outer join dbo.GST_Type J014 on J014.GST_Type_Code = J010.GST_Type_Code
 	left outer join dbo.FB_Client_CB_Transaction J015 on J015.Client_CB_ID = J010.Client_CB_ID and J015.Client_CB_Adj_ID = J010.Client_CB_Adj_ID
 
+	left outer join dbo.GST_Type J016 on J016.GST_Type_Code = J010.GST_Type_Code
+
 	Left outer join dbo.Person J222 on J222.Person_ID = J001.Client_ID
 
 	Where 
@@ -447,7 +544,7 @@ select * from
 			or 1 = iif(@FiltType = 1 and J010.Effective_From_Date &lt;= @EndDate,1,0)
 		)
 		and J015.Processing_Date is null
-)t4
+)t4 where T4.RN &lt; 2
 --*/
 order by
 1,5,7,10,3,14</CommandText>
@@ -522,7 +619,7 @@ order by
           <rd:TypeName>System.Decimal</rd:TypeName>
         </Field>
         <Field Name="Funding_type">
-          <DataField>Funding_type</DataField>
+          <DataField>Funding_Type</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
         <Field Name="FundingProgram">
@@ -544,6 +641,10 @@ order by
         <Field Name="AdjFix">
           <DataField>AdjFix</DataField>
           <rd:TypeName>System.Decimal</rd:TypeName>
+        </Field>
+        <Field Name="GST_Type">
+          <DataField>GST_Type</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
         </Field>
       </Fields>
     </DataSet>
@@ -640,6 +741,9 @@ select * from @BillContFilt</CommandText>
                 </TablixColumn>
                 <TablixColumn>
                   <Width>2.01083cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>2.5cm</Width>
                 </TablixColumn>
                 <TablixColumn>
                   <Width>2.63229cm</Width>
@@ -1129,6 +1233,45 @@ select * from @BillContFilt</CommandText>
                             </Paragraph>
                           </Paragraphs>
                           <rd:DefaultName>Textbox36</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Style>Solid</Style>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Style>None</Style>
+                            </BottomBorder>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox26">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value />
+                                  <Style>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox26</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -1886,6 +2029,42 @@ select * from @BillContFilt</CommandText>
                             </Paragraph>
                           </Paragraphs>
                           <rd:DefaultName>Textbox21</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Style>None</Style>
+                            </TopBorder>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox43">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>GST Type</Value>
+                                  <Style>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox43</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -2784,6 +2963,48 @@ Switch
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
+                        <Textbox Name="GST_Type">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!GST_Type.Value</Value>
+                                  <Style>
+                                    <Color>=
+Switch
+(
+	InStr(Fields!FundingProgram.Value ,"DCSI")&gt;0,"Green"
+	,Fields!Has_Charge_Item.Value = 2 ,"Blue"
+	,Fields!Has_Charge_Item.Value = 1,"Black"
+	,Fields!Has_Charge_Item.Value = 0,"Red"
+	,Fields!Has_Charge_Item.Value = 6,"Gray"
+	
+)</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>GST_Type</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
                         <Textbox Name="Billed_Date">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
@@ -3067,6 +3288,7 @@ Switch
                 <TablixMember />
                 <TablixMember />
                 <TablixMember />
+                <TablixMember />
               </TablixMembers>
             </TablixColumnHierarchy>
             <TablixRowHierarchy>
@@ -3119,7 +3341,7 @@ Switch
             <FixedRowHeaders>true</FixedRowHeaders>
             <DataSetName>DataSet1</DataSetName>
             <Height>2.38208cm</Height>
-            <Width>72.99355cm</Width>
+            <Width>75.49355cm</Width>
             <Style>
               <Border>
                 <Style>None</Style>
@@ -3130,7 +3352,7 @@ Switch
         <Height>0.93783in</Height>
         <Style />
       </Body>
-      <Width>28.73762in</Width>
+      <Width>29.72187in</Width>
       <Page>
         <PageHeader>
           <Height>1.95862cm</Height>
@@ -3141,7 +3363,7 @@ Switch
               <Source>Embedded</Source>
               <Value>Logo_AnglicareSA</Value>
               <Sizing>FitProportional</Sizing>
-              <Left>60.18895cm</Left>
+              <Left>62.68895cm</Left>
               <Height>1.95862cm</Height>
               <Width>12.8046cm</Width>
               <Style>
@@ -3274,27 +3496,6 @@ Switch
       </DefaultValue>
       <Prompt>End Date</Prompt>
     </ReportParameter>
-    <ReportParameter Name="HideGood">
-      <DataType>String</DataType>
-      <DefaultValue>
-        <Values>
-          <Value>="No"</Value>
-        </Values>
-      </DefaultValue>
-      <Prompt>Hide Good Entries</Prompt>
-      <ValidValues>
-        <ParameterValues>
-          <ParameterValue>
-            <Value>="Yes"</Value>
-            <Label>Yes</Label>
-          </ParameterValue>
-          <ParameterValue>
-            <Value>="No"</Value>
-            <Label>No</Label>
-          </ParameterValue>
-        </ParameterValues>
-      </ValidValues>
-    </ReportParameter>
     <ReportParameter Name="Organisation">
       <DataType>String</DataType>
       <DefaultValue>
@@ -3353,28 +3554,6 @@ Switch
       </ValidValues>
       <MultiValue>true</MultiValue>
     </ReportParameter>
-    <ReportParameter Name="DuplicateChargeItem">
-      <DataType>Integer</DataType>
-      <DefaultValue>
-        <Values>
-          <Value>=0</Value>
-        </Values>
-      </DefaultValue>
-      <Prompt>Show Duplicate Charge Item Only</Prompt>
-      <Hidden>true</Hidden>
-      <ValidValues>
-        <ParameterValues>
-          <ParameterValue>
-            <Value>=1</Value>
-            <Label>Yes</Label>
-          </ParameterValue>
-          <ParameterValue>
-            <Value>=0</Value>
-            <Label>No</Label>
-          </ParameterValue>
-        </ParameterValues>
-      </ValidValues>
-    </ReportParameter>
     <ReportParameter Name="FiltType">
       <DataType>String</DataType>
       <DefaultValue>
@@ -3407,10 +3586,54 @@ Switch
       <Prompt>Late Processed date</Prompt>
       <UsedInQuery>True</UsedInQuery>
     </ReportParameter>
+    <ReportParameter Name="HideGood">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>="No"</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Hide Good Entries</Prompt>
+      <Hidden>true</Hidden>
+      <ValidValues>
+        <ParameterValues>
+          <ParameterValue>
+            <Value>="Yes"</Value>
+            <Label>Yes</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>="No"</Value>
+            <Label>No</Label>
+          </ParameterValue>
+        </ParameterValues>
+      </ValidValues>
+    </ReportParameter>
+    <ReportParameter Name="DuplicateChargeItem">
+      <DataType>Integer</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>=0</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Show Duplicate Charge Item Only</Prompt>
+      <Hidden>true</Hidden>
+      <ValidValues>
+        <ParameterValues>
+          <ParameterValue>
+            <Value>=1</Value>
+            <Label>Yes</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>=0</Value>
+            <Label>No</Label>
+          </ParameterValue>
+        </ParameterValues>
+      </ValidValues>
+    </ReportParameter>
   </ReportParameters>
   <ReportParametersLayout>
     <GridLayoutDefinition>
-      <NumberOfColumns>4</NumberOfColumns>
+      <NumberOfColumns>3</NumberOfColumns>
       <NumberOfRows>3</NumberOfRows>
       <CellDefinitions>
         <CellDefinition>
@@ -3424,12 +3647,12 @@ Switch
           <ParameterName>EndDate</ParameterName>
         </CellDefinition>
         <CellDefinition>
-          <ColumnIndex>2</ColumnIndex>
-          <RowIndex>0</RowIndex>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>2</RowIndex>
           <ParameterName>HideGood</ParameterName>
         </CellDefinition>
         <CellDefinition>
-          <ColumnIndex>3</ColumnIndex>
+          <ColumnIndex>2</ColumnIndex>
           <RowIndex>0</RowIndex>
           <ParameterName>Organisation</ParameterName>
         </CellDefinition>
@@ -3445,11 +3668,11 @@ Switch
         </CellDefinition>
         <CellDefinition>
           <ColumnIndex>2</ColumnIndex>
-          <RowIndex>1</RowIndex>
+          <RowIndex>2</RowIndex>
           <ParameterName>DuplicateChargeItem</ParameterName>
         </CellDefinition>
         <CellDefinition>
-          <ColumnIndex>3</ColumnIndex>
+          <ColumnIndex>2</ColumnIndex>
           <RowIndex>1</RowIndex>
           <ParameterName>FiltType</ParameterName>
         </CellDefinition>

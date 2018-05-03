@@ -214,5 +214,53 @@
         <TargetReportPartFolder>/ComCare/DeploymentMain/ComCareDEV/DisabilityChildrens</TargetReportPartFolder>
       </Options>
     </Configuration>
+    <Configuration>
+      <Name>CCAz_Prod</Name>
+      <Options>
+        <OutputPath>bin</OutputPath>
+        <TargetServerVersion>SSRS2016</TargetServerVersion>
+        <TargetServerURL>http://az-sqlbi01/reportserver</TargetServerURL>
+        <TargetFolder>/ComCareReports/DeploymentMain/DisabilityChildrens</TargetFolder>
+        <TargetDataSourceFolder>/Data Sources</TargetDataSourceFolder>
+        <TargetDatasetFolder>/Data Sources</TargetDatasetFolder>
+        <TargetReportPartFolder>/ComCareReports/DeploymentMain/DisabilityChildrens</TargetReportPartFolder>
+      </Options>
+    </Configuration>
+    <Configuration>
+      <Name>CCAz_DEV</Name>
+      <Options>
+        <OutputPath>bin</OutputPath>
+        <TargetServerVersion>SSRS2016</TargetServerVersion>
+        <TargetServerURL>http://az-sqlbi01/reportserver</TargetServerURL>
+        <TargetFolder>/ComCareReports/DeploymentMain/ComCareDEV/DisabilityChildrens</TargetFolder>
+        <TargetDataSourceFolder>/Data Sources</TargetDataSourceFolder>
+        <TargetDatasetFolder>/Data Sources</TargetDatasetFolder>
+        <TargetReportPartFolder>/ComCareReports/DeploymentMain/ComCareDEV/DisabilityChildrens</TargetReportPartFolder>
+      </Options>
+    </Configuration>
+    <Configuration>
+      <Name>CCAz_Train</Name>
+      <Options>
+        <OutputPath>bin</OutputPath>
+        <TargetServerVersion>SSRS2016</TargetServerVersion>
+        <TargetServerURL>http://az-sqlbi01/reportserver</TargetServerURL>
+        <TargetFolder>/ComCareReports/DeploymentMain/ComCareTrain/DisabilityChildrens</TargetFolder>
+        <TargetDataSourceFolder>/Data Sources</TargetDataSourceFolder>
+        <TargetDatasetFolder>/Data Sources</TargetDatasetFolder>
+        <TargetReportPartFolder>/ComCareReports/DeploymentMain/ComCareTrain/DisabilityChildrens</TargetReportPartFolder>
+      </Options>
+    </Configuration>
+    <Configuration>
+      <Name>CCAz_UAT</Name>
+      <Options>
+        <OutputPath>bin</OutputPath>
+        <TargetServerVersion>SSRS2016</TargetServerVersion>
+        <TargetServerURL>http://az-sqlbi01/reportserver</TargetServerURL>
+        <TargetFolder>/ComCareReports/DeploymentMain/ComCareUAT/DisabilityChildrens</TargetFolder>
+        <TargetDataSourceFolder>/Data Sources</TargetDataSourceFolder>
+        <TargetDatasetFolder>/Data Sources</TargetDatasetFolder>
+        <TargetReportPartFolder>/ComCareReports/DeploymentMain/ComCareUAT/DisabilityChildrens</TargetReportPartFolder>
+      </Options>
+    </Configuration>
   </Configurations>
 </Project>

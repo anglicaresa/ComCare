@@ -26,6 +26,10 @@
   <DataSets />
   <Reports>
     <ProjectItem>
+      <Name>RAC Roster Report.rdl</Name>
+      <FullPath>RAC Roster Report.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
       <Name>RAC_Allocation Report_Dutton.rdl</Name>
       <FullPath>RAC_Allocation Report_Dutton.rdl</FullPath>
     </ProjectItem>
@@ -60,10 +64,6 @@
     <ProjectItem>
       <Name>RAC_ViewTimeSheetAdjustments.rdl</Name>
       <FullPath>RAC_ViewTimeSheetAdjustments.rdl</FullPath>
-    </ProjectItem>
-    <ProjectItem>
-      <Name>RAC Roster Report.rdl</Name>
-      <FullPath>RAC Roster Report.rdl</FullPath>
     </ProjectItem>
   </Reports>
   <Configurations>
@@ -152,6 +152,54 @@
         <TargetDataSourceFolder>/</TargetDataSourceFolder>
         <TargetDatasetFolder>/</TargetDatasetFolder>
         <TargetReportPartFolder>/ComCare/DeploymentMain/ComCareDEV/RAC</TargetReportPartFolder>
+      </Options>
+    </Configuration>
+    <Configuration>
+      <Name>CCAz_Prod</Name>
+      <Options>
+        <OutputPath>bin</OutputPath>
+        <TargetServerVersion>SSRS2016</TargetServerVersion>
+        <TargetServerURL>http://az-sqlbi01/reportserver</TargetServerURL>
+        <TargetFolder>/ComCareReports/DeploymentMain/RAC</TargetFolder>
+        <TargetDataSourceFolder>/Data Sources</TargetDataSourceFolder>
+        <TargetDatasetFolder>/Data Sources</TargetDatasetFolder>
+        <TargetReportPartFolder>/ComCareReports/DeploymentMain/RAC</TargetReportPartFolder>
+      </Options>
+    </Configuration>
+    <Configuration>
+      <Name>CCAz_DEV</Name>
+      <Options>
+        <OutputPath>bin</OutputPath>
+        <TargetServerVersion>SSRS2016</TargetServerVersion>
+        <TargetServerURL>http://az-sqlbi01/reportserver</TargetServerURL>
+        <TargetFolder>/ComCareReports/DeploymentMain/ComCareDEV/RAC</TargetFolder>
+        <TargetDataSourceFolder>/Data Sources</TargetDataSourceFolder>
+        <TargetDatasetFolder>/Data Sources</TargetDatasetFolder>
+        <TargetReportPartFolder>/ComCareReports/DeploymentMain/ComCareDEV/RAC</TargetReportPartFolder>
+      </Options>
+    </Configuration>
+    <Configuration>
+      <Name>CCAz_Train</Name>
+      <Options>
+        <OutputPath>bin</OutputPath>
+        <TargetServerVersion>SSRS2016</TargetServerVersion>
+        <TargetServerURL>http://az-sqlbi01/reportserver</TargetServerURL>
+        <TargetFolder>/ComCareReports/DeploymentMain/ComCareTrain/RAC</TargetFolder>
+        <TargetDataSourceFolder>/Data Sources</TargetDataSourceFolder>
+        <TargetDatasetFolder>/Data Sources</TargetDatasetFolder>
+        <TargetReportPartFolder>/ComCareReports/DeploymentMain/ComCareTrain/RAC</TargetReportPartFolder>
+      </Options>
+    </Configuration>
+    <Configuration>
+      <Name>CCAz_UAT</Name>
+      <Options>
+        <OutputPath>bin</OutputPath>
+        <TargetServerVersion>SSRS2016</TargetServerVersion>
+        <TargetServerURL>http://az-sqlbi01/reportserver</TargetServerURL>
+        <TargetFolder>/ComCareReports/DeploymentMain/ComCareUAT/RAC</TargetFolder>
+        <TargetDataSourceFolder>/Data Sources</TargetDataSourceFolder>
+        <TargetDatasetFolder>/Data Sources</TargetDatasetFolder>
+        <TargetReportPartFolder>/ComCareReports/DeploymentMain/ComCareUAT/RAC</TargetReportPartFolder>
       </Options>
     </Configuration>
   </Configurations>

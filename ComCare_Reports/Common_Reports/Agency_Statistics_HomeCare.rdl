@@ -6,7 +6,7 @@
     <DataSource Name="DataSource1">
       <DataSourceReference>ComCareProd Reports</DataSourceReference>
       <rd:SecurityType>None</rd:SecurityType>
-      <rd:DataSourceID>ff970172-11fd-461c-bea6-072a00b0308a</rd:DataSourceID>
+      <rd:DataSourceID>e6b31519-ce36-4574-b89e-509a5f7b85e9</rd:DataSourceID>
     </DataSource>
   </DataSources>
   <DataSets>
@@ -14,235 +14,404 @@
       <Query>
         <DataSourceName>DataSource1</DataSourceName>
         <QueryParameters>
-          <QueryParameter Name="@Org_Name">
-            <Value>=Parameters!Org_Name.Value</Value>
+          <QueryParameter Name="@Start_Date">
+            <Value>=Parameters!Start_Date.Value</Value>
           </QueryParameter>
-          <QueryParameter Name="@StartDate">
-            <Value>=Parameters!StartDate.Value</Value>
-          </QueryParameter>
-          <QueryParameter Name="@EndDate">
-            <Value>=Parameters!EndDate.Value</Value>
-          </QueryParameter>
-          <QueryParameter Name="@FunderProgram">
-            <Value>=Parameters!FunderProgram.Value</Value>
+          <QueryParameter Name="@End_Date">
+            <Value>=Parameters!End_Date.Value</Value>
           </QueryParameter>
         </QueryParameters>
-        <CommandText>Declare @ServiceCollection_Table Table (FunderProgram VarChar(256), Client_ID int, Service_ Varchar(256),Service_Type_Code VarChar(16),Service_From_Date date,Service_To_Date date)
-insert into @ServiceCollection_Table
-select distinct
-	JX004.Description 'FunderProgram'
-	,JX001.Client_ID
-	,JX003.Description 'Service'
-	,JX003.Service_Type_Code
-	,cast (JX002.From_Date as date )'Service_From_Date'
-	,cast (JX002.To_Date as date )'Service_To_Date'
-From
+        <CommandText>Declare @TaskTypeToProvClass Table (TaskTypeCode varchar(128), Provider_Class_Code VarChar(128))
+Insert into @TaskTypeToProvClass Values
+( 'AASIFS  ', 'CW' )
+,( 'AASSI   ', 'CW' )
+,( 'ACSAMPC ', 'CW' )
+,( 'ASCPC   ', 'CW' )
+,( 'ASCPCFS ', 'CW' )
+,( 'CMHCP   ', 'CW' )
+,( 'CSHCP   ', 'CW' )
+,( 'DAHCP   ', 'CW' )
+,( 'ENNU    ', 'EN' )
+,( 'ENNUFS  ', 'EN' )
+,( 'FSHCP   ', 'CW' )
+,( 'GARDHCP ', 'CW' )
+,( 'GHCDA   ', 'CW' )
+,( 'GHCDAFS ', 'CW' )
+,( 'GMHMA   ', 'MN' )
+,( 'HMHCP   ', 'CW' )
+,( 'HMOHMO  ', 'MN' )
+,( 'HMRHMA  ', 'MN' )
+,( 'MAHCP   ', 'CW' )
+,( 'MPHCP   ', 'CW' )
+,( 'NUENHCP ', 'EN' )
+,( 'NURNHCP ', 'RN' )
+,( 'PCHCP   ', 'CW' )
+,( 'RESDHCP ', 'CW' )
+,( 'RESNHCP ', 'CW' )
+,( 'SAHCP   ', 'CW' )
+,( 'SSHCP   ', 'CW' )
+,( 'USDA    ', 'CW' )
+,( 'USDAFS  ', 'CW' )
+,('NotDefined', null)
+,('TRHCP   ','CW')
+
+Declare @AgencyMapping Table (Provider_ID int,Agency VarChar(128))
+Insert into @AgencyMapping Values
+(10059513,'Ach')
+,(10057612,'Belmore Nursing')
+,(10057624,'Belmore Nursing')
+,(10057636,'Belmore Nursing')
+,(10057650,'Belmore Nursing')
+,(10058969,'Belmore Nursing')
+,(10058983,'Belmore Nursing')
+,(10058995,'Belmore Nursing')
+,(10059000,'Belmore Nursing')
+,(10059012,'Belmore Nursing')
+,(10059803,'Belmore Nursing')
+,(10061850,'Belmore Nursing')
+,(10064600,'Belmore Nursing')
+,(10065866,'Belmore Nursing')
+,(10125167,'Belmore Nursing')
+,(10057504,'Cunningham, Yvonne')
+,(10064094,'Datir, Swati')
+,(10059381,'Esar')
+,(10059393,'Esar')
+,(10066616,'Familly Home Support Services')
+,(10110572,'Greek Welfare Centre')
+,(10058866,'Green Thumbz')
+,(10058892,'Green Thumbz')
+,(10058904,'Green Thumbz')
+,(10058916,'Green Thumbz')
+,(10058933,'Green Thumbz')
+,(10061783,'Green Thumbz')
+,(10059750,'Helping hands')
+,(10059762,'Helping hands')
+,(10059777,'Helping hands')
+,(10059791,'Helping hands')
+,(10059525,'Hendercare')
+,(10059549,'Hendercare')
+,(10069644,'Hi Line Hardware Distributors')
+,(10086722,'Hi Line Hardware Distributors')
+,(10086734,'Hi Line Hardware Distributors')
+,(10086746,'Hi Line Hardware Distributors')
+,(10057888,'Home Instead')
+,(10059724,'Integrity Care')
+,(10059736,'Integrity Care')
+,(10061769,'Integrity Care')
+,(10106583,'Integrity Care')
+,(10108012,'Integrity Care')
+,(10058427,'Life Care')
+,(10059194,'Mediserve nursing')
+,(10059223,'Mediserve nursing')
+,(10091291,'Mediserve nursing')
+,(10101434,'Mobility Therapy Centre')
+,(10023482,'My Care Solutions')
+,(10057281,'My Care Solutions')
+,(10057293,'My Care Solutions')
+,(10057305,'My Care Solutions')
+,(10057322,'My Care Solutions')
+,(10057334,'My Care Solutions')
+,(10057569,'My Care Solutions')
+,(10057583,'My Care Solutions')
+,(10057595,'My Care Solutions')
+,(10057600,'My Care Solutions')
+,(10057770,'My Care Solutions')
+,(10057782,'My Care Solutions')
+,(10057823,'My Care Solutions')
+,(10057861,'My Care Solutions')
+,(10058300,'My Care Solutions')
+,(10058312,'My Care Solutions')
+,(10058324,'My Care Solutions')
+,(10058336,'My Care Solutions')
+,(10058350,'My Care Solutions')
+,(10058362,'My Care Solutions')
+,(10058377,'My Care Solutions')
+,(10058391,'My Care Solutions')
+,(10058403,'My Care Solutions')
+,(10058415,'My Care Solutions')
+,(10061625,'My Care Solutions')
+,(10061666,'My Care Solutions')
+,(10061877,'My Care Solutions')
+,(10062682,'My Care Solutions')
+,(10063502,'My Care Solutions')
+,(10065523,'My Care Solutions')
+,(10056977,'Nasa')
+,(10089745,'Nasa')
+,(10120715,'Noerth East Property')
+,(10058945,'Omega comunities')
+,(10060040,'SRF')
+,(10060055,'SRF')
+,(10060067,'SRF')
+,(10060134,'SRF')
+,(10060146,'SRF')
+,(10060172,'SRF')
+,(10062181,'SRF')
+,(10062193,'SRF')
+,(10062205,'SRF')
+,(10062222,'SRF')
+,(10062234,'SRF')
+,(10096783,'SRF')
+,(10096795,'SRF')
+,(10096800,'SRF')
+,(10096812,'SRF')
+,(10096824,'SRF')
+,(10101367,'Stockland Group')
+,(10104155,'Total Support Services')
+,(10059446,'Uniting Care Wesley')
+,(10059460,'Uniting Care Wesley')
+,(10059472,'Uniting Care Wesley')
+,(10059484,'Uniting Care Wesley')
+,(10059499,'Uniting Care Wesley')
+,(10059815,'Uniting Care Wesley')
+,(10061733,'Uniting Care Wesley')
+,(10061824,'Uniting Care Wesley')
+,(10059115,'Uniting Communities')
+,(10059127,'Uniting Communities')
+,(10059144,'Uniting Communities')
+,(10059156,'Uniting Communities')
+,(10059170,'Uniting Communities')
+,(10064360,'Uniting Communities')
+,(10064372,'Uniting Communities')
+,(10023506,'UnKnown')
+,(10023523,'UnKnown')
+,(10046661,'UnKnown')
+,(10046673,'UnKnown')
+,(10057662,'UnKnown')
+,(10060570,'UnKnown')
+,(10080062,'UnKnown')
+,(10080077,'UnKnown')
+,(10080906,'UnKnown')
+,(10082016,'UnKnown')
+,(10082033,'UnKnown')
+,(10082045,'UnKnown')
+,(10082069,'UnKnown')
+,(10088316,'UnKnown')
+,(10092847,'UnKnown')
+,(10092940,'UnKnown')
+,(10100166,'UnKnown')
+,(10107655,'UnKnown')
+,(10056962,'Your Nursing Agency')
+,(10059633,'Your Nursing Agency')
+,(10059669,'Your Nursing Agency')
+,(10059683,'Your Nursing Agency')
+,(10063792,'Your Nursing Agency')
+,(10063924,'Your Nursing Agency')
+,(10080894,'Your Nursing Agency')
+,(10080923,'Your Nursing Agency')
+,(10080935,'Your Nursing Agency')
+,(10081556,'Your Nursing Agency')
+,(10081570,'Your Nursing Agency')
+,(10084435,'Your Nursing Agency')
+,(10084447,'Your Nursing Agency')
+,(10092413,'Your Nursing Agency')
+,(10092449,'Your Nursing Agency')
+,(10092466,'Your Nursing Agency')
+,(10098684,'Your Nursing Agency')
+,(10119833,'Your Nursing Agency')
+,(10125061,'Your Nursing Agency')
+,(10057346,'Zenitas')
+,(10057360,'Zenitas')
+,(10057372,'Zenitas')
+,(10057384,'Zenitas')
+,(10057399,'Zenitas')
+,(10059036,'Zenitas')
+,(10059050,'Zenitas')
+,(10059062,'Zenitas')
+,(10059077,'Zenitas')
+,(10061745,'Zenitas')
+;with wT_BaseProviderDeets
+as
 (
-	Select Distinct
-			SD.Client_ID
-			,O.Organisation_Name as 'Organisation_Name'
-			--,FP.Description 'FunderProgram'
-		From dbo.Organisation O
-		Join dbo.Service_Provision SP on SP.Centre_ID = O.Organisation_ID
-		Join dbo.Address A on A.Suburb_ID = SP.Suburb_ID
-		Join dbo.Period_of_Residency PR on PR.Address_ID = A.Address_ID
-		Join dbo.Service_Delivery SD on SD.Client_ID = PR.Person_ID and SD.Service_Type_Code = SP.Service_Type_Code
-	Where 
-		PR.To_Date is null
-		and PR.Display_Indicator = 1
-		and O.Organisation_Name = @Org_Name
-)JX001
-
-Left outer Join dbo.Service_Delivery JX002 ON JX002.Client_ID = JX001.Client_ID
-Left outer Join dbo.Funding_Program JX004 on JX004.Funding_Prog_Code = JX002.Funding_Prog_Code
-Left outer Join dbo.Service_Type JX003 on JX003.Service_Type_Code = JX002.Service_Type_Code
-
-where 
-	1=1
---	and JX001.Client_ID = @Client_ID
-	and (JX002.To_Date is null or JX002.To_Date &gt; @StartDate)
-	and JX002.From_Date &lt; @EndDate
---	and JX004.Description in (select * from @FunderProgram)
-	and JX004.Description in (@FunderProgram)
-
-
-select distinct
-	JX001.FunderProgram
-	,JX001.Client_ID
-	,JX004.Provider_ID
-	,JX004.From_Date
-	,JX004.To_Date
-	,JX003.Preferred_Name +' '+JX003.Last_Name 'Client_Name'
-	,JX005.Preferred_Name +' '+JX005.Last_Name 'Provider_Name'
-	,JX001.Service_
-	,JX001.Service_Type_Code
-	,JX001.Service_From_Date
-	,JX001.Service_To_Date
-	,JX002.Task_Type_Code
-	,JX002.Period_Type_Code
-	,JX002.Period_Increment
-	,JX002.Duration
-	,JX002.Start_Date
-	,JX002.End_Date
-From @ServiceCollection_Table JX001
-Left outer Join
-(
+	Select
+	J101.Provider_ID
+	,J101.Provider_Classification
+	,J101.Agency
+	,J101.Organisation_Name
+	From
+	(
 	select distinct
-		J001.FunderProgram
-		,J001.Client_ID
-		,J001.Service_
-		,J001.Service_Type_Code
-		,J001.Service_From_Date
-		,J001.Service_To_Date
-		,J003.Task_Type_Code
-		,J003.Period_Type_Code
-		,J003.Period_Increment
-		,J003.Duration
-		,J003.Start_Date
-		,J003.End_Date
-		,J003.Schedule_Sequence_No
-	--	,ROW_NUMBER()over(partition by J001.FunderProgram, J001.Client_ID,J001.Service_Type_Code order by J003.Task_Type_Code Desc)
-	from @ServiceCollection_Table J001
-	Left outer Join dbo.Task_Type J002 on J002.Service_Type_Code = J001.Service_Type_Code
-	inner join dbo.Task_Schedule_Allocation J003 on J003.Client_ID = J001.Client_ID and J003.Task_Type_Code = J002.Task_Type_Code
-	where
-		1=1
-		and (J003.End_Date is null or J003.End_Date &gt; @StartDate)
-		and J003.Start_Date &lt; @EndDate
-
-)JX002 on 
-	JX002.Client_ID = JX001.Client_ID 
-	and JX002.Service_Type_Code = JX001.Service_Type_Code 
-	and JX002.FunderProgram = JX001.FunderProgram
-Left outer join dbo.Person JX003 on JX003.Person_ID = JX001.Client_ID
-
-Left outer join
-(
-	select distinct
-		J001.Schedule_Sequence_No
-		,J002.Provider_ID
-		,J002.From_Date
-		,J002.To_Date
-	--	,ROW_NUMBER()over(Partition by J001.Schedule_Sequence_No order by J002.From
-	from dbo.Round_Allocation J001
-	Left outer join dbo.Position_Allocation J002 on J002.Service_Prov_Position_ID = J001.Service_Prov_Position_ID
+		J001.Provider_ID
+		,J006.Description 'Provider_Classification'
+		,J002.Organisation_Name
+		,J003.Employee_No 'T1_Employee_ID'
+		,J004.Description 'Employee_Contract_Type'
+		,J005.Agency
+	from dbo.Provider_Contract J001
+	Left outer join dbo.Organisation J002 on J002.Organisation_ID = J001.Organisation_ID
+	Left outer join dbo.[Provider] J003 on J003.Provider_ID = J001.Provider_ID
+	Left outer join dbo.Provider_Contract_Type J004 on J004.Provider_Contract_Type_Code = J001.Provider_Contract_Type_Code
+	Left outer join dbo.Provider_Classification J006 on J006.Provider_Class_Code = J001.Provider_Class_Code
+	Left outer join @AgencyMapping J005 on J005.Provider_ID = J001.Provider_ID
 	Where
 		1=1
-		and @EndDate &gt; J002.From_Date
-		and @StartDate &lt; iif(J002.To_Date is null,Cast('2100-01-01'as date),J002.To_Date)
-)JX004 on JX002.Schedule_Sequence_No = JX004.Schedule_Sequence_No
+		and (J001.Effective_Date_To is null or J001.Effective_Date_To &gt; @Start_Date)
+		and J001.Effective_Date_From &lt; @End_Date
+		and J004.Description = 'Agency'
+		and J002.Organisation_Name != 'AnglicareSA Corporate Office'
+		and J002.Organisation_Name like 'Home Care%'
+	)J101
+	Left outer join dbo.Person J102 on J102.Person_ID = J101.Provider_ID
+)
+,wT_Activity_Work_Table
+as
+(
+	select distinct
+		J001.Provider_ID
+		,iif(J001.Task_Type_Code is null,'NotDefined',J001.Task_Type_Code)'Task_Type_Code'
+		,(SUM(J001.Activity_Duration)over(partition by J001.Provider_ID,J001.Task_Type_Code))/60.0 'Activity_Duration'
+		,Count(J001.Provider_ID)over(partition by J001.Provider_ID,J001.Task_Type_Code)'Activity_Count'
+	From dbo.Activity_Work_Table J001
+	inner join wT_BaseProviderDeets J002 on J002.Provider_ID = J001.Provider_ID
+	where
+	J001.Activity_Date between @Start_Date and @End_Date
+	and J001.Activity_Duration is not null
+)
+,wT_Wi_Activity
+as
+(
+	select distinct
+		J001.Provider_ID
+		,iif(J001.Schedule_Task_Type is null,'NotDefined',J001.Schedule_Task_Type)'Task_Type_Code'
+		,(SUM(J001.Provider_Duration)over(partition by J002.Provider_ID,J001.Schedule_Task_Type))/60.0'Provider_Duration'
+		,Count(J001.Provider_ID)over(partition by J002.Provider_ID,J001.Schedule_Task_Type)'Activity_Count'
+	From dbo.WI_Activity J001
+	inner join wT_BaseProviderDeets J002 on J002.Provider_ID = J001.Provider_ID
+	where
+	J001.Activity_Date between @Start_Date and @End_Date
+	and (J001.Event_Type = 15 or J001.Event_Type = 18)
+)
+/*
+,wT_Wi_Activity_RAC
+as
+(
+	select distinct
+	t1.Provider_ID
+	,SUM(t1.Provider_Duration)over(partition by t1.Provider_ID, t1.Provider_Class_Code)'Provider_Duration'
+	,SUM(t1.Activity_Count)over(partition by t1.Provider_ID, t1.Provider_Class_Code)'Activity_Count'
+	,t1.Provider_Class_Code
+	from
+	(
+		select distinct -- select * from dbo.WI_Activity where event_type = 12 and activity_Date between '2018-04-01' and '2018-04-30'
+			J001.Provider_ID
+	--		,J001.Generated_Provider_Code
+			,(SUM(J001.Provider_Duration)over(partition by J002.Provider_ID,J001.SPPID))/60.0'Provider_Duration'
+			,Count(J001.Provider_ID)over(partition by J002.Provider_ID,J001.SPPID)'Activity_Count'
+			,J003.Provider_Class_Code
+		From dbo.WI_Activity J001
+		inner join wT_BaseProviderDeets J002 on J002.Provider_ID = J001.Provider_ID
+		left outer join dbo.Service_Provision_Position J003 on J003.Service_Prov_Position_ID = J001.SPPID
+		where
+		J001.Activity_Date between @Start_Date and @End_Date
+		and (J001.Event_Type = 12 or J001.Event_Type = 18)
+	)t1
+)
+*/
+--select * from wT_Wi_Activity_RAC
+--/*
+,wT_Actual_Service
+as
+(
+	select distinct
+		J001.Provider_ID
+		,iif(J001.Task_Type_Code is null,'NotDefined',J001.Task_Type_Code)'Task_Type_Code'
+		,(SUM(J001.Visit_Duration)over(partition by J002.Provider_ID,J001.Task_Type_Code))/60.0 'Visit_Duration'
+		,Count(J001.Provider_ID)over(partition by J002.Provider_ID,J001.Task_Type_Code)'Activity_Count'
+	From dbo.Actual_Service J001
+	inner join wT_BaseProviderDeets J002 on J002.Provider_ID = J001.Provider_ID
+	where
+	J001.Visit_Date between @Start_Date and @End_Date
+)
 
-Left outer join dbo.Person JX005 on JX004.Provider_ID = JX005.Person_ID
 
-where 
-	JX002.Task_Type_Code is not null</CommandText>
+select distinct
+	J001.Provider_ID
+	,J001.Agency
+	,J001.Organisation_Name
+	,J002.Task_Type_Code
+	,J006.Provider_Class_Code
+	,J003.Activity_Count 'TimeSheet_Count'
+	,J003.Activity_Duration 'TimeSheet_Duration'
+--	,J003.Task_Type_Code 'TimeSheet_TaskType'
+	,J004.Activity_Count 'Schedule_Count'
+	,J004.Provider_Duration 'Schedule_Duration'
+--	,J004.Task_Type_Code 'Schedule_TaskType'
+	,J005.Activity_Count 'Actual_Count'
+	,J005.Visit_Duration 'Actual_Duration'
+--	,J005.Task_Type_Code 'Actual_TaskType'
+--	,J007.Provider_Class_Code
+--	,J007.Provider_Duration
+--	,J007.Activity_Count
+from wT_BaseProviderDeets J001
+inner join
+(
+	select
+		J1.Provider_ID
+		,J1.Task_Type_Code
+	from wT_Activity_Work_Table J1
+	union
+	select
+		J1.Provider_ID
+		,J1.Task_Type_Code
+	from wT_Wi_Activity J1
+	union
+	select
+		J1.Provider_ID
+		,J1.Task_Type_Code
+	from wT_Actual_Service J1
+
+)J002 on J002.Provider_ID = J001.Provider_ID
+
+left outer join wT_Activity_Work_Table J003 on J003.Provider_ID = J001.Provider_ID and J003.Task_Type_Code = J002.Task_Type_Code
+left outer join wT_Wi_Activity J004 on J004.Provider_ID = J001.Provider_ID and J004.Task_Type_Code = J002.Task_Type_Code
+left outer join wT_Actual_Service J005 on J005.Provider_ID = J001.Provider_ID and J005.Task_Type_Code = J002.Task_Type_Code
+left outer join @TaskTypeToProvClass J006 on J006.TaskTypeCode = J002.Task_Type_Code
+--left outer join wT_Wi_Activity_RAC J007 on J007.Provider_ID = J001.Provider_ID --and J007.Provider_Class_Code = J002.Task_Type_Code
+order by 3,2,4</CommandText>
       </Query>
       <Fields>
-        <Field Name="FunderProgram">
-          <DataField>FunderProgram</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-        <Field Name="Client_ID">
-          <DataField>Client_ID</DataField>
-          <rd:TypeName>System.Int32</rd:TypeName>
-        </Field>
         <Field Name="Provider_ID">
           <DataField>Provider_ID</DataField>
           <rd:TypeName>System.Int32</rd:TypeName>
         </Field>
-        <Field Name="Client_Name">
-          <DataField>Client_Name</DataField>
+        <Field Name="Agency">
+          <DataField>Agency</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
-        <Field Name="From_Date">
-          <DataField>From_Date</DataField>
-          <rd:TypeName>System.DateTime</rd:TypeName>
-        </Field>
-        <Field Name="Service_">
-          <DataField>Service_</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-        <Field Name="Service_Type_Code">
-          <DataField>Service_Type_Code</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-        <Field Name="To_Date">
-          <DataField>To_Date</DataField>
-          <rd:TypeName>System.DateTime</rd:TypeName>
-        </Field>
-        <Field Name="Service_From_Date">
-          <DataField>Service_From_Date</DataField>
-          <rd:TypeName>System.DateTime</rd:TypeName>
-        </Field>
-        <Field Name="Service_To_Date">
-          <DataField>Service_To_Date</DataField>
-          <rd:TypeName>System.DateTime</rd:TypeName>
-        </Field>
-        <Field Name="Provider_Name">
-          <DataField>Provider_Name</DataField>
+        <Field Name="Organisation_Name">
+          <DataField>Organisation_Name</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
         <Field Name="Task_Type_Code">
           <DataField>Task_Type_Code</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
-        <Field Name="Period_Type_Code">
-          <DataField>Period_Type_Code</DataField>
+        <Field Name="Provider_Class_Code">
+          <DataField>Provider_Class_Code</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
-        <Field Name="Period_Increment">
-          <DataField>Period_Increment</DataField>
-          <rd:TypeName>System.Int16</rd:TypeName>
+        <Field Name="TimeSheet_Count">
+          <DataField>TimeSheet_Count</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
         </Field>
-        <Field Name="Duration">
-          <DataField>Duration</DataField>
-          <rd:TypeName>System.Int16</rd:TypeName>
+        <Field Name="TimeSheet_Duration">
+          <DataField>TimeSheet_Duration</DataField>
+          <rd:TypeName>System.Decimal</rd:TypeName>
         </Field>
-        <Field Name="Start_Date">
-          <DataField>Start_Date</DataField>
-          <rd:TypeName>System.DateTime</rd:TypeName>
+        <Field Name="Schedule_Count">
+          <DataField>Schedule_Count</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
         </Field>
-        <Field Name="End_Date">
-          <DataField>End_Date</DataField>
-          <rd:TypeName>System.DateTime</rd:TypeName>
+        <Field Name="Schedule_Duration">
+          <DataField>Schedule_Duration</DataField>
+          <rd:TypeName>System.Decimal</rd:TypeName>
         </Field>
-      </Fields>
-    </DataSet>
-    <DataSet Name="DataSet2">
-      <Query>
-        <DataSourceName>DataSource1</DataSourceName>
-        <CommandText>select
-	J001.Description 'Funder_Program'
- from dbo.Funding_Program J001
-where 
-	1=1
-	and 
-	(
-		J001.Description like 'HCP %'
-		or J001.Description like 'CHSP %'
-		or J001.Description = 'Onkaparinga Council'
-		or J001.Description = 'Aged Care Network - Resthaven'
-		or J001.Description = 'Fee for Service'
-		or J001.Description = 'Unfunded'
-	)</CommandText>
-      </Query>
-      <Fields>
-        <Field Name="Funder_Program">
-          <DataField>Funder_Program</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
+        <Field Name="Actual_Count">
+          <DataField>Actual_Count</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
         </Field>
-      </Fields>
-    </DataSet>
-    <DataSet Name="DataSet3">
-      <Query>
-        <DataSourceName>DataSource1</DataSourceName>
-        <CommandText>select Organisation_name from dbo.Organisation where
-Organisation_name like 'Home Care %'</CommandText>
-      </Query>
-      <Fields>
-        <Field Name="Organisation_name">
-          <DataField>Organisation_name</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
+        <Field Name="Actual_Duration">
+          <DataField>Actual_Duration</DataField>
+          <rd:TypeName>System.Decimal</rd:TypeName>
         </Field>
       </Fields>
     </DataSet>
@@ -255,46 +424,34 @@ Organisation_name like 'Home Care %'</CommandText>
             <TablixBody>
               <TablixColumns>
                 <TablixColumn>
-                  <Width>6.57458cm</Width>
-                </TablixColumn>
-                <TablixColumn>
                   <Width>2.5cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>5.675cm</Width>
+                  <Width>5.9925cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>2.5cm</Width>
+                  <Width>7.39479cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>5.675cm</Width>
+                  <Width>2.68521cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>5.68792cm</Width>
-                </TablixColumn>
-                <TablixColumn>
-                  <Width>2.10313cm</Width>
+                  <Width>2.34126cm</Width>
                 </TablixColumn>
                 <TablixColumn>
                   <Width>2.23542cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>2.1825cm</Width>
+                  <Width>2.5cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>2.12958cm</Width>
-                </TablixColumn>
-                <TablixColumn>
-                  <Width>2.57938cm</Width>
-                </TablixColumn>
-                <TablixColumn>
-                  <Width>1.89146cm</Width>
-                </TablixColumn>
-                <TablixColumn>
-                  <Width>1.73271cm</Width>
+                  <Width>1.865cm</Width>
                 </TablixColumn>
                 <TablixColumn>
                   <Width>2.5cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1.70625cm</Width>
                 </TablixColumn>
                 <TablixColumn>
                   <Width>2.5cm</Width>
@@ -302,7 +459,97 @@ Organisation_name like 'Home Care %'</CommandText>
               </TablixColumns>
               <TablixRows>
                 <TablixRow>
-                  <Height>1.26146cm</Height>
+                  <Height>2.1525cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox23">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Agency Statistics Home Care</Value>
+                                  <Style>
+                                    <FontSize>16pt</FontSize>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>#004b8e</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>From: </Value>
+                                  <Style />
+                                </TextRun>
+                                <TextRun>
+                                  <Value>=format(Parameters!Start_Date.Value,"dd/MM/yyy")</Value>
+                                  <Style />
+                                </TextRun>
+                                <TextRun>
+                                  <Value> to </Value>
+                                  <Style />
+                                </TextRun>
+                                <TextRun>
+                                  <Value>=format(Parameters!End_Date.Value,"dd/MM/yyy")</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Created on </Value>
+                                  <Style />
+                                </TextRun>
+                                <TextRun>
+                                  <Value>=format(today(),"dd/MM/yyy")</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox23</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                        <ColSpan>11</ColSpan>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                    <TablixCell />
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>1.2cm</Height>
                   <TablixCells>
                     <TablixCell>
                       <CellContents>
@@ -313,7 +560,7 @@ Organisation_name like 'Home Care %'</CommandText>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Funder Program</Value>
+                                  <Value>Provider ID</Value>
                                   <Style>
                                     <FontWeight>Bold</FontWeight>
                                     <Color>White</Color>
@@ -347,7 +594,7 @@ Organisation_name like 'Home Care %'</CommandText>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Client ID</Value>
+                                  <Value>Agency</Value>
                                   <Style>
                                     <FontWeight>Bold</FontWeight>
                                     <Color>White</Color>
@@ -381,7 +628,7 @@ Organisation_name like 'Home Care %'</CommandText>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Client Name</Value>
+                                  <Value>Organisation Name</Value>
                                   <Style>
                                     <FontWeight>Bold</FontWeight>
                                     <Color>White</Color>
@@ -408,211 +655,7 @@ Organisation_name like 'Home Care %'</CommandText>
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Textbox2">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>Provider ID</Value>
-                                  <Style>
-                                    <FontWeight>Bold</FontWeight>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox2</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox6">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>Provider Name</Value>
-                                  <Style>
-                                    <FontWeight>Bold</FontWeight>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox6</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox10">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>Service </Value>
-                                  <Style>
-                                    <FontWeight>Bold</FontWeight>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox10</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox12">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>Service Type Code</Value>
-                                  <Style>
-                                    <FontWeight>Bold</FontWeight>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox12</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox14">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>Service From Date</Value>
-                                  <Style>
-                                    <FontWeight>Bold</FontWeight>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox14</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox16">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>Service To Date</Value>
-                                  <Style>
-                                    <FontWeight>Bold</FontWeight>
-                                    <Color>White</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Textbox16</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <BackgroundColor>#004b8e</BackgroundColor>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Textbox18">
+                        <Textbox Name="Textbox7">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
@@ -629,7 +672,7 @@ Organisation_name like 'Home Care %'</CommandText>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Textbox18</rd:DefaultName>
+                          <rd:DefaultName>Textbox7</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -646,14 +689,14 @@ Organisation_name like 'Home Care %'</CommandText>
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Textbox20">
+                        <Textbox Name="Textbox9">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Period Type Code</Value>
+                                  <Value>Provider Class Code</Value>
                                   <Style>
                                     <FontWeight>Bold</FontWeight>
                                     <Color>White</Color>
@@ -663,7 +706,7 @@ Organisation_name like 'Home Care %'</CommandText>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Textbox20</rd:DefaultName>
+                          <rd:DefaultName>Textbox9</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -680,14 +723,14 @@ Organisation_name like 'Home Care %'</CommandText>
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Textbox22">
+                        <Textbox Name="Textbox11">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Period Increment</Value>
+                                  <Value>Time Sheet Count</Value>
                                   <Style>
                                     <FontWeight>Bold</FontWeight>
                                     <Color>White</Color>
@@ -697,7 +740,7 @@ Organisation_name like 'Home Care %'</CommandText>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Textbox22</rd:DefaultName>
+                          <rd:DefaultName>Textbox11</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -714,14 +757,14 @@ Organisation_name like 'Home Care %'</CommandText>
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Textbox24">
+                        <Textbox Name="Textbox13">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Duration (m)</Value>
+                                  <Value>Time Sheet Duration (h)</Value>
                                   <Style>
                                     <FontWeight>Bold</FontWeight>
                                     <Color>White</Color>
@@ -731,7 +774,7 @@ Organisation_name like 'Home Care %'</CommandText>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Textbox24</rd:DefaultName>
+                          <rd:DefaultName>Textbox13</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -748,14 +791,14 @@ Organisation_name like 'Home Care %'</CommandText>
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Textbox26">
+                        <Textbox Name="Textbox15">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Start Date</Value>
+                                  <Value>Schedule Count</Value>
                                   <Style>
                                     <FontWeight>Bold</FontWeight>
                                     <Color>White</Color>
@@ -765,7 +808,7 @@ Organisation_name like 'Home Care %'</CommandText>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Textbox26</rd:DefaultName>
+                          <rd:DefaultName>Textbox15</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -782,14 +825,14 @@ Organisation_name like 'Home Care %'</CommandText>
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Textbox28">
+                        <Textbox Name="Textbox17">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>End Date</Value>
+                                  <Value>Schedule Duration (h)</Value>
                                   <Style>
                                     <FontWeight>Bold</FontWeight>
                                     <Color>White</Color>
@@ -799,7 +842,75 @@ Organisation_name like 'Home Care %'</CommandText>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Textbox28</rd:DefaultName>
+                          <rd:DefaultName>Textbox17</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox19">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Actual Count</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox19</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox21">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Actual Duration (h)</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox21</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -819,96 +930,6 @@ Organisation_name like 'Home Care %'</CommandText>
                 <TablixRow>
                   <Height>0.6cm</Height>
                   <TablixCells>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="FunderProgram">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=Fields!FunderProgram.Value</Value>
-                                  <Style />
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>FunderProgram</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Client_ID">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=Fields!Client_ID.Value</Value>
-                                  <Style />
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Client_ID</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Client_Name">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=Fields!Client_Name.Value</Value>
-                                  <Style />
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Client_Name</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
                     <TablixCell>
                       <CellContents>
                         <Textbox Name="Provider_ID">
@@ -941,21 +962,21 @@ Organisation_name like 'Home Care %'</CommandText>
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Provider_Name">
+                        <Textbox Name="Agency">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>=Fields!Provider_Name.Value</Value>
+                                  <Value>=Fields!Agency.Value</Value>
                                   <Style />
                                 </TextRun>
                               </TextRuns>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Provider_Name</rd:DefaultName>
+                          <rd:DefaultName>Agency</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -971,115 +992,21 @@ Organisation_name like 'Home Care %'</CommandText>
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Service_">
+                        <Textbox Name="Organisation_Name">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>=Fields!Service_.Value</Value>
+                                  <Value>=Fields!Organisation_Name.Value</Value>
                                   <Style />
                                 </TextRun>
                               </TextRuns>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Service_</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Service_Type_Code">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=Fields!Service_Type_Code.Value</Value>
-                                  <Style />
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Service_Type_Code</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Service_From_Date">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=Fields!Service_From_Date.Value</Value>
-                                  <Style>
-                                    <Format>d</Format>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Service_From_Date</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Service_To_Date">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=Fields!Service_To_Date.Value</Value>
-                                  <Style>
-                                    <Format>d</Format>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Service_To_Date</rd:DefaultName>
+                          <rd:DefaultName>Organisation_Name</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -1125,21 +1052,21 @@ Organisation_name like 'Home Care %'</CommandText>
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Period_Type_Code">
+                        <Textbox Name="Provider_Class_Code">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>=Fields!Period_Type_Code.Value</Value>
+                                  <Value>=Fields!Provider_Class_Code.Value</Value>
                                   <Style />
                                 </TextRun>
                               </TextRuns>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Period_Type_Code</rd:DefaultName>
+                          <rd:DefaultName>Provider_Class_Code</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -1155,21 +1082,21 @@ Organisation_name like 'Home Care %'</CommandText>
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Period_Increment">
+                        <Textbox Name="TimeSheet_Count">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>=Fields!Period_Increment.Value</Value>
+                                  <Value>=Fields!TimeSheet_Count.Value</Value>
                                   <Style />
                                 </TextRun>
                               </TextRuns>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Period_Increment</rd:DefaultName>
+                          <rd:DefaultName>TimeSheet_Count</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -1185,53 +1112,23 @@ Organisation_name like 'Home Care %'</CommandText>
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Duration">
+                        <Textbox Name="TimeSheet_Duration">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>=Fields!Duration.Value</Value>
-                                  <Style />
-                                </TextRun>
-                              </TextRuns>
-                              <Style />
-                            </Paragraph>
-                          </Paragraphs>
-                          <rd:DefaultName>Duration</rd:DefaultName>
-                          <Style>
-                            <Border>
-                              <Color>LightGrey</Color>
-                              <Style>Solid</Style>
-                            </Border>
-                            <PaddingLeft>2pt</PaddingLeft>
-                            <PaddingRight>2pt</PaddingRight>
-                            <PaddingTop>2pt</PaddingTop>
-                            <PaddingBottom>2pt</PaddingBottom>
-                          </Style>
-                        </Textbox>
-                      </CellContents>
-                    </TablixCell>
-                    <TablixCell>
-                      <CellContents>
-                        <Textbox Name="Start_Date">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=Fields!Start_Date.Value</Value>
+                                  <Value>=Fields!TimeSheet_Duration.Value</Value>
                                   <Style>
-                                    <Format>d</Format>
+                                    <Format>0.00</Format>
                                   </Style>
                                 </TextRun>
                               </TextRuns>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Start_Date</rd:DefaultName>
+                          <rd:DefaultName>TimeSheet_Duration</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -1247,23 +1144,115 @@ Organisation_name like 'Home Care %'</CommandText>
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="End_Date">
+                        <Textbox Name="Schedule_Count">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>=Fields!End_Date.Value</Value>
+                                  <Value>=Fields!Schedule_Count.Value</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Schedule_Count</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Schedule_Duration">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Schedule_Duration.Value</Value>
                                   <Style>
-                                    <Format>d</Format>
+                                    <Format>0.00</Format>
                                   </Style>
                                 </TextRun>
                               </TextRuns>
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>End_Date</rd:DefaultName>
+                          <rd:DefaultName>Schedule_Duration</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Actual_Count">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Actual_Count.Value</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Actual_Count</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Actual_Duration">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Actual_Duration.Value</Value>
+                                  <Style>
+                                    <Format>0.00</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Actual_Duration</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -1294,14 +1283,13 @@ Organisation_name like 'Home Care %'</CommandText>
                 <TablixMember />
                 <TablixMember />
                 <TablixMember />
-                <TablixMember />
-                <TablixMember />
-                <TablixMember />
-                <TablixMember />
               </TablixMembers>
             </TablixColumnHierarchy>
             <TablixRowHierarchy>
               <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                </TablixMember>
                 <TablixMember>
                   <KeepWithGroup>After</KeepWithGroup>
                 </TablixMember>
@@ -1311,8 +1299,8 @@ Organisation_name like 'Home Care %'</CommandText>
               </TablixMembers>
             </TablixRowHierarchy>
             <DataSetName>DataSet1</DataSetName>
-            <Height>1.86146cm</Height>
-            <Width>48.46668cm</Width>
+            <Height>3.9525cm</Height>
+            <Width>34.22043cm</Width>
             <Style>
               <Border>
                 <Style>None</Style>
@@ -1320,10 +1308,10 @@ Organisation_name like 'Home Care %'</CommandText>
             </Style>
           </Tablix>
         </ReportItems>
-        <Height>0.73286in</Height>
+        <Height>1.5561in</Height>
         <Style />
       </Body>
-      <Width>19.08137in</Width>
+      <Width>13.47261in</Width>
       <Page>
         <PageHeight>29.7cm</PageHeight>
         <PageWidth>21cm</PageWidth>
@@ -1337,84 +1325,33 @@ Organisation_name like 'Home Care %'</CommandText>
     </ReportSection>
   </ReportSections>
   <ReportParameters>
-    <ReportParameter Name="StartDate">
+    <ReportParameter Name="Start_Date">
       <DataType>DateTime</DataType>
-      <DefaultValue>
-        <Values>
-          <Value>=today()</Value>
-        </Values>
-      </DefaultValue>
       <Prompt>Start Date</Prompt>
     </ReportParameter>
-    <ReportParameter Name="EndDate">
+    <ReportParameter Name="End_Date">
       <DataType>DateTime</DataType>
-      <DefaultValue>
-        <Values>
-          <Value>=DateAdd(DateInterval.Day,28,today())</Value>
-        </Values>
-      </DefaultValue>
       <Prompt>End Date</Prompt>
-    </ReportParameter>
-    <ReportParameter Name="Org_Name">
-      <DataType>String</DataType>
-      <Prompt>Org Name</Prompt>
-      <ValidValues>
-        <DataSetReference>
-          <DataSetName>DataSet3</DataSetName>
-          <ValueField>Organisation_name</ValueField>
-          <LabelField>Organisation_name</LabelField>
-        </DataSetReference>
-      </ValidValues>
-      <UsedInQuery>True</UsedInQuery>
-    </ReportParameter>
-    <ReportParameter Name="FunderProgram">
-      <DataType>String</DataType>
-      <DefaultValue>
-        <DataSetReference>
-          <DataSetName>DataSet2</DataSetName>
-          <ValueField>Funder_Program</ValueField>
-        </DataSetReference>
-      </DefaultValue>
-      <Prompt>Funder Program</Prompt>
-      <ValidValues>
-        <DataSetReference>
-          <DataSetName>DataSet2</DataSetName>
-          <ValueField>Funder_Program</ValueField>
-          <LabelField>Funder_Program</LabelField>
-        </DataSetReference>
-      </ValidValues>
-      <MultiValue>true</MultiValue>
     </ReportParameter>
   </ReportParameters>
   <ReportParametersLayout>
     <GridLayoutDefinition>
-      <NumberOfColumns>3</NumberOfColumns>
+      <NumberOfColumns>4</NumberOfColumns>
       <NumberOfRows>2</NumberOfRows>
       <CellDefinitions>
         <CellDefinition>
           <ColumnIndex>0</ColumnIndex>
           <RowIndex>0</RowIndex>
-          <ParameterName>StartDate</ParameterName>
+          <ParameterName>Start_Date</ParameterName>
         </CellDefinition>
         <CellDefinition>
           <ColumnIndex>1</ColumnIndex>
           <RowIndex>0</RowIndex>
-          <ParameterName>EndDate</ParameterName>
-        </CellDefinition>
-        <CellDefinition>
-          <ColumnIndex>2</ColumnIndex>
-          <RowIndex>0</RowIndex>
-          <ParameterName>Org_Name</ParameterName>
-        </CellDefinition>
-        <CellDefinition>
-          <ColumnIndex>0</ColumnIndex>
-          <RowIndex>1</RowIndex>
-          <ParameterName>FunderProgram</ParameterName>
+          <ParameterName>End_Date</ParameterName>
         </CellDefinition>
       </CellDefinitions>
     </GridLayoutDefinition>
   </ReportParametersLayout>
-  <Language>en-au</Language>
   <rd:ReportUnitType>Cm</rd:ReportUnitType>
-  <rd:ReportID>adf6ee65-9f38-44ad-8104-f83bf5e1dbec</rd:ReportID>
+  <rd:ReportID>e9f5613b-1f10-4cf8-8b90-2c9678ecef3b</rd:ReportID>
 </Report>

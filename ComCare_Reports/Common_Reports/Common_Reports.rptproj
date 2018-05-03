@@ -23,13 +23,12 @@
       <FullPath>ComCareUAT Reports.rds</FullPath>
     </ProjectItem>
   </DataSources>
-  <DataSets>
-    <ProjectItem>
-      <Name>DataSet1.rsd</Name>
-      <FullPath>DataSet1.rsd</FullPath>
-    </ProjectItem>
-  </DataSets>
+  <DataSets />
   <Reports>
+    <ProjectItem>
+      <Name>Agency_Statistics_HomeCare.rdl</Name>
+      <FullPath>Agency_Statistics_HomeCare.rdl</FullPath>
+    </ProjectItem>
     <ProjectItem>
       <Name>ComCare_ClientTransactionOperatingAccount.rdl</Name>
       <FullPath>ComCare_ClientTransactionOperatingAccount.rdl</FullPath>
@@ -59,6 +58,10 @@
       <FullPath>Disability_TimeSheet_PerProviderPerPeriod_Vs_T1.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
+      <Name>Disability_TimeSheet_PerProviderPerPeriod_Vs_T1_ShortView.rdl</Name>
+      <FullPath>Disability_TimeSheet_PerProviderPerPeriod_Vs_T1_ShortView.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
       <Name>TimeSheet_PerProviderPerDay_Vs_T1.rdl</Name>
       <FullPath>TimeSheet_PerProviderPerDay_Vs_T1.rdl</FullPath>
     </ProjectItem>
@@ -71,8 +74,8 @@
       <FullPath>VisitTime_Vs_ContractDates.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>Disability_TimeSheet_PerProviderPerPeriod_Vs_T1_ShortView.rdl</Name>
-      <FullPath>Disability_TimeSheet_PerProviderPerPeriod_Vs_T1_ShortView.rdl</FullPath>
+      <Name>Agency_Statistics_RAC.rdl</Name>
+      <FullPath>Agency_Statistics_RAC.rdl</FullPath>
     </ProjectItem>
   </Reports>
   <Configurations>
@@ -161,6 +164,54 @@
         <TargetDataSourceFolder>/</TargetDataSourceFolder>
         <TargetDatasetFolder>/</TargetDatasetFolder>
         <TargetReportPartFolder>/ComCare/DeploymentMain/ComCareDEV</TargetReportPartFolder>
+      </Options>
+    </Configuration>
+    <Configuration>
+      <Name>CCAz_Prod</Name>
+      <Options>
+        <OutputPath>bin</OutputPath>
+        <TargetServerVersion>SSRS2016</TargetServerVersion>
+        <TargetServerURL>http://az-sqlbi01/reportserver</TargetServerURL>
+        <TargetFolder>/ComCareReports/DeploymentMain</TargetFolder>
+        <TargetDataSourceFolder>/Data Sources</TargetDataSourceFolder>
+        <TargetDatasetFolder>/Data Sources</TargetDatasetFolder>
+        <TargetReportPartFolder>/ComCareReports/DeploymentMain</TargetReportPartFolder>
+      </Options>
+    </Configuration>
+    <Configuration>
+      <Name>CCAz_DEV</Name>
+      <Options>
+        <OutputPath>bin</OutputPath>
+        <TargetServerVersion>SSRS2016</TargetServerVersion>
+        <TargetServerURL>http://az-sqlbi01/reportserver</TargetServerURL>
+        <TargetFolder>/ComCareReports/DeploymentMain/ComCareDEV</TargetFolder>
+        <TargetDataSourceFolder>/Data Sources</TargetDataSourceFolder>
+        <TargetDatasetFolder>/Data Sources</TargetDatasetFolder>
+        <TargetReportPartFolder>/ComCareReports/DeploymentMain/ComCareDEV</TargetReportPartFolder>
+      </Options>
+    </Configuration>
+    <Configuration>
+      <Name>CCAz_Train</Name>
+      <Options>
+        <OutputPath>bin</OutputPath>
+        <TargetServerVersion>SSRS2016</TargetServerVersion>
+        <TargetServerURL>http://az-sqlbi01/reportserver</TargetServerURL>
+        <TargetFolder>/ComCareReports/DeploymentMain/ComCareTrain</TargetFolder>
+        <TargetDataSourceFolder>/Data Sources</TargetDataSourceFolder>
+        <TargetDatasetFolder>/Data Sources</TargetDatasetFolder>
+        <TargetReportPartFolder>/ComCareReports/DeploymentMain/ComCareTrain</TargetReportPartFolder>
+      </Options>
+    </Configuration>
+    <Configuration>
+      <Name>CCAz_UAT</Name>
+      <Options>
+        <OutputPath>bin</OutputPath>
+        <TargetServerVersion>SSRS2016</TargetServerVersion>
+        <TargetServerURL>http://az-sqlbi01/reportserver</TargetServerURL>
+        <TargetFolder>/ComCareReports/DeploymentMain/ComCareUAT</TargetFolder>
+        <TargetDataSourceFolder>/Data Sources</TargetDataSourceFolder>
+        <TargetDatasetFolder>/Data Sources</TargetDatasetFolder>
+        <TargetReportPartFolder>/ComCareReports/DeploymentMain/ComCareUAT</TargetReportPartFolder>
       </Options>
     </Configuration>
   </Configurations>
