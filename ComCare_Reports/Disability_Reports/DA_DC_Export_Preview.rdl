@@ -20,12 +20,6 @@
           <QueryParameter Name="@EndDate">
             <Value>=Parameters!EndDate.Value</Value>
           </QueryParameter>
-          <QueryParameter Name="@FiltType">
-            <Value>=Parameters!FiltType.Value</Value>
-          </QueryParameter>
-          <QueryParameter Name="@Min_Date">
-            <Value>=Parameters!Min_Date.Value</Value>
-          </QueryParameter>
           <QueryParameter Name="@DuplicateChargeItem">
             <Value>=Parameters!DuplicateChargeItem.Value</Value>
           </QueryParameter>
@@ -34,6 +28,12 @@
           </QueryParameter>
           <QueryParameter Name="@ContractType">
             <Value>=Parameters!ContractType.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@FiltType">
+            <Value>=Parameters!FiltType.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Min_Date">
+            <Value>=Parameters!Min_Date.Value</Value>
           </QueryParameter>
         </QueryParameters>
         <CommandText>declare @CareModel_ID int = 6
@@ -98,6 +98,8 @@ select
 	,t2.AdjFix
 	--,t2.Billable_Hours
 	,null 'GST_Type'
+	,t2.Billing_GL_Account_Code
+	,t2.Billed_To_ID
 from
 (
 	select 
@@ -174,6 +176,8 @@ from
 			,J033.Round_Allocation_ID
 			,J001.Allocated_Task_ID
 			,null 'GST Free'
+			,J555.Billing_GL_Account_Code----------------------------------new
+			,J009.Billed_To_ID
 		from 
 		(
 			select 
@@ -263,6 +267,8 @@ from
 				,JX008.Organisation_Name
 				,JX010.Effective_From_Date
 				,JX010.Effective_to_Date
+				,JX002.Funder_Contract_ID---------new
+				,iif(JX007.Person_ID is null,JX007.Organisation_ID,JX007.Person_ID) 'Billed_To_ID'
 			from dbo.Service_Delivery JX001
 			inner join dbo.FC_Contract_Area_Product JX002 on JX002.Funding_Prog_Code = JX001.Funding_Prog_Code
 			inner join dbo.Task_Type JX003 on JX003.Service_Type_Code = JX001.Service_Type_Code
@@ -294,6 +300,8 @@ from
 		left outer join dbo.FC_Contract_Area_Product J010 ON J010.CAP_ID = J001.CAP_ID
 		left outer join dbo.FC_Funder_Contract J011 ON J011.Funder_Contract_ID = J010.Funder_Contract_ID
 		Left outer join dbo.Visit_Cancel_Reason J014 on J014.Visit_Cancel_Reason_ID = J001.Visit_Cancel_Reason_ID
+
+		Left outer join dbo.FC_Funder_Contract_GL_Mapping J555 on J555.Funding_Care_Model_ID = J011.Funding_Care_Model_ID and J555.Funder_Contract_ID = J009.Funder_Contract_ID---------new
 
 		Left outer join dbo.Person J222 on J222.Person_ID = J001.Client_ID
 		Left outer join dbo.Person J333 on J333.Person_ID = J001.Provider_ID
@@ -360,6 +368,8 @@ select * from
 		,0 'lateData'
 		,0 'AdjFix'
 		,null 'GST_Type'
+		,null 'Billing_GL_Account_Code'
+		,null 'Billed_To_ID'
 	from
 	(
 		select 
@@ -471,6 +481,8 @@ select
 	,T4.lateData
 	,T4.AdjFix
 	,T4.GST_Type
+	,T4.Billing_GL_Account_Code
+	,T4.Billed_To_ID
 --	,T4.RN
 from
 (
@@ -500,6 +512,8 @@ from
 		,IIF(cast(J010.Effective_From_Date AS date) between @StartDate and @EndDate,0,1) 'lateData'
 		,J010.Client_CB_Adj_ID 'AdjFix'
 		,J016.Description 'GST_Type'
+		,J555.Billing_GL_Account_Code
+		,J001.Billed_To_ID
 		,ROW_NUMBER()over(partition by J010.Client_CB_Adj_ID order by J001.Client_ID)'RN'
 	from
 	(
@@ -509,6 +523,7 @@ from
 			,CCB.Funder_Contract_ID
 			,CBG.Description 'ContractBillingGroup'
 			,Org.Organisation_Name
+			,iif(CCBS.Person_ID is null,CCBS.Organisation_ID,CCBS.Person_ID) 'Billed_To_ID'
 		from dbo.FB_Client_Contract_Billing CCB
 			LEFT OUTER JOIN dbo.FB_Contract_Billing_Group CBG on CBG.Contract_Billing_Group_ID = CCB.Contract_Billing_Group_ID
 			LEFT OUTER JOIN dbo.FB_Client_Contract_Billed_To CCBT on CCBT.Client_CB_ID = CCB.Client_CB_ID
@@ -529,6 +544,8 @@ from
 	left outer join dbo.GST_Type J016 on J016.GST_Type_Code = J010.GST_Type_Code
 
 	Left outer join dbo.Person J222 on J222.Person_ID = J001.Client_ID
+
+	Left outer join dbo.FC_Funder_Contract_GL_Mapping J555 on J555.Funding_Care_Model_ID = J012.Funding_Care_Model_ID and J555.Funder_Contract_ID = J001.Funder_Contract_ID---------new
 
 	Where 
 		1=1
@@ -618,7 +635,7 @@ order by
           <DataField>Amount</DataField>
           <rd:TypeName>System.Decimal</rd:TypeName>
         </Field>
-        <Field Name="Funding_type">
+        <Field Name="Funding_Type">
           <DataField>Funding_Type</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
@@ -645,6 +662,14 @@ order by
         <Field Name="GST_Type">
           <DataField>GST_Type</DataField>
           <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Billing_GL_Account_Code">
+          <DataField>Billing_GL_Account_Code</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Billed_To_ID">
+          <DataField>Billed_To_ID</DataField>
+          <rd:TypeName>System.Decimal</rd:TypeName>
         </Field>
       </Fields>
     </DataSet>
@@ -759,6 +784,12 @@ select * from @BillContFilt</CommandText>
                 </TablixColumn>
                 <TablixColumn>
                   <Width>7.24896cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>3.53126cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>2.5cm</Width>
                 </TablixColumn>
                 <TablixColumn>
                   <Width>0.33042cm</Width>
@@ -1467,6 +1498,84 @@ select * from @BillContFilt</CommandText>
                             </Paragraph>
                           </Paragraphs>
                           <rd:DefaultName>Textbox10</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Style>Solid</Style>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Style>None</Style>
+                            </BottomBorder>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox44">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value />
+                                  <Style>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox44</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Style>Solid</Style>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Style>None</Style>
+                            </BottomBorder>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox47">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value />
+                                  <Style>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox47</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -2247,6 +2356,79 @@ select * from @BillContFilt</CommandText>
                             </Paragraph>
                           </Paragraphs>
                           <rd:DefaultName>Textbox12</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Style>None</Style>
+                            </TopBorder>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox45">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>GL Account Code
+(Line Ledger Account)</Value>
+                                  <Style>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox45</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Style>None</Style>
+                            </TopBorder>
+                            <BackgroundColor>#004b8e</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox48">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Billed To ID</Value>
+                                  <Style>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox48</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -3138,14 +3320,14 @@ Switch
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Funding_type">
+                        <Textbox Name="Funding_Type">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>=Fields!Funding_type.Value</Value>
+                                  <Value>=Fields!Funding_Type.Value</Value>
                                   <Style>
                                     <Color>=
 Switch
@@ -3163,7 +3345,7 @@ Switch
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Funding_type</rd:DefaultName>
+                          <rd:DefaultName>Funding_Type</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -3206,6 +3388,92 @@ Switch
                             </Paragraph>
                           </Paragraphs>
                           <rd:DefaultName>FundingProgram</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Billing_GL_Account_Code">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Billing_GL_Account_Code.Value</Value>
+                                  <Style>
+                                    <Format>0;(0)</Format>
+                                    <Color>=
+Switch
+(
+	InStr(Fields!FundingProgram.Value ,"DCSI")&gt;0,"Green"
+	,Fields!Has_Charge_Item.Value = 2 ,"Blue"
+	,Fields!Has_Charge_Item.Value = 1,"Black"
+	,Fields!Has_Charge_Item.Value = 0,"Red"
+	,Fields!Has_Charge_Item.Value = 6,"Gray"
+	
+)</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Billing_GL_Account_Code</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>= Iif ( RunningValue ( Fields!Client_ID.Value , Count , "DataSet1") Mod 2 = 0, "#e4eefc", "White")</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Billed_To_ID">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Billed_To_ID.Value</Value>
+                                  <Style>
+                                    <Format>0;(0)</Format>
+                                    <Color>=
+Switch
+(
+	InStr(Fields!FundingProgram.Value ,"DCSI")&gt;0,"Green"
+	,Fields!Has_Charge_Item.Value = 2 ,"Blue"
+	,Fields!Has_Charge_Item.Value = 1,"Black"
+	,Fields!Has_Charge_Item.Value = 0,"Red"
+	,Fields!Has_Charge_Item.Value = 6,"Gray"
+	
+)</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Billed_To_ID</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -3289,6 +3557,8 @@ Switch
                 <TablixMember />
                 <TablixMember />
                 <TablixMember />
+                <TablixMember />
+                <TablixMember />
               </TablixMembers>
             </TablixColumnHierarchy>
             <TablixRowHierarchy>
@@ -3308,7 +3578,7 @@ Switch
                         <FilterValues>
                           <FilterValue DataType="Boolean">=iif
 	(
-		inStr(Join(Parameters!BillingContractFilter.Value,","),Fields!Funding_type.Value)=0
+		inStr(Join(Parameters!BillingContractFilter.Value,","),Fields!Funding_Type.Value)=0
 		,iif
 		(
 			Fields!Has_Charge_Item.Value = 2
@@ -3341,7 +3611,7 @@ Switch
             <FixedRowHeaders>true</FixedRowHeaders>
             <DataSetName>DataSet1</DataSetName>
             <Height>2.38208cm</Height>
-            <Width>75.49355cm</Width>
+            <Width>81.52481cm</Width>
             <Style>
               <Border>
                 <Style>None</Style>
@@ -3352,7 +3622,7 @@ Switch
         <Height>0.93783in</Height>
         <Style />
       </Body>
-      <Width>29.72187in</Width>
+      <Width>32.09638in</Width>
       <Page>
         <PageHeader>
           <Height>1.95862cm</Height>
@@ -3363,9 +3633,9 @@ Switch
               <Source>Embedded</Source>
               <Value>Logo_AnglicareSA</Value>
               <Sizing>FitProportional</Sizing>
-              <Left>62.68895cm</Left>
+              <Left>67.91417cm</Left>
               <Height>1.95862cm</Height>
-              <Width>12.8046cm</Width>
+              <Width>13.61064cm</Width>
               <Style>
                 <Border>
                   <Style>None</Style>

@@ -1562,7 +1562,7 @@ order by 1
                       </Style>
                     </TextRun>
                     <TextRun>
-                      <Value>=Parameters!OrgName.Value</Value>
+                      <Value>=Join(Parameters!OrgName.Value,", ")</Value>
                       <Style>
                         <FontSize>20pt</FontSize>
                         <FontWeight>Bold</FontWeight>

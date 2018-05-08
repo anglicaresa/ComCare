@@ -30,6 +30,10 @@
       <FullPath>Agency_Statistics_HomeCare.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
+      <Name>Agency_Statistics_RAC.rdl</Name>
+      <FullPath>Agency_Statistics_RAC.rdl</FullPath>
+    </ProjectItem>
+    <ProjectItem>
       <Name>ComCare_ClientTransactionOperatingAccount.rdl</Name>
       <FullPath>ComCare_ClientTransactionOperatingAccount.rdl</FullPath>
     </ProjectItem>
@@ -74,8 +78,8 @@
       <FullPath>VisitTime_Vs_ContractDates.rdl</FullPath>
     </ProjectItem>
     <ProjectItem>
-      <Name>Agency_Statistics_RAC.rdl</Name>
-      <FullPath>Agency_Statistics_RAC.rdl</FullPath>
+      <Name>Email_2_SMS_Usage.rdl</Name>
+      <FullPath>Email_2_SMS_Usage.rdl</FullPath>
     </ProjectItem>
   </Reports>
   <Configurations>
